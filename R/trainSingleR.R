@@ -32,8 +32,9 @@
 #' 
 #' @export
 #' @importFrom scran scaledColRanks
-#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
+#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
+#' @importFrom SummarizedExperiment assay
 #' @importFrom methods is
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPARAM=KmknnParam()) {
@@ -48,34 +49,37 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     if (is.list(genes)) {
         genes <- "de"
         extra <- genes
-        x <- x[unique(unlist(extra)),,drop=FALSE]
+        common <- unique(unlist(extra))
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
             extra <- getGenesByDE(x, labels)
-            x <- x[unique(unlist(extra)),,drop=FALSE]
+            common <- unique(unlist(extra))
         } else if (genes=="sd") {
             sd.out <- getGenesBySD(x, labels, sd.thresh=sd.thresh)
-            x <- x[sd.out$genes,,drop=FALSE]
+            common <- sd.out$genes
             extra <- sd.out$mat
         }
     }
 
-    # Converting to scaled ranks and building an index for each label.
-    ranked <- scaledColRanks(x, transposed=TRUE)
     if (bndistance(BNPARAM)!="Euclidean") {
         stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
     }
-    indices <- List()
+    indices <- original <- List()
     for (u in unique(labels)) {
-        indices[[u]] <- buildIndex(ranked[labels==u,,drop=FALSE], BNPARAM=BNPARAM)
+        current <- x[,labels==u,drop=FALSE] # don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
+        original[[u]] <- current
+        ranked <- scaledColRanks(current[common,,drop=FALSE], transposed=TRUE)
+        indices[[u]] <- buildIndex(ranked, BNPARAM=BNPARAM)
     }
 
     List(
-        original=x,
-        genes=genes,
-        indices=indices,
-        extra=extra
+        common.genes=common,
+        original.exprs=original,
+        search.mode=genes,
+        nn.indices=indices,
+        extra=extra,
+        BNPARAM=BNPARAM
     )
 }
 
@@ -88,7 +92,7 @@ getGenesByDE <- function(x, labels) {
     collected <- list()
     for (i in ulabels) {
         subcollected <- list()
-        for (j in setdiff(ulabels, i)) {
+        for (j in ulabels) {
             s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
             s <- s[s>0]
             subcollected[[j]] <- head(names(s), n)
