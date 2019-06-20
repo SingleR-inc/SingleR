@@ -1,7 +1,7 @@
 Package: SingleR
 Type: Package
 Title: Reference-based single-cell RNA-seq annotation
-Version: 0.98.0 
+Version: 0.98.0
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph", "cre")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"))
 Description: Performs unbiased cell type recognition from single-cell RNA sequencing data,
@@ -11,7 +11,14 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
 bioCviews:
-Imports: BiocManager,
+Depends: SingleCellExperiment
+Imports: 
+    methods,
+    S4Vectors,
+    SummarizedExperiment,
+    DelayedMatrixStats,
+    BiocNeighbors,
+    scran,
     RColorBrewer,
     outliers,
     matrixStats,
