@@ -21,14 +21,22 @@
 #' )
 #' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
 #' 
-#' ########################
-#' ## Doing the training ##
-#' ########################
-#'
 #' trained <- trainSingleR(sce, sce$label)
 #'
-#' sce <- classifySingleR(sce, trained)
-#' table(predicted=sce$SingleR$labels, truth=g)
+#' ##################################################
+#' ## Mocking up some test data for classification ##
+#' ##################################################
+#'
+#' N <- 100
+#' g <- sample(LETTERS[1:5], N, replace=TRUE)
+#' test <- SingleCellExperiment(
+#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+#'     colData=DataFrame(label=g)
+#' )
+#' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
+#' 
+#' test <- classifySingleR(test, trained)
+#' table(predicted=test$SingleR$labels, truth=g)
 #' 
 #' @export
 #' @importFrom scran scaledColRanks
@@ -49,16 +57,18 @@ classifySingleR <- function(x, trained, quant.thresh=0.2, fine.tune=TRUE, tune.t
         x <- assay(x, i=assay.type)
     }
 
+    # Don't globally subset 'x', as fine-tuning requires all genes
+    # when search.mode='sd'.
     ref.genes <- trained$common.genes
-    if (all(ref.genes %in% rownames(x))) {
-        x <- x[ref.genes,,drop=FALSE]
-    } else {
+    if (!all(ref.genes %in% rownames(x))) {
         stop("'rownames(x)' does not contain all genes used in 'trained'")
     }
 
     # Initial search in rank space.
-    ranked <- scaledColRanks(x, transposed=TRUE)
+    sr.out <- .scaled_colranks_safe(x[ref.genes,,drop=FALSE])
+    ranked <- sr.out$mat[!sr.out$failed,,drop=FALSE]
     all.indices <- trained$nn.indices
+
     scores <- matrix(0, nrow(ranked), length(all.indices), dimnames=list(rownames(ranked), names(all.indices)))
     for (u in names(all.indices)) {
         curdex <- all.indices[[u]]
@@ -70,7 +80,8 @@ classifySingleR <- function(x, trained, quant.thresh=0.2, fine.tune=TRUE, tune.t
     # Fine-tuning with an iterative search in lower dimensions.
     labels <- colnames(scores)[max.col(scores)]
     if (fine.tune) {
-        new.labels <- .fine_tune_data(exprs=x, scores=scores, genes=trained$search.mode, 
+        new.labels <- .fine_tune_data(exprs=x[,!sr.out$failed,drop=FALSE], 
+            scores=scores, genes=trained$search.mode, 
             extras=trained$extra, references=trained$original.exprs, 
             quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
             sd.thresh=trained$sd.thresh, BPPARAM=BPPARAM)
@@ -78,6 +89,11 @@ classifySingleR <- function(x, trained, quant.thresh=0.2, fine.tune=TRUE, tune.t
     } else {
         output <- DataFrame(scores=I(scores), labels=labels)
     }
+
+    # Restoring all failed cells with "NA" values.
+    expander <- rep(NA_integer_, ncol(x))
+    expander[!sr.out$failed] <- seq_len(nrow(output))
+    output <- output[expander,]
 
     if (was.sce) {
         colData(original)$SingleR <- output

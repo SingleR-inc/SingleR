@@ -31,7 +31,6 @@
 #' trained$indices
 #' 
 #' @export
-#' @importFrom scran scaledColRanks
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
@@ -69,8 +68,8 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     for (u in unique(labels)) {
         current <- x[,labels==u,drop=FALSE] # don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
         original[[u]] <- current
-        ranked <- scaledColRanks(current[common,,drop=FALSE], transposed=TRUE)
-        indices[[u]] <- buildIndex(ranked, BNPARAM=BNPARAM)
+        sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE])
+        indices[[u]] <- buildIndex(sr.out$mat[!sr.out$failed,,drop=FALSE], BNPARAM=BNPARAM)
     }
 
     List(
@@ -108,3 +107,13 @@ getGenesBySE <- function(x, labels, sd.thresh=1) {
     sd <- rowSds(mat)
     list(mat=mat, genes=rownames(mat)[sd > sd.thresh])
 }
+
+#' @importFrom DelayedMatrixStats colRanks rowSds
+.scaled_colranks_safe <- function(x) {
+    out <- colRanks(x, ties.method="average")
+    center <- (nrow(x) + 1)/2
+    sum.sq <- rowVars(out, center=center) * (nrow(x)-1)
+    out <- (out - center)/(sqrt(sum.sq) * 2)
+    list(mat=out, failed=(sum.sq < 1e-8))
+}
+
