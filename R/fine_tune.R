@@ -58,16 +58,24 @@
         common <- commonFUN(top.labels, ...)
 
         cur.scores <- numeric(length(top.labels))
-        for (u in seq_along(top.labels)) {
-            ref <- references[[top.labels[u]]]
+        names(cur.scores) <- top.labels
+        for (u in top.labels) {
+            ref <- references[[u]]
             ref <- as.matrix(ref[common,,drop=FALSE]) # should be cheap with few 'common'.
             cur.scores[u] <- quantile(cor(cur.exprs[common], ref, method="spearman"), 
                 na.rm=TRUE, p=quant.thresh)
         }
 
         old.labels <- top.labels
-        top.labels <- top.labels[cur.scores > max(cur.scores) - tune.thresh] 
+        cur.scores <- cur.scores[!is.na(cur.scores)]
+        top.labels <- names(cur.scores)[cur.scores > max(cur.scores) - tune.thresh] 
     }
 
-    top.labels[1]
+    if (length(top.labels)==1L) {
+        top.labels
+    } else if (length(top.labels)==0L) {
+        NA_character_
+    } else {
+        names(cur.scores)[which.max(cur.scores)]
+    }
 }
