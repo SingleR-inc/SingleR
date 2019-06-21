@@ -3,7 +3,7 @@
 
 test_that("trainSingleR works correctly for genes='de'", {
     out <- trainSingleR(training, training$label)
-    expect_identical(out$search.mode, "de")
+    expect_identical(out$search$mode, "de")
 
     # Checking that the original expression is correctly returned,
     # and that the NN indices are correctly constructed.
@@ -17,38 +17,39 @@ test_that("trainSingleR works correctly for genes='de'", {
     }
 
     # Checking the structure of the DE gene set.
-    expect_identical(names(out$extra), unique(training$label))
-    for (u in names(out$extra)) {
-        expect_identical(names(out$extra[[u]]), names(out$extra))
-        expect_identical(out$extra[[u]][[u]], character(0))
+    expect_identical(names(out$search$extra), unique(training$label))
+    for (u in names(out$search$extra)) {
+        expect_identical(names(out$search$extra[[u]]), names(out$search$extra))
+        expect_identical(out$search$extra[[u]][[u]], character(0))
 
         # Genes in opposite directions should not intersect.
-        for (j in names(out$extra)) {
-            combined <- intersect(out$extra[[u]][[j]], out$extra[[j]][[u]])
+        for (j in names(out$search$extra)) {
+            combined <- intersect(out$search$extra[[u]][[j]], out$search$extra[[j]][[u]])
             expect_identical(combined, character(0))
         }
     }
 
-    expect_identical(training$common.genes, unlist(training$extra))
+    expect_identical(training$common.genes, unlist(training$search$extra))
 })
 
 test_that("trainSingleR works correctly for genes='sd'", {
     out <- trainSingleR(training, training$label, genes='sd')
-    expect_identical(out$search.mode, "sd")
+    expect_identical(out$search$mode, "sd")
 
     # Checking the structure of the extras (a median matrix).
-    expect_identical(colnames(out$extra), unique(training$label))
-    expect_identical(rownames(out$extra), rownames(training))
+    expect_identical(colnames(out$search$extra), unique(training$label))
+    expect_identical(rownames(out$search$extra), rownames(training))
 
     # Checking the selected genes.
-    expect_identical(out$common.genes, rownames(training)[rowSds(out$extra) > 1])
+    expect_identical(out$common.genes, rownames(training)[rowSds(out$search$extra) > 1])
 })
 
 test_that("trainSingleR works correctly for genes='all'", {
     out <- trainSingleR(training, training$label, genes='all')
-    expect_identical(out$search.mode, "all")
-    expect_identical(out$extra, NULL)
     expect_identical(out$common.genes, rownames(training))
+
+    ref <- trainSingleR(training, training$label, genes='sd')
+    expect_identical(ref$search, out$search)
 })
 
 test_that("trainSingleR works correctly for a list of lists of genes", {
@@ -116,6 +117,8 @@ test_that("trainSingleR is invariant to simple transformations", {
     out2 <- trainSingleR(sce, sce$label, genes='all')
     set.seed(3523)
     alt2 <- trainSingleR(sce, sce$label, genes='all', assay.type="logcounts")
+
+    out2$search$extra <- alt2$search$extra <- NULL
     expect_identical(out2[same.fields], alt2[same.fields])
 })
 
@@ -127,13 +130,13 @@ test_that("trainSingleR behaves with silly inputs", {
 
     out <- trainSingleR(training[0,], training$label)
     expect_identical(out$common.genes, character(0))
-    expect_identical(names(out$extra), unique(training$label))
+    expect_identical(names(out$search$extra), unique(training$label))
     expect_identical(names(out$original.exprs), unique(training$label))
     expect_identical(names(out$nn.indices), unique(training$label))
 
     out <- trainSingleR(training[0,], training$label, genes='sd')
     expect_identical(out$common.genes, character(0))
-    expect_identical(colnames(out$extra), unique(training$label))
+    expect_identical(colnames(out$search$extra), unique(training$label))
     expect_identical(names(out$original.exprs), unique(training$label))
     expect_identical(names(out$nn.indices), unique(training$label))
 
