@@ -6,42 +6,33 @@
 # combination of topLabels, but it adds a lot of complexity and additional overhead.
 
 #' @importFrom BiocParallel bplapply SerialParam
-.fine_tune_data <- function(exprs, scores, genes, extras, references, quant.thresh, tune.thresh, sd.thresh, sd.n, BPPARAM=SerialParam()) {
-    if (genes=="de") {
-        extras <- do.call(cbind, extras)
-        out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell_de, exprs=exprs, 
-            scores=scores, extras=extras, references=references, quant.thresh=quant.thresh, 
-            tune.thresh=tune.thresh, BPPARAM=BPPARAM)            
-
-    } else if (genes=="sd") {
-        out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell_sd, exprs=exprs, 
-            scores=scores, extras=extras, references=references, quant.thresh=quant.thresh, 
-            tune.thresh=tune.thresh, sd.thresh=sd.thresh, sd.n=sd.n, BPPARAM=BPPARAM)
-    }
+.fine_tune_de <- function(exprs, scores, references, quant.thresh, tune.thresh, de.info, BPPARAM=SerialParam()) {
+    de.info <- do.call(cbind, de.info)
+    out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
+        references=references, quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
+        commonFUN=.fine_tune_de_genes, de.info=de.info, BPPARAM=BPPARAM)            
     unlist(out)
 }
 
-.fine_tune_cell_de <- function(i, exprs, scores, extras, references, quant.thresh, tune.thresh) {
-    .fine_tune_cell(i, exprs, scores, references, quant.thresh, tune.thresh, commonFUN=.fine_tune_de_genes, 
-        extras=extras)
+#' @importFrom BiocParallel bplapply SerialParam
+.fine_tune_sd <- function(exprs, scores, references, quant.thresh, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
+    out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
+        references=references, quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
+        commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
+    unlist(out)
 }
 
-.fine_tune_de_genes <- function(top.labels, extras) {
+.fine_tune_de_genes <- function(top.labels, de.info) {
     # Finding the subset of genes (assuming 'extras' is a matrix of lists).
     all.combos <- expand.grid(top.labels, top.labels)
-    unlist(extras[as.matrix(all.combos)])
-}
-
-.fine_tune_cell_sd <- function(i, exprs, scores, extras, references, quant.thresh, tune.thresh, sd.thresh, sd.n) {
-    .fine_tune_cell(i, exprs, scores, references, quant.thresh, tune.thresh, commonFUN=.fine_tune_sd_genes, 
-        extras=extras, sd.thresh=sd.thresh, sd.n=sd.n)
+    unique(unlist(de.info[as.matrix(all.combos)]))
 }
 
 #' @importFrom DelayedMatrixStats rowSds
-.fine_tune_sd_genes <- function(top.labels, extras, sd.thresh, sd.n) {
-    sds <- rowSds(extras[,top.labels])
+.fine_tune_sd_genes <- function(top.labels, extras, sd.thresh, sd.n=500) {
+    sds <- rowSds(extras, col=top.labels)
     sd.n <- min(length(sds), sd.n)
-    sd.thresh <- min(sd.thresh, sort(sds, partial=sd.n)[sd.n])
+    sd.thresh <- min(sd.thresh, sort(sds, partial=sd.n, decreasing=TRUE)[sd.n])
     rownames(extras)[sds > sd.thresh]
 }
 

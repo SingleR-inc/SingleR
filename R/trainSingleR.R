@@ -11,6 +11,8 @@
 #' Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
+#' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
+#' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 #' if \code{x} is a \linkS4class{SingleCellExperiment} object.
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
@@ -38,7 +40,7 @@
 #' \item \code{genes="sd"} identifies genes that are highly variable across labels.
 #' This is done by identifying the median expression within each label, and computing the standard deviation in the medians across all labels.
 #' The set of all features is defined as those genes with standard deviations above \code{sd.thresh}.
-#' \item \code{genes="none"} will not perform any feature selection.
+#' \item \code{genes="all"} will not perform any feature selection.
 #' }
 #'
 #' \code{genes} can also be a named list of named lists of character vectors:
@@ -52,7 +54,7 @@
 #' That is, these genes are upregulated in \code{"A"} compared to \code{"B"}.
 #' The outer list should have one list per label, and each inner list should have one character vector per label.
 #' (Obviously, a label cannot have markers against itself, so this is just set to \code{character(0)}.)
-#' 
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
@@ -91,7 +93,7 @@
 #' @importFrom SummarizedExperiment assay
 #' @importFrom methods is
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
-trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPARAM=KmknnParam()) {
+trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.type=1, BNPARAM=KmknnParam()) {
     if (is.null(rownames(x))) {
         stop("'x' must have row names")
     }
@@ -100,6 +102,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     }
 
     # Choosing the gene sets of interest. 
+    args <- list()
     if (is.list(genes)) {
         extra <- genes
         common <- unique(unlist(extra))
@@ -107,15 +110,18 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
-            extra <- .get_genes_by_de(x, labels)
+            extra <- .get_genes_by_de(x, labels, de.n=de.n)
             common <- unique(unlist(extra))
         } else if (genes=="sd") {
             sd.out <- .get_genes_by_sd(x, labels, sd.thresh=sd.thresh)
             common <- sd.out$genes
             extra <- sd.out$mat
+            args$sd.thresh <- sd.thresh
         } else {
             common <- rownames(x)
-            extra <- NULL
+            extra <- .median_by_label(x, labels)
+            genes <- "sd"
+            args$sd.thresh <- sd.thresh
         }
     }
 
@@ -133,18 +139,18 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     List(
         common.genes=as.character(common),
         original.exprs=original,
-        search.mode=genes,
         nn.indices=indices,
-        extra=extra,
-        BNPARAM=BNPARAM
+        search=List(mode=genes, args=args, extra=extra)
     )
 }
 
 #' @importFrom utils head
-.get_genes_by_de <- function(x, labels) {
+.get_genes_by_de <- function(x, labels, de.n=NULL) {
     ulabels <- unique(labels)
-    n <- round(500*(2/3)^log2(ncol(x)))
     mat <- .median_by_label(x, labels)
+    if (is.null(de.n)) {
+        de.n <- round(500*(2/3)^log2(ncol(mat)))
+    }
 
     collected <- list()
     for (i in ulabels) {
@@ -152,7 +158,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
         for (j in ulabels) {
             s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
             s <- s[s>0]
-            subcollected[[j]] <- as.character(head(names(s), n))
+            subcollected[[j]] <- as.character(head(names(s), de.n))
         }
         collected[[i]] <- subcollected
     }
@@ -179,7 +185,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     output
 }
 
-#' @importFrom DelayedMatrixStats colRanks rowSds
+#' @importFrom DelayedMatrixStats colRanks rowVars
 .scaled_colranks_safe <- function(x) {
     out <- colRanks(x, ties.method="average")
     center <- (nrow(x) + 1)/2

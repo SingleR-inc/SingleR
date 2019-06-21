@@ -39,15 +39,15 @@
 #' table(predicted=test$SingleR$labels, truth=g)
 #' 
 #' @export
-#' @importFrom scran scaledColRanks
 #' @importFrom BiocNeighbors KmknnParam bndistance queryKNN
 #' @importFrom S4Vectors List DataFrame
 #' @importFrom methods is
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom SummarizedExperiment colData<- colData assay
 #' @importFrom BiocParallel SerialParam
-classifySingleR <- function(x, trained, quant.thresh=0.2, fine.tune=TRUE, tune.thresh=0.05, assay.type=1, 
-    BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
+classifySingleR <- function(x, trained, quant.thresh=0.2, 
+    fine.tune=TRUE, tune.thresh=0.05, sd.thresh=NULL,
+    assay.type=1, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     if (is.null(rownames(x))) {
         stop("'x' must have row names")
@@ -73,18 +73,31 @@ classifySingleR <- function(x, trained, quant.thresh=0.2, fine.tune=TRUE, tune.t
     for (u in names(all.indices)) {
         curdex <- all.indices[[u]]
         k <- max(1, round(nrow(curdex) * quant.thresh))
-        nn.out <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE)
+        nn.out <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE, BPPARAM=BPPARAM)
         scores[,u] <- 1 - 2*nn.out$distance[,ncol(nn.out$distance)]^2 # see https://arxiv.org/abs/1208.3145
     }
 
     # Fine-tuning with an iterative search in lower dimensions.
     labels <- colnames(scores)[max.col(scores)]
     if (fine.tune) {
-        new.labels <- .fine_tune_data(exprs=x[,!sr.out$failed,drop=FALSE], 
-            scores=scores, genes=trained$search.mode, 
-            extras=trained$extra, references=trained$original.exprs, 
-            quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
-            sd.thresh=trained$sd.thresh, BPPARAM=BPPARAM)
+        to.use <- x[,!sr.out$failed,drop=FALSE]
+        search.mode <- trained$search$mode
+
+        if (search.mode=="de") {
+            new.labels <- .fine_tune_de(exprs=to.use, scores=scores, references=trained$original.exprs, 
+                quant.thresh=quant.thresh, tune.thresh=tune.thresh, de.info=trained$search$extra,
+                BPPARAM=BPPARAM)
+        } else if (search.mode=="sd") {
+            if (is.null(sd.thresh)) {
+                sd.thresh <- trained$search$args$sd.thresh
+            }
+            new.labels <- .fine_tune_sd(exprs=to.use, scores=scores, references=trained$original.exprs, 
+                quant.thresh=quant.thresh, tune.thresh=tune.thresh, median.mat=trained$search$extra,
+                sd.thresh=sd.thresh, BPPARAM=BPPARAM)
+        } else {
+            stop(sprintf("unrecognised search mode '%s' when fine-tuning", search.mode))
+        }
+
         output <- DataFrame(scores=I(scores), labels=new.labels, first.labels=labels)
     } else {
         output <- DataFrame(scores=I(scores), labels=labels)
