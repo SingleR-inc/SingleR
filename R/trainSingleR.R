@@ -46,18 +46,21 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
 
     # Choosing the gene sets of interest. 
     if (is.list(genes)) {
-        genes <- "de"
         extra <- genes
         common <- unique(unlist(extra))
+        genes <- "de"
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
-            extra <- getGenesByDE(x, labels)
+            extra <- .get_genes_by_de(x, labels)
             common <- unique(unlist(extra))
         } else if (genes=="sd") {
-            sd.out <- getGenesBySD(x, labels, sd.thresh=sd.thresh)
+            sd.out <- .get_genes_by_sd(x, labels, sd.thresh=sd.thresh)
             common <- sd.out$genes
             extra <- sd.out$mat
+        } else {
+            common <- rownames(x)
+            extra <- NULL
         }
     }
 
@@ -73,7 +76,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
     }
 
     List(
-        common.genes=common,
+        common.genes=as.character(common),
         original.exprs=original,
         search.mode=genes,
         nn.indices=indices,
@@ -83,10 +86,10 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, assay.type=1, BNPAR
 }
 
 #' @importFrom utils head
-getGenesByDE <- function(x, labels) {
+.get_genes_by_de <- function(x, labels) {
     ulabels <- unique(labels)
     n <- round(500*(2/3)^log2(ncol(x)))
-    mat <- medianMatrix(x, labels)
+    mat <- .median_by_label(x, labels)
 
     collected <- list()
     for (i in ulabels) {
@@ -94,7 +97,7 @@ getGenesByDE <- function(x, labels) {
         for (j in ulabels) {
             s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
             s <- s[s>0]
-            subcollected[[j]] <- head(names(s), n)
+            subcollected[[j]] <- as.character(head(names(s), n))
         }
         collected[[i]] <- subcollected
     }
@@ -102,10 +105,23 @@ getGenesByDE <- function(x, labels) {
 }
 
 #' @importFrom DelayedMatrixStats rowSds
-getGenesBySE <- function(x, labels, sd.thresh=1) {
-    mat <- medianMatrix(x, labels)
+.get_genes_by_sd <- function(x, labels, sd.thresh=1) {
+    mat <- .median_by_label(x, labels)
     sd <- rowSds(mat)
-    list(mat=mat, genes=rownames(mat)[sd > sd.thresh])
+    list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
+}
+
+#' @importFrom DelayedMatrixStats rowMedians
+.median_by_label <- function(mat, labels) {
+    ulabels <- unique(labels)
+    output <- matrix(0, nrow(mat), length(ulabels))
+    rownames(output) <- rownames(mat)
+    colnames(output) <- ulabels
+
+    for (u in ulabels) {
+        output[,u] <- rowMedians(mat, cols=u==labels)
+    }
+    output
 }
 
 #' @importFrom DelayedMatrixStats colRanks rowSds
@@ -116,4 +132,3 @@ getGenesBySE <- function(x, labels, sd.thresh=1) {
     out <- (out - center)/(sqrt(sum.sq) * 2)
     list(mat=out, failed=(sum.sq < 1e-8))
 }
-
