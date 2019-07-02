@@ -6,18 +6,18 @@
 # combination of topLabels, but it adds a lot of complexity and additional overhead.
 
 #' @importFrom BiocParallel bplapply SerialParam
-.fine_tune_de <- function(exprs, scores, references, quant.thresh, tune.thresh, de.info, BPPARAM=SerialParam()) {
+.fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info, BPPARAM=SerialParam()) {
     de.info <- do.call(cbind, de.info)
     out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
-        references=references, quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
+        references=references, quantile=quantile, tune.thresh=tune.thresh, 
         commonFUN=.fine_tune_de_genes, de.info=de.info, BPPARAM=BPPARAM)            
     unlist(out)
 }
 
 #' @importFrom BiocParallel bplapply SerialParam
-.fine_tune_sd <- function(exprs, scores, references, quant.thresh, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
+.fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
     out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
-        references=references, quant.thresh=quant.thresh, tune.thresh=tune.thresh, 
+        references=references, quantile=quantile, tune.thresh=tune.thresh, 
         commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
     unlist(out)
 }
@@ -37,7 +37,7 @@
 }
 
 #' @importFrom stats cor quantile
-.fine_tune_cell <- function(i, exprs, scores, references, quant.thresh, tune.thresh, commonFUN, ...) {
+.fine_tune_cell <- function(i, exprs, scores, references, quantile, tune.thresh, commonFUN, ...) {
     cur.exprs <- exprs[,i]
     cur.scores <- scores[i,]
     top.labels <- names(cur.scores)[cur.scores > max(cur.scores) - tune.thresh]
@@ -53,8 +53,7 @@
         for (u in top.labels) {
             ref <- references[[u]]
             ref <- as.matrix(ref[common,,drop=FALSE]) # should be cheap with few 'common'.
-            cur.scores[u] <- quantile(cor(cur.exprs[common], ref, method="spearman"), 
-                na.rm=TRUE, p=quant.thresh)
+            cur.scores[u] <- quantile(cor(cur.exprs[common], ref, method="spearman"), na.rm=TRUE, p=quantile)
         }
 
         old.labels <- top.labels
