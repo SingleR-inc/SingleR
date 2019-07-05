@@ -4,7 +4,7 @@
 typedef std::vector<std::pair<double, size_t> > ranked_vector;
 
 template <class IT> 
-void scaled_ranks(IT start, IT end, const std::set<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
+void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
     size_t slen=chosen.size();
 
     // Various other bits and pieces.
@@ -14,13 +14,14 @@ void scaled_ranks(IT start, IT end, const std::set<int>& chosen, ranked_vector& 
     outgoing.resize(slen);
 
     // Sorting all subsetted values (zeroes are handled separately for greater efficiency).
+    size_t s=0;
     for (auto i : chosen) {
-        const double curval=*(IT + i);
-        if (isNA(curval)) { 
-            throw std::runtime_error("missing values not supported in quickCluster");
-        } else {
-            collected.push_back(std::make_pair(curval, s));
-        }
+        const double curval=*(start + i);
+        if (ISNA(curval)) { 
+            throw std::runtime_error("missing values not supported in SingleR");
+        } 
+        collected.push_back(std::make_pair(curval, s));
+        ++s;
     }
     std::sort(collected.begin(), collected.end());
 
@@ -58,7 +59,7 @@ void scaled_ranks(IT start, IT end, const std::set<int>& chosen, ranked_vector& 
 
     if (sum_squares==0) {
         for (auto& o : outgoing) {
-            o=NA_Real;
+            o=R_NaReal;
         }
     } else {
         sum_squares = std::sqrt(sum_squares)*2;
