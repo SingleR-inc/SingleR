@@ -28,7 +28,8 @@ private:
     std::vector<std::vector<Rcpp::IntegerVector> > collected;
 };
 
-
+//' @importFrom Rcpp sourceCpp
+//' @useDynLib SingleR
 // [[Rcpp::export(rng=false)]]
 Rcpp::IntegerVector fine_tune_label (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
     double quantile, double tune_thresh, Rcpp::List marker_genes) 

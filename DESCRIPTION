@@ -18,23 +18,10 @@ Imports:
     SummarizedExperiment,
     DelayedMatrixStats,
     BiocNeighbors,
-    scran,
-    RColorBrewer,
-    outliers,
-    matrixStats,
-    plyr,
-    dplyr,
-    ggplot2,
-    pbmcapply,
-    Matrix,
-    GSEABase,
-    GSVA,
-    pheatmap,
-    parallel,
-    devtools,
-    doFuture,
-    data.table,
-    foreach,
-    singscore,
-    doParallel
-Suggests: Seurat (>= 2.2)
+    BiocParallel,
+    stats,
+    utils,
+    Rcpp
+LinkingTo:
+    Rcpp,
+    beachmat
