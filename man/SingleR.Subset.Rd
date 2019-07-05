@@ -4,7 +4,8 @@
 \alias{SingleR.Subset}
 \title{Subseting a SingleR object. This function subsets all the SingleR data and the Seurat object if included.}
 \usage{
-SingleR.Subset(singler, subsetdata, rerun.seurat = F)
+SingleR.Subset(singler, subsetdata, rerun.seurat = F,
+  rerun.singler.clustering = F)
 }
 \arguments{
 \item{singler}{as SingleR object}
