@@ -57,11 +57,8 @@ void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collecte
         sum_squares+=o*o;
     }
 
-    if (sum_squares==0) {
-        for (auto& o : outgoing) {
-            o=R_NaReal;
-        }
-    } else {
+    // Special behaviour for no-variance genes; these are left as all-zero scaled ranks.
+    if (sum_squares!=0) {
         sum_squares = std::sqrt(sum_squares)*2;
         for (auto& o : outgoing) {
             o/=sum_squares;

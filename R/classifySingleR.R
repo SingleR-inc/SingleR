@@ -97,8 +97,7 @@ classifySingleR <- function(x, trained, quantile=0.8,
     }
 
     # Initial search in rank space.
-    sr.out <- .scaled_colranks_safe(x[ref.genes,,drop=FALSE])
-    ranked <- sr.out$mat[!sr.out$failed,,drop=FALSE]
+    ranked <- .scaled_colranks_safe(x[ref.genes,,drop=FALSE])
     all.indices <- trained$nn.indices
 
     scores <- matrix(0, nrow(ranked), length(all.indices), dimnames=list(rownames(ranked), names(all.indices)))
@@ -112,18 +111,16 @@ classifySingleR <- function(x, trained, quantile=0.8,
     # Fine-tuning with an iterative search in lower dimensions.
     labels <- colnames(scores)[max.col(scores)]
     if (fine.tune) {
-        to.use <- x[,!sr.out$failed,drop=FALSE]
         search.mode <- trained$search$mode
-
         if (search.mode=="de") {
-            new.labels <- .fine_tune_de(exprs=to.use, scores=scores, references=trained$original.exprs, 
+            new.labels <- .fine_tune_de(exprs=x, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, de.info=trained$search$extra,
                 BPPARAM=BPPARAM)
         } else if (search.mode=="sd") {
             if (is.null(sd.thresh)) {
                 sd.thresh <- trained$search$args$sd.thresh
             }
-            new.labels <- .fine_tune_sd(exprs=to.use, scores=scores, references=trained$original.exprs, 
+            new.labels <- .fine_tune_sd(exprs=x, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, median.mat=trained$search$extra,
                 sd.thresh=sd.thresh, BPPARAM=BPPARAM)
         } else {
