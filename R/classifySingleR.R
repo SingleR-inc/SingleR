@@ -132,9 +132,5 @@ classifySingleR <- function(x, trained, quantile=0.8,
         output <- DataFrame(scores=I(scores), labels=labels)
     }
 
-    # Restoring all failed cells with "NA" values.
-    expander <- rep(NA_integer_, ncol(x))
-    expander[!sr.out$failed] <- seq_len(nrow(output))
-    output <- output[expander,]
     output
 }

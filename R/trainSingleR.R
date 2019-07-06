@@ -130,7 +130,14 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.ty
     }
     indices <- original <- List()
     for (u in unique(labels)) {
-        current <- x[,labels==u,drop=FALSE] # don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
+        # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
+        current <- x[,labels==u,drop=FALSE] 
+
+        # Coerce to double to make life easier for the C++ code later.
+        if (!is.double(current[0,])) {
+            current <- current + 0
+        }
+
         original[[u]] <- current
         sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE])
         indices[[u]] <- buildIndex(sr.out, BNPARAM=BNPARAM)
