@@ -31,7 +31,7 @@ private:
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 // [[Rcpp::export(rng=false)]]
-Rcpp::IntegerVector fine_tune_label (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
+Rcpp::IntegerVector fine_tune_label_de (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
     double quantile, double tune_thresh, Rcpp::List marker_genes) 
 {
     auto mat=beachmat::create_numeric_matrix(Exprs);

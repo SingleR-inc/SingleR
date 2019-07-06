@@ -5,9 +5,9 @@
 
 using namespace Rcpp;
 
-// fine_tune_label
-Rcpp::IntegerVector fine_tune_label(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
-RcppExport SEXP _SingleR_fine_tune_label(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP marker_genesSEXP) {
+// fine_tune_label_de
+Rcpp::IntegerVector fine_tune_label_de(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
+RcppExport SEXP _SingleR_fine_tune_label_de(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP marker_genesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type Exprs(ExprsSEXP);
@@ -16,13 +16,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
     Rcpp::traits::input_parameter< double >::type tune_thresh(tune_threshSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type marker_genes(marker_genesSEXP);
-    rcpp_result_gen = Rcpp::wrap(fine_tune_label(Exprs, scores, References, quantile, tune_thresh, marker_genes));
+    rcpp_result_gen = Rcpp::wrap(fine_tune_label_de(Exprs, scores, References, quantile, tune_thresh, marker_genes));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SingleR_fine_tune_label", (DL_FUNC) &_SingleR_fine_tune_label, 6},
+    {"_SingleR_fine_tune_label_de", (DL_FUNC) &_SingleR_fine_tune_label_de, 6},
     {NULL, NULL, 0}
 };
 

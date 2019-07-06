@@ -3,7 +3,7 @@
 
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib SingleR
-fine_tune_label <- function(Exprs, scores, References, quantile, tune_thresh, marker_genes) {
-    .Call('_SingleR_fine_tune_label', PACKAGE = 'SingleR', Exprs, scores, References, quantile, tune_thresh, marker_genes)
+fine_tune_label_de <- function(Exprs, scores, References, quantile, tune_thresh, marker_genes) {
+    .Call('_SingleR_fine_tune_label_de', PACKAGE = 'SingleR', Exprs, scores, References, quantile, tune_thresh, marker_genes)
 }
 
