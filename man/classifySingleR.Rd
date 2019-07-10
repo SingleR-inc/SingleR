@@ -30,10 +30,17 @@ This is only used if \code{genes="sd"} when constructing \code{trained} and defa
 }
 \value{
 A \linkS4class{DataFrame} where each row corresponds to a cell in \code{x}.
-Fields are:
+If \code{fine.tune=FALSE}, fields are:
 \itemize{
 \item \code{scores}, a matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
 \item \code{labels}, the predicted label based on the maximum entry in \code{scores}.
+}
+
+If \code{fine.tune=TRUE}, fields are:
+\itemize{
+\item \code{scores}, a matrix of correlations as above.
+\item \code{first.labels}, the predicted label based on the maximum entry in \code{scores}.
+\item \code{labels}, the predicted label after fine-tuning.
 }
 }
 \description{

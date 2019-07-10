@@ -2,43 +2,91 @@
 % Please edit documentation in R/SingleR.R
 \name{SingleR}
 \alias{SingleR}
-\title{The main SingleR function}
+\title{Annotate scRNA-seq data}
 \usage{
-SingleR(method = "single", sc_data, ref_data, types, clusters = NULL,
-  genes = "de", quantile.use = 0.8, p.threshold = 0.05,
-  fine.tune = TRUE, fine.tune.thres = 0.05, sd.thres = 1,
-  do.pvals = T, numCores = SingleR.numCores, ...)
+SingleR(test, training, labels, method = c("single", "cluster"),
+  clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
+  tune.thresh = 0.05, sd.thresh = 1, assay.type = 1,
+  BNPARAM = KmknnParam())
 }
 \arguments{
-\item{method}{annotating each single-cell or as a group by cluster: (\code{"single"} or \code{"cluster"})}
+\item{test}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
+where rows are genes and columns are cells.
+Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
 
-\item{sc_data}{the single-cell RNA-seq data set as a matrix with genes as rownames. If the data if from a full-length platform, counts must be normalized to gene length (TPM, RPKM, FPKM, etc.).}
+\item{training}{A numeric matrix of single-cell expression values, like \code{test}.
+Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+This should have the same rows as or a subset of the rows in \code{test}.}
 
-\item{ref_data}{the reference dataset with genes as rownames. Gene names must be in the same format as the single cell data (if sc_data uses genes symbols, ref_data must have the same)}
+\item{labels}{A character vector or factor of known labels for all cells in \code{training}.}
 
-\item{types}{a list of cell type names corresponding to ref_data. Number of elements in types must be equal to number of columns in ref_data}
+\item{method}{String specifying whether annotation should be performed on single cells in \code{test},
+or whether they should be aggregated into cluster-level profiles prior to annotation.}
 
-\item{clusters}{only if using the "cluster" method. Please provide grouping variables as a factor. The number of elements of clusters must be equal to the number of columns in sc_data}
+\item{clusters}{A character vector or factor of cluster identities for each cell in \code{test}.
+Only used if \code{method="cluster"}.}
 
-\item{genes}{list of genes to use for the annotations, or a method for extracting the genes from the data. Available methods are standard deviation and gene dispersion (\code{"sd"} or \code{"de"}). default is "de".}
+\item{genes, sd.thresh}{Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.}
 
-\item{quantile.use}{correlation coefficients are aggregated for multiple cell types in the reference data set. This parameter allows to choose how to sort the cell types scores, by median (0.5) or any other number between 0 and 1. The default is 0.9.}
+\item{quantile, fine.tune, tune.thresh}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
-\item{p.threshold}{Chi-square outlier detection is used to assess the significance power of the top correlation. Single-cell with an annotation of p-value > p.threshold are designated as "X". Only applies for non fine-tuned annotations.}
+\item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
+if \code{x} is a \linkS4class{SingleCellExperiment} object.}
 
-\item{fine.tune}{perform the fine tuning step? default is TRUE.}
-
-\item{fine.tune.thres}{the fine tuning step performs the scoring procedure for the top scoring labels using only genes that vary between those cell types in the reference data set. The top labels are those with a score lower than the top score by less than fine.tune.thres}
-
-\item{sd.thres}{if genes=='sd' then this is the threshold for defining a variable gene.}
-
-\item{do.pvals}{compute chi-squared outlier test p-values}
-
-\item{numCores}{Number of cores to use.}
+\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
 }
 \value{
-a list with the labels and scores
+A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+This is identical to the output of \code{\link{classifySingleR}}.
 }
 \description{
-Given single-cell RNAseq data and reference dataset the function returns the best annotation for each single-cell.
+Returns the best annotation for each cell in a training dataset,
+given a labelled.reference dataset in the same features space.
+}
+\details{
+If \code{method="single"}, this function is effectively just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
+
+If \code{method="cluster"}, per-cell profiles are summed to obtain per-cluster profiles and annotation is performed on these clusters.
+}
+\examples{
+###########################################
+## Mocking up some example training data ##
+###########################################
+
+Ngroups <- 5
+Ngenes <- 1000
+means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
+means[1:900,] <- 0
+colnames(means) <- LETTERS[1:5]
+
+N <- 100
+g <- sample(LETTERS[1:5], N, replace=TRUE)
+sce <- SingleCellExperiment(
+    list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+    colData=DataFrame(label=g)
+)
+rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
+
+##################################################
+## Mocking up some test data for classification ##
+##################################################
+
+N <- 100
+g <- sample(LETTERS[1:5], N, replace=TRUE)
+test <- SingleCellExperiment(
+    list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+    colData=DataFrame(label=g)
+)
+rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
+
+pred <- SingleR(test, sce, labels=sce$label)
+table(predicted=pred$labels, truth=g)
+
+pred2 <- SingleR(test, sce, labels=sce$label, 
+    method="cluster", clusters=test$label) 
+table(predicted=pred2$labels, truth=rownames(pred2))
+
+}
+\author{
+Aaron Lun, based on code by Dvir Aran.
 }
