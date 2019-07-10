@@ -51,10 +51,8 @@
     Reduce(union, de.info[as.matrix(all.combos)])
 }
 
-.fine_tune_sd_genes <- function(top.labels, extras, sd.thresh, sd.n=500) {
+.fine_tune_sd_genes <- function(top.labels, extras, sd.thresh) {
     sds <- DelayedMatrixStats::rowSds(extras, col=match(top.labels, colnames(extras)))
-    sd.n <- min(length(sds), sd.n)
-    sd.thresh <- min(sd.thresh, -sort(-sds, partial=sd.n)[sd.n])
     rownames(extras)[sds > sd.thresh]
 }
 
@@ -66,6 +64,13 @@
     out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
         references=references, quantile=quantile, tune.thresh=tune.thresh, 
         commonFUN=.fine_tune_de_genes, de.info=de.info)            
+    unlist(out)
+}
+
+.fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh) {
+    out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
+        references=references, quantile=quantile, tune.thresh=tune.thresh, 
+        commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh)
     unlist(out)
 }
 
@@ -135,16 +140,12 @@ test_that("fine-tuning SD selection works", {
 
     # Responds to various settings correctly
     # (difficult to test exactly without regurgitating the code).
-    out <- .fine_tune_sd_genes(lab, mat, 1, sd.n=50)
+    out <- .fine_tune_sd_genes(lab, mat, 1)
     expect_true(min(ref[match(out, rownames(mat))]) > max(ref[-match(out, rownames(mat))]))
 
-    out2 <- .fine_tune_sd_genes(lab, mat, 1, sd.n=100)
+    out2 <- .fine_tune_sd_genes(lab, mat, 0.5)
     expect_true(length(out2) > length(out))
     expect_true(min(ref[match(out2, rownames(mat))]) > max(ref[-match(out2, rownames(mat))]))
-
-    out3 <- .fine_tune_sd_genes(lab, mat, 0.5, sd.n=50)
-    expect_true(length(out3) > length(out))
-    expect_true(min(ref[match(out3, rownames(mat))]) > max(ref[-match(out3, rownames(mat))]))
 })
 
 ###################################
@@ -183,22 +184,34 @@ test_that("fine-tuning by DE runs without errors", {
     expect_false(any(is.diff & rowSums(pred$scores >= maxed - thresh)==1L))
 })
 
-#test_that("fine-tuning by SD runs without errors", {
-#    trained <- trainSingleR(training, training$label, genes='sd')
-#    ref <- classifySingleR(test, trained, fine.tune=FALSE)
-#
-#    Q <- 0.8
-#    thresh <- 0.05
-#    tuned <- SingleR:::.fine_tune_sd(assay(test), ref$scores, trained$original.exprs, 
-#         quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
-#
-#    expect_identical(length(tuned), nrow(ref))
-#    is.diff <- tuned!=ref$labels
-#    expect_true(any(is.diff))
-#
-#    maxed <- ref$scores[cbind(seq_len(nrow(ref)), max.col(ref$scores))]
-#    expect_false(any(is.diff & rowSums(ref$scores >= maxed - thresh)==1L))
-#})
+test_that("fine-tuning by SD runs without errors", {
+    trained <- trainSingleR(training, training$label, genes='sd')
+    pred <- classifySingleR(test, trained, fine.tune=FALSE)
+
+    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { # Minor offsets to avoid problems with numerical precision.
+        for (thresh in c(0, 0.05, 0.1)) {
+            tuned <- SingleR:::.fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
+            ref <- .fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
+
+            expect_equal(colnames(pred$scores)[tuned+1], ref)
+        }
+    }
+
+    # Sanity checking of the dimensions and output.
+    Q <- 0.8
+    thresh <- 0.05
+    tuned <- SingleR:::.fine_tune_sd(assay(test), pred$scores, trained$original.exprs, 
+         quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
+
+    expect_identical(length(tuned), nrow(pred))
+    is.diff <- colnames(pred$scores)[tuned+1]!=pred$labels
+    expect_true(any(is.diff))
+
+    maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]
+    expect_false(any(is.diff & rowSums(pred$scores >= maxed - thresh)==1L))
+})
 
 ###################################
 ###################################
