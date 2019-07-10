@@ -41,6 +41,7 @@
         cur.cor <- cor(cur.exprs, ref, method="spearman")
         cur.scores[u] <- -sort(-cur.cor, partial=k)[k]
     }
+
     cur.scores
 }
 
@@ -57,14 +58,14 @@
     rownames(extras)[sds > sd.thresh]
 }
 
-.fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info, BPPARAM=SerialParam()) {
+.fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info) { 
     de.info <- do.call(cbind, de.info)
     if (is.null(colnames(de.info)) || !identical(colnames(de.info), rownames(de.info))) {
         stop("marker list should be named during training")
     }
     out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
         references=references, quantile=quantile, tune.thresh=tune.thresh, 
-        commonFUN=.fine_tune_de_genes, de.info=de.info, BPPARAM=BPPARAM)            
+        commonFUN=.fine_tune_de_genes, de.info=de.info)            
     unlist(out)
 }
 
@@ -157,11 +158,11 @@ test_that("fine-tuning by DE runs without errors", {
     trained <- trainSingleR(training, training$label, genes='de')
     pred <- classifySingleR(test, trained, fine.tune=FALSE)
 
-    for (Q in c(0, 0.2, 0.5, 0.8, 1)) {
+    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { # Minor offsets to avoid problems with numerical precision.
         for (thresh in c(0, 0.05, 0.1)) {
-            tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+            tuned <- SingleR:::.fine_tune_de(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
-            ref <- .fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+            ref <- .fine_tune_de(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
 
             expect_equal(colnames(pred$scores)[tuned+1], ref)
@@ -171,11 +172,11 @@ test_that("fine-tuning by DE runs without errors", {
     # Sanity checking of the dimensions and output.
     Q <- 0.8
     thresh <- 0.05
-    tuned <- SingleR:::.fine_tune_de(assay(test), ref$scores, trained$original.exprs, 
+    tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
          quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
 
     expect_identical(length(tuned), nrow(pred))
-    is.diff <- tuned!=pred$labels
+    is.diff <- colnames(pred$scores)[tuned+1]!=pred$labels
     expect_true(any(is.diff))
 
     maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]

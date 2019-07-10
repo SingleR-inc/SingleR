@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
 
@@ -21,21 +22,22 @@ public:
         auto cur_scores=scores.column(i);
         int topI=std::max_element(cur_scores.begin(), cur_scores.end()) - cur_scores.begin();
         double threshold=cur_scores[topI] - tune_thresh;
+
+        labels_in_use.clear();
         for (size_t i=0; i<cur_scores.size(); ++i) {
             if (cur_scores[i] >= threshold) {
                 labels_in_use.push_back(i);
             }
         }
-        bool unchanged=false;
 
         // Check if it's unchanged, to avoid an infinite loop if the correlations are still close after fine tuning.
+        bool unchanged=false;
         while (labels_in_use.size() > 1 && !unchanged) {
             commonFUN(labels_in_use, genes_in_use);
             get_scores(references, quantile);
             topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
             threshold=new_scores[topI] - tune_thresh;
 
-            next_labels.clear();
             unchanged=true;
             for (size_t i=0; i<new_scores.size(); ++i) {
                 if (new_scores[i] >= threshold) {
@@ -45,6 +47,7 @@ public:
                 }
             }
             labels_in_use.swap(next_labels);
+            next_labels.clear();
         }
 
         if (labels_in_use.size()==1L) {
@@ -71,12 +74,12 @@ public:
                 current->get_col(c, holder_right.begin());
                 scaled_ranks(holder_right.begin(), genes_in_use, collected, scaled_right);
 
-                double& cor=all_correlations[c];
+                double dist=0;
                 for (size_t j=0; j<scaled_left.size(); ++j) {
-                    double tmp=scaled_left[j] - scaled_right[j];
-                    cor+=tmp*tmp;
+                    const double tmp=scaled_left[j] - scaled_right[j];
+                    dist+=tmp*tmp;
                 }
-                cor*=-1; // for sorting purposes.
+                all_correlations.push_back(-(1 - 2*dist)); // -1, for sorting purposes.
             }
 
             const int k=std::max(1, static_cast<int>((1-quantile) * ncells + 0.5)) - 1;

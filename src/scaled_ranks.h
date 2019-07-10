@@ -6,12 +6,8 @@ typedef std::vector<std::pair<double, size_t> > ranked_vector;
 template <class IT> 
 void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
     size_t slen=chosen.size();
-
-    // Various other bits and pieces.
     collected.reserve(slen);
     collected.clear();
-    outgoing.clear();
-    outgoing.resize(slen);
 
     // Sorting all subsetted values (zeroes are handled separately for greater efficiency).
     size_t s=0;
@@ -29,6 +25,8 @@ void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collecte
     double accumulated_rank=0;
     size_t cur_rank=0;
     auto cIt=collected.begin();
+    outgoing.clear();
+    outgoing.resize(slen);
 
     while (cIt!=collected.end()) {
         auto copy=cIt;
