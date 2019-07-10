@@ -7,15 +7,12 @@ Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "c
 Description: Performs unbiased cell type recognition from single-cell RNA sequencing data,
     by leverages reference transcriptomic datasets of pure cell types to infer the cell of origin of each single cell independently. 
 License: GPL-3
-Encoding: UTF-8
-LazyData: true
-RoxygenNote: 6.1.1
-bioCviews:
 Depends: SingleCellExperiment
 Imports: 
     methods,
     S4Vectors,
     SummarizedExperiment,
+    DelayedArray,
     DelayedMatrixStats,
     BiocNeighbors,
     BiocParallel,
@@ -25,3 +22,11 @@ Imports:
 LinkingTo:
     Rcpp,
     beachmat
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    beachmat
+Encoding: UTF-8
+RoxygenNote: 6.1.1
