@@ -20,9 +20,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fine_tune_label_sd
+Rcpp::IntegerVector fine_tune_label_sd(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::NumericMatrix median_mat, double sd_thresh);
+RcppExport SEXP _SingleR_fine_tune_label_sd(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP median_matSEXP, SEXP sd_threshSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type Exprs(ExprsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type scores(scoresSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type References(ReferencesSEXP);
+    Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
+    Rcpp::traits::input_parameter< double >::type tune_thresh(tune_threshSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type median_mat(median_matSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_thresh(sd_threshSEXP);
+    rcpp_result_gen = Rcpp::wrap(fine_tune_label_sd(Exprs, scores, References, quantile, tune_thresh, median_mat, sd_thresh));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_fine_tune_label_de", (DL_FUNC) &_SingleR_fine_tune_label_de, 6},
+    {"_SingleR_fine_tune_label_sd", (DL_FUNC) &_SingleR_fine_tune_label_sd, 7},
     {NULL, NULL, 0}
 };
 
