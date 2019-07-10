@@ -23,10 +23,10 @@
 
 #' @importFrom BiocParallel bplapply SerialParam
 .fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
-    out <- bplapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
-        references=references, quantile=quantile, tune.thresh=tune.thresh, 
-        commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
-    unlist(out)
+    if (!is.double(exprs[0,])) {
+        exprs <- exprs + 0
+    }
+    fine_tune_label_sd(exprs, t(scores), references, quantile, tune.thresh, t(median.mat), sd.thresh)
 }
 
 
