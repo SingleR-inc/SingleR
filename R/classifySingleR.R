@@ -140,5 +140,6 @@ classifySingleR <- function(x, trained, quantile=0.8,
         output <- DataFrame(scores=I(scores), labels=labels)
     }
 
+    rownames(output) <- colnames(x)
     output
 }
