@@ -9,6 +9,8 @@
 #' @param genes A string specifying the feature selection method to be used, see Details.
 #' 
 #' Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
+#' 
+#' Alternatively, a list of character vectors containing marker genes for each label.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
 #' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
@@ -43,7 +45,7 @@
 #' \item \code{genes="all"} will not perform any feature selection.
 #' }
 #'
-#' \code{genes} can also be a named list of named lists of character vectors:
+#' Alternatively, \code{genes} can be a named list of named lists of character vectors:
 #' \preformatted{genes <- list(
 #'    A = list(A = character(0), B = "GENE_1", C = c("GENE_2", "GENE_3")),
 #'    B = list(A = "GENE_100", B = character(0), C = "GENE_200"),
@@ -54,6 +56,17 @@
 #' That is, these genes are upregulated in \code{"A"} compared to \code{"B"}.
 #' The outer list should have one list per label, and each inner list should have one character vector per label.
 #' (Obviously, a label cannot have markers against itself, so this is just set to \code{character(0)}.)
+#'
+#' Alternatively, \code{genes} can be a named list of character vectors:
+#' \preformatted{genes <- list(
+#'      A = c("GENE_1", "GENE_2", "GENE_3"),
+#'      B = c("GENE_100", "GENE_200"),
+#'      C = c("GENE_4", "GENE_5")
+#' )
+#' }
+#' The entry \code{genes$A} represent the genes that are upregulated in \code{A} compared to some or all other labels. 
+#' This allows the function to handle pre-defined marker lists for specific cell populations.
+#' However, it obviously captures less information than marker sets for the pairwise comparisons.
 #'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
@@ -104,6 +117,13 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.ty
     # Choosing the gene sets of interest. 
     args <- list()
     if (is.list(genes)) {
+        is.char <- vapply(genes, is.character, TRUE)
+        if (all(is.char)) {
+            genes <- .convert_per_label_set(genes)
+        } else if (any(is.char)) {
+            stop("'genes' must be a list of character vectors or a list of list of vectors")
+        }
+        .validate_de_gene_set(genes, labels)
         extra <- genes
         common <- unique(unlist(extra))
         genes <- "de"
@@ -177,6 +197,32 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.ty
     mat <- .median_by_label(x, labels)
     sd <- rowSds(mat)
     list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
+}
+
+.convert_per_label_set <- function(genes) {
+    # Converting into a list-of-lists format so that it plays nice with downstream methods.
+    # This is done by saving the markers on the diagonal so that each label's markers are
+    # included in the set of genes to use during fine-tuning. Don't exclude the diagonal!
+    all.labs <- names(genes)
+    for (i in all.labs) {
+        empty <- rep(list(character(0)), length(all.labs))
+        names(empty) <- all.labs
+        empty[[i]] <- genes[[i]]
+        genes[[i]] <- empty
+    }
+    genes
+}
+
+.validate_de_gene_set <- function(genes, labels) {
+    ulabels <- unique(labels)
+    if (!all(ulabels %in% names(genes))) {
+        stop("need marker gene information for each label")
+    }
+    for (u in ulabels) {
+        if (!all(ulabels %in% names(genes[[u]]))) {
+            stop("need marker genes between each pair of labels")
+        }
+    }
 }
 
 #' @importFrom DelayedMatrixStats rowMedians

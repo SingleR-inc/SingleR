@@ -16,10 +16,8 @@ struct de_markers {
         genes.clear();
         for (auto l : labels) {
             for (auto l2 : labels) {
-                if (l!=l2) {
-                    auto& current=collected[l][l2];
-                    genes.insert(current.begin(), current.end());
-                }
+                auto& current=collected[l][l2];
+                genes.insert(current.begin(), current.end());
             }
         }
         return;

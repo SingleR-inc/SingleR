@@ -9,10 +9,8 @@ test_that("trainSingleR works correctly for genes='de'", {
     # and that the NN indices are correctly constructed.
     for (u in unique(training$label)) {
         current <- u == training$label
-        expect_identical(out$original.exprs[[u]], assay(training)[,current])
+        expect_identical(out$original.exprs[[u]], assay(training)[,current]+0)
         expect_s4_class(out$nn.indices[[u]], "BiocNeighborIndex")
-
-        # NOTE: not true in general, as zero-variance cells get discarded; see below.
         expect_identical(nrow(out$nn.indices[[u]]), sum(current))
     }
 
@@ -56,10 +54,49 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
     set.seed(92) # As NN index construction uses the random seed.
     ref <- trainSingleR(training, training$label, genes='de')
 
+    collected <- SingleR:::.get_genes_by_de(assay(training), training$label)
+    expect_identical(sort(names(collected)), sort(unique(training$label)))
+    in.names <- unique(lapply(collected, names))
+    expect_identical(length(in.names), 1L)
+    expect_identical(in.names[[1]], names(collected))
+
+    set.seed(92)
+    out <- trainSingleR(training, training$label, genes=collected)
+
+    expect_identical(ref, out)
+})
+
+test_that("trainSingleR works correctly for a list of genes", {
+    collected <- SingleR:::.get_genes_by_de(assay(training), training$label)
+
+    set.seed(92)
+    ref <- trainSingleR(training, training$label, genes=collected)
+
+    set.seed(92)
+    re.collected <- lapply(collected, unlist, use.names=FALSE)
+    out <- trainSingleR(training, training$label, genes=re.collected)
+
+    expect_identical(ref$common.genes, out$common.genes)
+    expect_identical(names(ref$search$extra), names(out$search$extra))
+    expect_identical(lapply(ref$search$extra, names), lapply(out$search$extra, names))
+})
+
+test_that("trainSingleR works correctly for a list of lists of genes", {
+    set.seed(92) # As NN index construction uses the random seed.
+    ref <- trainSingleR(training, training$label, genes='de')
+
     set.seed(92)
     out <- trainSingleR(training, training$label, genes=SingleR:::.get_genes_by_de(assay(training), training$label))
 
     expect_identical(ref, out)
+
+    # Fails when a weird gene set input is provided.
+    expect_error(trainSingleR(training, training$label, genes=list(A=list(), B=character(0))), "'genes' must be")
+    expect_error(trainSingleR(training, training$label, genes=list(A=list(), B=list())), "for each label")
+
+    empty <- rep(list(list()), length(unique(training$label)))
+    names(empty) <- unique(training$label)
+    expect_error(trainSingleR(training, training$label, genes=empty), "between each pair of labels")
 })
 
 test_that("trainSingleR is robust to no-variance cells", {
@@ -71,9 +108,7 @@ test_that("trainSingleR is robust to no-variance cells", {
         current <- u == sce$label
         expect_identical(out$original.exprs[[u]], assay(sce)[,current])
         expect_s4_class(out$nn.indices[[u]], "BiocNeighborIndex")
-
-        # Zero variance cells are lost.
-        expect_identical(nrow(out$nn.indices[[u]]), sum(current[-(1:10)]))
+        expect_identical(nrow(out$nn.indices[[u]]), sum(current))
     }
 })
 
