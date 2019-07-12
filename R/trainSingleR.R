@@ -180,6 +180,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.ty
 }
 
 #' @importFrom DelayedMatrixStats rowMedians
+#' @importFrom DelayedArray DelayedArray
 .median_by_label <- function(mat, labels) {
     ulabels <- unique(labels)
     output <- matrix(0, nrow(mat), length(ulabels))
@@ -187,14 +188,15 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.ty
     colnames(output) <- ulabels
 
     for (u in ulabels) {
-        output[,u] <- rowMedians(mat, cols=u==labels)
+        output[,u] <- rowMedians(DelayedArray(mat), cols=u==labels)
     }
     output
 }
 
 #' @importFrom DelayedMatrixStats colRanks rowVars
+#' @importFrom DelayedArray DelayedArray
 .scaled_colranks_safe <- function(x) {
-    out <- colRanks(x, ties.method="average")
+    out <- colRanks(DelayedArray(x), ties.method="average")
     center <- (nrow(x) + 1)/2
     sum.sq <- rowVars(out, center=center) * (nrow(x)-1)
     sum.sq <- pmax(1e-8, sum.sq)
