@@ -1,0 +1,130 @@
+---
+title: Using SingleR to annotate single-cell RNA-seq data
+author: Aaron Lun
+date: "Revised: 17 October 2018"
+output:
+  BiocStyle::html_document:
+    toc_float: true
+package: SingleR 
+bibliography: ref.bib
+vignette: >
+  %\VignetteIndexEntry{Using scran to analyze scRNA-seq data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}    
+---
+
+```{r, echo=FALSE, results="hide", message=FALSE}
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+library(BiocStyle)
+```
+
+# Introduction
+
+`r Biocpkg("SingleR")` is an automatic annotation method for single-cell RNA sequencing (scRNAseq) data.
+Given a training dataset of cells with known labels, we can annotate new cells from a test dataset based on similarity to the training set.
+Specifically, for each test cell.
+
+1. We compute the Spearman correlation between its expression profile and that of each training cell a given label.
+2. We define the per-label score as a fixed quantile (by default, 0.8) of the distribution of correlations.
+3. We repeat this for all labels and we take the label with the highest score as the annotation for this cell.
+4. We optionally perform a fine-tuning step:
+  - The training dataset is subsetted to only include labels with scores close to the maximum.
+  - Scores are recomputed using only marker genes for the subset of labels.
+  - This is iterated until one label remains.
+
+Automatic annotation provides a convenient way of transferring biological knowledge across datasets.
+In this manner, the burden of interpreting clusters and defining marker genes only has to be done once.
+
+# Demonstration on pancreas data
+
+## Obtaining the data 
+
+Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package for training and testing.
+We restrict our analysis to the common genes between the two datasets, also removing spike-in transcripts.
+
+```{r}
+library(scRNAseq)
+sceM <- MuraroPancreasData()
+sceG <- GrunPancreasData()
+
+common <- intersect(rownames(sceM), rownames(sceG))
+common <- common[-grep("^ERCC-", common)]
+sceM <- sceM[common,]
+sceG <- sceG[common,]
+```
+
+One should normally do quality control at this point, but for brevity's sake, we will just remove the empty libraries here.
+We then compute log-normalized expression values^[This is only necessary for the marker gene detection step.].
+
+```{r}
+library(scater)
+sceM <- sceM[,!is.na(sceM$label)]
+sceM <- normalize(sceM)
+sceG <- sceG[,colSums(counts(sceG)) > 0]
+sceG <- normalize(sceG)
+```
+
+The Muraro dataset contains labels so we will use this as our training dataset.
+
+```{r}
+table(sceM$label)
+```
+
+## Using default marker detection
+
+The `SingleR()` function annotates a test dataset given a training dataset with known labels.
+It returns a `DataFrame` containing the predicted labels and the per-label scores associated with each prediction.
+
+```{r}
+library(SingleR)
+pred <- SingleR(test=sceG, training=sceM, labels=sceM$label)
+table(pred$labels)
+```
+
+By default, the `genes="de"` setting will identify markers based on pairwise comparisons between labels.
+Specifically, `SingleR()` will compute the log-fold change in the median expression between each pair of labels.
+Markers are defined from the top set of genes with the largest positive log-fold changes in each pairwise comparison.
+Correlations are then computed using only these informative genes.
+Another strategy is to set `genes="sd"`, which will define markers based on the standard deviation of the median expression across labels.
+
+## Using custom markers
+
+Users can achieve more control of the annotation procedure by defining their own marker list.
+This requires a series of pairwise comparisons between labels.
+We demonstrate with the top 10 markers from pairwise $t$-tests performed using `r Biocpkg("scran")`.
+
+```{r}
+library(scran)
+out <- pairwiseTTests(logcounts(sceM), sceM$label, direction="up")
+
+# To be moved into scran::topPairwiseMarkers().
+markers <- list()
+for (first in unique(sceM$label)) {
+    cur.markers <- list()
+    for (second in unique(sceM$label)) {
+        chosen <- which(out$pairs$first==first & out$pairs$second==second)
+        if (!length(chosen)) {
+            cur.markers[[second]] <- character(0)
+        } else {
+            cur.stats <- out$statistics[[chosen]]
+            cur.stats <- cur.stats[order(cur.stats$p.value),]
+            cur.markers[[second]] <- head(rownames(cur.stats), 10)
+        }
+    }
+    markers[[first]] <- cur.markers
+}
+```
+
+We then supply these genes to `SingleR()` directly.
+This changes the results quite a bit, reflecting the importance of careful feature selection for this annotation method^[And many others.].
+
+```{r}
+pred2 <- SingleR(test=sceG, training=sceM, labels=sceM$label, genes=markers)
+table(pred$labels, pred2$labels)
+```
+
+# Available reference datasets
+
+# Session information
+
+# References

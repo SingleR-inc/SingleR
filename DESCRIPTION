@@ -27,6 +27,9 @@ Suggests:
     knitr,
     rmarkdown,
     BiocStyle,
-    beachmat
+    beachmat,
+    scater,
+    scRNAseq,
+    scran
 Encoding: UTF-8
 RoxygenNote: 6.1.1
