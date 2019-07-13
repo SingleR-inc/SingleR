@@ -12,7 +12,9 @@
         for (j in seq_along(de.info[[i]])) {
             de.info[[i]][[j]] <- match(de.info[[i]][[j]], genes) - 1L
         }
+        de.info[[i]] <- de.info[[i]][colnames(scores)]
     }
+    de.info <- de.info[colnames(scores)]
 
     # Coercing it to double as a hack; can't be bothered to template the C++ code twice.
     if (!is.double(exprs[0,])) {
