@@ -8,7 +8,7 @@ output:
 package: SingleR 
 bibliography: ref.bib
 vignette: >
-  %\VignetteIndexEntry{Using scran to analyze scRNA-seq data}
+  %\VignetteIndexEntry{Using SingleR to annotate scRNA-seq data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}    
 ---
