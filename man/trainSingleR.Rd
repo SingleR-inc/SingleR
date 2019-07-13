@@ -59,7 +59,7 @@ The set of all features is defined as those genes with standard deviations above
 \item \code{genes="all"} will not perform any feature selection.
 }
 
-\code{genes} can also be a named list of named lists of character vectors:
+Alternatively, \code{genes} can be a named list of named lists of character vectors:
 \preformatted{genes <- list(
    A = list(A = character(0), B = "GENE_1", C = c("GENE_2", "GENE_3")),
    B = list(A = "GENE_100", B = character(0), C = "GENE_200"),
@@ -70,6 +70,17 @@ If we consider the entry \code{genes$A$B}, this contains marker genes for label 
 That is, these genes are upregulated in \code{"A"} compared to \code{"B"}.
 The outer list should have one list per label, and each inner list should have one character vector per label.
 (Obviously, a label cannot have markers against itself, so this is just set to \code{character(0)}.)
+
+Alternatively, \code{genes} can be a named list of character vectors:
+\preformatted{genes <- list(
+     A = c("GENE_1", "GENE_2", "GENE_3"),
+     B = c("GENE_100", "GENE_200"),
+     C = c("GENE_4", "GENE_5")
+)
+}
+The entry \code{genes$A} represent the genes that are upregulated in \code{A} compared to some or all other labels. 
+This allows the function to handle pre-defined marker lists for specific cell populations.
+However, it obviously captures less information than marker sets for the pairwise comparisons.
 }
 \examples{
 ###########################################
