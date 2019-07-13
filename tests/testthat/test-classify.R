@@ -72,8 +72,7 @@ test_that("classifySingleR behaves with no-variance cells", {
 
     Q <- 0.2
     out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q)
-    expect_true(all(is.na(out$scores[1:10,])))
-    expect_true(all(is.na(out$labels[1:10])))
+    expect_true(all(abs(out$scores[1:10,] - 0.5) < 1e-8)) # works out to 0.5, as a mathematical oddity.
 
     ref <- classifySingleR(test, trained, fine.tune=FALSE, quantile=Q)
     expect_identical(out$scores[-(1:10),], ref$scores[-(1:10),])
@@ -86,5 +85,3 @@ test_that("classifySingleR behaves with silly inputs", {
     expect_identical(length(out$labels), 0L)
     expect_error(classifySingleR(test[0,], trained, fine.tune=FALSE), "does not contain")
 })
-
-
