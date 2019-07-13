@@ -20,9 +20,9 @@ library(BiocStyle)
 
 # Introduction
 
-`r Biocpkg("SingleR")` is an automatic annotation method for single-cell RNA sequencing (scRNAseq) data.
-Given a training dataset of cells with known labels, we can annotate new cells from a test dataset based on similarity to the training set.
-Specifically, for each test cell.
+`r Biocpkg("SingleR")` is an automatic annotation method for single-cell RNA sequencing (scRNAseq) data [@aran2019reference].
+Given a training dataset of cells with known labels, it labels new cells from a test dataset based on similarity to the training set.
+Specifically, for each test cell:
 
 1. We compute the Spearman correlation between its expression profile and that of each training cell a given label.
 2. We define the per-label score as a fixed quantile (by default, 0.8) of the distribution of correlations.
@@ -39,8 +39,8 @@ In this manner, the burden of interpreting clusters and defining marker genes on
 
 ## Obtaining the data 
 
-Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package for training and testing.
-We restrict our analysis to the common genes between the two datasets, also removing spike-in transcripts.
+Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package for training and testing [@muraro2016singlecell;@grun2016denovo].
+We restrict our analysis to the common genes between the two datasets, also removing spike-in transcripts for simplicity.
 
 ```{r}
 library(scRNAseq)
@@ -77,21 +77,23 @@ It returns a `DataFrame` containing the predicted labels and the per-label score
 
 ```{r}
 library(SingleR)
-pred <- SingleR(test=sceG, training=sceM, labels=sceM$label)
+pred <- SingleR(test=sceG, training=sceM, labels=sceM$label, 
+    assay.type="logcounts")
 table(pred$labels)
 ```
 
 By default, the `genes="de"` setting will identify markers based on pairwise comparisons between labels.
-Specifically, `SingleR()` will compute the log-fold change in the median expression between each pair of labels.
-Markers are defined from the top set of genes with the largest positive log-fold changes in each pairwise comparison.
+Specifically, `SingleR()` will compute the difference in the median log-expression between each pair of labels.
+Markers are defined from the top set of genes with the largest positive differences in each pairwise comparison.
 Correlations are then computed using only these informative genes.
 Another strategy is to set `genes="sd"`, which will define markers based on the standard deviation of the median expression across labels.
 
 ## Using custom markers
 
 Users can achieve more control of the annotation procedure by defining their own marker list.
-This requires a series of pairwise comparisons between labels.
-We demonstrate with the top 10 markers from pairwise $t$-tests performed using `r Biocpkg("scran")`.
+This requires a series of pairwise comparisons between labels to define markers that distinguish each label from another.
+For example, we can perform pairwise $t$-tests using `r Biocpkg("scran")` to obtain a list of lists of character vectors.
+Each character vector contains the top 10 marker genes from a comparison between a pair of labels.
 
 ```{r}
 library(scran)
@@ -115,16 +117,66 @@ for (first in unique(sceM$label)) {
 }
 ```
 
-We then supply these genes to `SingleR()` directly.
-This changes the results quite a bit, reflecting the importance of careful feature selection for this annotation method^[And many others.].
+We then supply these genes to `SingleR()` directly via the `genes=` argument.
+This changes the results quite a bit, reflecting the importance of feature selection for this annotation method^[And many others.].
 
 ```{r}
 pred2 <- SingleR(test=sceG, training=sceM, labels=sceM$label, genes=markers)
 table(pred$labels, pred2$labels)
 ```
 
+In some cases, markers may only be available for specific labels rather than for pairwise comparisons between labels.
+This is accommodated by supplying a named list of character vectors to `genes`.
+Note that this is likely to be less powerful than the list-of-lists approach as information about pairwise differences is discarded.
+
+```{r}
+label.markers <- lapply(markers, unlist, recursive=FALSE)
+pred3 <- SingleR(test=sceG, training=sceM, labels=sceM$label, genes=label.markers)
+table(pred$labels, pred3$labels)
+```
+
 # Available reference datasets
 
+`r Biocpkg("SingleR")` comes pre-packaged with a number of training datasets generated from bulk RNA-seq of pure cell types.
+This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources.
+Each reference dataset is obtained from `r Biocpkg("ExperimentHub")` by using the relevant command:
+
+```{r, eval=FALSE}
+hpca <- HPCATrainingSet()
+```
+
+This can then be directly used for annotation of our scRNA-seq dataset.
+In this case, we will use the precomputed marker genes in `de.genes` though users are free to define their own markers.
+
+```{r, eval=FALSE}
+pred.hpca <- SingleR(test=sceG, training=hpca$data, 
+    labels=hpca$labels, genes=hpca$de.genes)
+```
+
+# Separating training from classification
+
+Advanced users can split the `SingleR()` workflow into two separate training and classification steps.
+This means that training (e.g., marker detection, assembling of nearest-neighbor indices) only needs to be performed once.
+The resulting data structures can then be re-used across multiple classifications with different test datasets, provided the test feature set is identical to or a superset of the features in the training set.
+For example:
+
+```{r}
+trained <- trainSingleR(sceM, labels=sceM$label, genes=markers)
+pred2b <- classifySingleR(sceG, trained)
+table(pred2$labels, pred2b$labels)
+```
+
+Other efficiency improvements are possible through several arguments:
+
+- Switching to an approximate algorithm for the nearest neighbor search in `trainSingleR()` via the `BNPARAM=` argument from the `r Biocpkg("BiocNeighbors")` package.
+- Parallelizing the fine-tuning step in `classifySingleR()` with the `BPPARAM=` argument from the `r Biocpkg("BiocParallel")` package.
+
+These arguments can also be specified in the `SingleR()` command.
+
 # Session information
+
+```{r}
+sessionInfo()
+```
 
 # References
