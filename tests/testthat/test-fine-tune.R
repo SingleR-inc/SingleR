@@ -56,7 +56,7 @@
     rownames(extras)[sds > sd.thresh]
 }
 
-.fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info) { 
+.fine_tune_de_ref <- function(exprs, scores, references, quantile, tune.thresh, de.info) { 
     de.info <- do.call(cbind, de.info)
     if (is.null(colnames(de.info)) || !identical(colnames(de.info), rownames(de.info))) {
         stop("marker list should be named during training")
@@ -67,7 +67,7 @@
     unlist(out)
 }
 
-.fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh) {
+.fine_tune_sd_ref <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh) {
     out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
         references=references, quantile=quantile, tune.thresh=tune.thresh, 
         commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh)
@@ -125,9 +125,9 @@ test_that("fine-tuning DE marker selection works", {
     # Throwing if the constructed matrix doesn't have dimnames.
     Q <- 0.8
     thresh <- 0.05
-    expect_error(.fine_tune_de(assay(test), ref$scores, trained$original.exprs,
+    expect_error(.fine_tune_de_ref(assay(test), ref$scores, trained$original.exprs,
          quantile=Q, tune.thresh=thresh, de.info=unname(trained$search$extra)), "named")
-    expect_error(.fine_tune_de(assay(test), ref$scores, trained$original.exprs,
+    expect_error(.fine_tune_de_ref(assay(test), ref$scores, trained$original.exprs,
          quantile=Q, tune.thresh=thresh, de.info=lapply(trained$search$extra, unname)), "named")
 })
 
@@ -163,7 +163,7 @@ test_that("fine-tuning by DE runs without errors", {
         for (thresh in c(0, 0.05, 0.1)) {
             tuned <- SingleR:::.fine_tune_de(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
-            ref <- .fine_tune_de(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            ref <- .fine_tune_de_ref(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
 
             expect_equal(colnames(pred$scores)[tuned+1], ref)
@@ -182,6 +182,12 @@ test_that("fine-tuning by DE runs without errors", {
 
     maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]
     expect_false(any(is.diff & rowSums(pred$scores >= maxed - thresh)==1L))
+
+    # Works with parallelization.
+    multi <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+         quantile=Q, tune.thresh=thresh, de.info=trained$search$extra, 
+         BPPARAM=BiocParallel::SnowParam(3))
+    expect_identical(multi, tuned)
 })
 
 test_that("fine-tuning by SD runs without errors", {
@@ -192,7 +198,7 @@ test_that("fine-tuning by SD runs without errors", {
         for (thresh in c(0, 0.05, 0.1)) {
             tuned <- SingleR:::.fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
-            ref <- .fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            ref <- .fine_tune_sd_ref(assay(test)[,1:10], pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
 
             expect_equal(colnames(pred$scores)[tuned+1], ref)
@@ -211,6 +217,12 @@ test_that("fine-tuning by SD runs without errors", {
 
     maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]
     expect_false(any(is.diff & rowSums(pred$scores >= maxed - thresh)==1L))
+
+    # Works with parallelization.
+    multi <- SingleR:::.fine_tune_sd(assay(test), pred$scores, trained$original.exprs, 
+         quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1,
+         BPPARAM=BiocParallel::SnowParam(3))
+    expect_identical(multi, tuned)
 })
 
 ###################################
