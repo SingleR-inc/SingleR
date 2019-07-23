@@ -16,7 +16,7 @@ public:
 
     template<class PICKER> 
     int assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
-        const matrix_list& references, double quantile, double tune_thresh, PICKER commonFUN) 
+        const matrix_list& references, double quantile, double tune_thresh, const PICKER& commonFUN) 
     {
         exprs->get_col(i, holder_left.begin());
         auto cur_scores=scores.column(i);

@@ -12,7 +12,7 @@ struct de_markers {
         }
         return;
     }
-    void operator()(const std::vector<int>& labels, std::set<int>& genes) {
+    void operator() (const std::vector<int>& labels, std::set<int>& genes) const {
         genes.clear();
         for (auto l : labels) {
             for (auto l2 : labels) {

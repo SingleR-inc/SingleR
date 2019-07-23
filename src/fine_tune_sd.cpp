@@ -3,7 +3,7 @@
 
 struct sd_markers {
     sd_markers(Rcpp::NumericMatrix Mat, double l) : mat(Mat), limit(l*l) {}
-    void operator()(const std::vector<int>& labels, std::set<int>& genes) {
+    void operator() (const std::vector<int>& labels, std::set<int>& genes) const {
         genes.clear();
         auto it=mat.begin();
         for (int i=0; i<mat.ncol(); ++i, it+=mat.nrow()) {
