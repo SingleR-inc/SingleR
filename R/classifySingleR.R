@@ -111,8 +111,8 @@ classifySingleR <- function(x, trained, quantile=0.8,
     for (u in names(all.indices)) {
         curdex <- all.indices[[u]]
         k <- max(1, round(nrow(curdex) * (1-quantile)))
-        nn.out <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE, BPPARAM=BPPARAM)
-        scores[,u] <- 1 - 2*nn.out$distance[,ncol(nn.out$distance)]^2 # see https://arxiv.org/abs/1208.3145
+        nn.d <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE, get.distance=FALSE, BPPARAM=BPPARAM)
+        scores[,u] <- 1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
     }
 
     # Fine-tuning with an iterative search in lower dimensions.
