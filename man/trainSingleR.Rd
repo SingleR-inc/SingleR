@@ -16,7 +16,9 @@ Alternatively, a \linkS4class{SingleCellExperiment} object containing such a mat
 
 \item{genes}{A string specifying the feature selection method to be used, see Details.
 
-Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.}
+Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
+
+Alternatively, a list of character vectors containing marker genes for each label.}
 
 \item{sd.thresh}{A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 Only used when \code{genes="sd"}.}
