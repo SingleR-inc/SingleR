@@ -10,6 +10,7 @@
 #' @param sd.thresh A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
 #' This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{x} is a \linkS4class{SingleCellExperiment}.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.
 #' 
 #' @return A \linkS4class{DataFrame} where each row corresponds to a cell in \code{x}.
@@ -80,21 +81,13 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance queryKNN
 #' @importFrom S4Vectors List DataFrame
-#' @importFrom methods is
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom SummarizedExperiment colData<- colData assay
+#' @importFrom SummarizedExperiment colData<- colData 
 #' @importFrom BiocParallel SerialParam
 classifySingleR <- function(x, trained, quantile=0.8, 
     fine.tune=TRUE, tune.thresh=0.05, sd.thresh=NULL,
-    assay.type=1, BPPARAM=SerialParam()) 
+    assay.type=1, check.missing=TRUE, BPPARAM=SerialParam()) 
 {
-    if (is.null(rownames(x))) {
-        stop("'x' must have row names")
-    }
-    if (is(x, "SingleCellExperiment")) {
-        original <- x
-        x <- assay(x, i=assay.type)
-    }
+    x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
 
     # Don't globally subset 'x', as fine-tuning requires all genes
     # when search.mode='sd'.

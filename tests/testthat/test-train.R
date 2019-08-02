@@ -157,6 +157,18 @@ test_that("trainSingleR is invariant to simple transformations", {
     expect_identical(out2[same.fields], alt2[same.fields])
 })
 
+test_that("trainSingleR behaves with NAs", {
+    sce <- training
+    assay(sce)[1,1] <- NA
+
+    set.seed(30101)
+    expect_warning(out <- trainSingleR(sce, sce$label), "missing values")
+    set.seed(30101)
+    ref <- trainSingleR(sce[-1,], sce$label)
+
+    expect_identical(out, ref)
+})
+
 test_that("trainSingleR behaves with silly inputs", {
     out <- trainSingleR(training[,0], training$label[0])
     expect_identical(out$common.genes, character(0))

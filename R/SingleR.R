@@ -18,6 +18,7 @@
 #' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 #' if \code{x} is a \linkS4class{SingleCellExperiment} object.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
@@ -75,14 +76,25 @@
 #' @importFrom DelayedArray colsum
 SingleR <- function(test, training, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, assay.type = 1, BNPARAM=KmknnParam()) 
+    tune.thresh = 0.05, sd.thresh = 1, assay.type = 1, check.missing=TRUE, 
+    BNPARAM=KmknnParam()) 
 {
-    trained <- trainSingleR(training, labels, genes = genes, sd.thresh=sd.thresh, 
-        assay.type=assay.type, BNPARAM=BNPARAM)
+    test <- .to_clean_matrix(test, assay.type, check.missing, msg="test")
+    training <- .to_clean_matrix(training, assay.type, check.missing, msg="training")
 
-    if (is(test, "SingleCellExperiment")) {
-        test <- assay(test, assay.type)
+    keep <- intersect(rownames(test), rownames(training))
+    if (length(keep) == 0) {
+        stop("no common genes between 'test' and 'training'")
     }
+    if (!identical(keep, rownames(test))) {
+        test <- test[keep,]
+    } 
+    if (!identical(keep, rownames(training))) {
+        training <- training[keep,]
+    }
+
+    trained <- trainSingleR(training, labels, genes = genes, sd.thresh=sd.thresh, 
+        assay.type=assay.type, check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)
     if (method=="cluster") {
@@ -94,5 +106,5 @@ SingleR <- function(test, training, labels, method = c("single", "cluster"),
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, assay.type=assay.type)
+        tune.thresh=tune.thresh, assay.type=assay.type, check.missing=FALSE)
 }

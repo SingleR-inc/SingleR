@@ -30,3 +30,10 @@ test_that("SingleR works with custom gene selection", {
     expect_identical(out, out2)
 })
 
+test_that("SingleR works when genes are not the same between test and training", {
+    out <- SingleR(test=test[1:800,], training=training[200:1000,], labels=training$label)
+    ref <- SingleR(test=test[200:800,], training=training[200:800,], labels=training$label)
+    expect_identical(out, ref)
+
+    expect_error(SingleR(test=test[1:200,], training=training[800:1000,], labels=training$label), "no common genes")
+})

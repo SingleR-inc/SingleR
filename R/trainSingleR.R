@@ -17,6 +17,7 @@
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 #' if \code{x} is a \linkS4class{SingleCellExperiment} object.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
 #' @return A \linkS4class{List} containing:
@@ -103,16 +104,10 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
-#' @importFrom SummarizedExperiment assay
-#' @importFrom methods is
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
-trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.type=1, BNPARAM=KmknnParam()) {
-    if (is.null(rownames(x))) {
-        stop("'x' must have row names")
-    }
-    if (is(x, "SingleCellExperiment")) {
-        x <- assay(x, i=assay.type)
-    }
+trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, 
+    assay.type=1, check.missing=TRUE, BNPARAM=KmknnParam()) 
+{
+    x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
 
     # Choosing the gene sets of interest. 
     args <- list()
