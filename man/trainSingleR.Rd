@@ -5,7 +5,7 @@
 \title{Train the SingleR classifier}
 \usage{
 trainSingleR(x, labels, genes = "de", sd.thresh = 1, de.n = NULL,
-  assay.type = 1, BNPARAM = KmknnParam())
+  assay.type = 1, check.missing = TRUE, BNPARAM = KmknnParam())
 }
 \arguments{
 \item{x}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
@@ -28,6 +28,8 @@ Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique 
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 if \code{x} is a \linkS4class{SingleCellExperiment} object.}
+
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
 }

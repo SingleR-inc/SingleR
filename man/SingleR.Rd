@@ -7,7 +7,7 @@
 SingleR(test, training, labels, method = c("single", "cluster"),
   clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
   tune.thresh = 0.05, sd.thresh = 1, assay.type = 1,
-  BNPARAM = KmknnParam())
+  check.missing = TRUE, BNPARAM = KmknnParam())
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
@@ -32,6 +32,8 @@ Only used if \code{method="cluster"}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 if \code{x} is a \linkS4class{SingleCellExperiment} object.}
+
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
 }
