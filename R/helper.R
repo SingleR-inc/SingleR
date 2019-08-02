@@ -1,4 +1,4 @@
-#' Retrieve SingleR reference datasets from Github.
+#' Retrieve SingleR reference datasets from Github
 #'
 #' \code{getSinglerRef} retrieves \code{SingleR} reference datasets from Github. 
 #'
@@ -36,7 +36,6 @@ getSinglerRef <- function(dataset = "hpca") {
 	  bfc <- BiocFileCache(ask=FALSE)
 	  ref <- bfcrpath(bfc, full.url)
 
-	  # This could be less gross if rds files were used instead.
 	  load(ref, envir = environment())
 	  ref.set <- get(dataset, envir = environment())
 	
