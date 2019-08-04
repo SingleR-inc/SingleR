@@ -18,7 +18,8 @@ Imports:
     BiocParallel,
     stats,
     utils,
-    Rcpp
+    Rcpp,
+    BiocFileCache
 LinkingTo:
     Rcpp,
     beachmat
