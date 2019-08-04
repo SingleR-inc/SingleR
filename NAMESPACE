@@ -2,8 +2,11 @@
 
 export(SingleR)
 export(classifySingleR)
+export(getReferenceDataset)
 export(trainSingleR)
 importClassesFrom(SingleCellExperiment,SingleCellExperiment)
+importFrom(BiocFileCache,BiocFileCache)
+importFrom(BiocFileCache,bfcrpath)
 importFrom(BiocNeighbors,KmknnParam)
 importFrom(BiocNeighbors,bndistance)
 importFrom(BiocNeighbors,buildIndex)
