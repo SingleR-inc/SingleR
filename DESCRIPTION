@@ -4,9 +4,11 @@ Title: Reference-Based Single-Cell RNA-seq Annotation
 Version: 0.98.3
 Date: 2019-08-02
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph", "cre")),
-    person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"))
-Description: Performs unbiased cell type recognition from single-cell RNA sequencing data,
-    by leverages reference transcriptomic datasets of pure cell types to infer the cell of origin of each single cell independently. 
+    person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"),
+    person("Jared", "Andrews", role="ctb"))
+Description: Performs unbiased cell type recognition from single-cell RNA
+    sequencing data, by leveraging reference transcriptomic datasets of pure cell
+    types to infer the cell of origin of each single cell independently. 
 License: GPL-3 + file LICENSE
 Depends: SingleCellExperiment
 Imports: 
