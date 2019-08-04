@@ -7,7 +7,8 @@
 SingleR(test, training, labels, method = c("single", "cluster"),
   clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
   tune.thresh = 0.05, sd.thresh = 1, assay.type = 1,
-  check.missing = TRUE, BNPARAM = KmknnParam())
+  check.missing = TRUE, BNPARAM = KmknnParam(),
+  BPPARAM = SerialParam())
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
@@ -36,6 +37,8 @@ if \code{x} is a \linkS4class{SingleCellExperiment} object.}
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).

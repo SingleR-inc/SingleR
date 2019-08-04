@@ -20,6 +20,7 @@
 #' if \code{x} is a \linkS4class{SingleCellExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
@@ -74,10 +75,11 @@
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
 #' @importFrom DelayedArray colsum
+#' @importFrom BiocParallel SerialParam
 SingleR <- function(test, training, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
     tune.thresh = 0.05, sd.thresh = 1, assay.type = 1, check.missing=TRUE, 
-    BNPARAM=KmknnParam()) 
+    BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing, msg="test")
     training <- .to_clean_matrix(training, assay.type, check.missing, msg="training")
@@ -106,5 +108,5 @@ SingleR <- function(test, training, labels, method = c("single", "cluster"),
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, assay.type=assay.type, check.missing=FALSE)
+        tune.thresh=tune.thresh, assay.type=assay.type, check.missing=FALSE, BPPARAM=BPPARAM)
 }
