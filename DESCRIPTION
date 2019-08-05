@@ -35,6 +35,7 @@ Suggests:
     scater,
     scRNAseq,
     scran,
+    Matrix,
     BiocGenerics
 VignetteBuilder: knitr
 Encoding: UTF-8

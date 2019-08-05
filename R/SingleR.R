@@ -74,7 +74,7 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
-#' @importFrom DelayedArray colsum
+#' @importFrom DelayedArray colsum DelayedArray
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, training, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
@@ -103,7 +103,7 @@ SingleR <- function(test, training, labels, method = c("single", "cluster"),
         if (is.null(clusters)) {
             stop("'clusters' must be specified when 'method=\"cluster\"'")
         }
-        test <- colsum(test, clusters)
+        test <- colsum(DelayedArray(test), clusters)
     }
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
