@@ -79,10 +79,10 @@
 #' table(predicted=pred$labels, truth=g)
 #' 
 #' @export
-#' @importFrom BiocNeighbors KmknnParam bndistance queryKNN
+#' @importFrom BiocNeighbors KmknnParam bndistance 
 #' @importFrom S4Vectors List DataFrame
 #' @importFrom SummarizedExperiment colData<- colData 
-#' @importFrom BiocParallel SerialParam
+#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply
 classifySingleR <- function(x, trained, quantile=0.8, 
     fine.tune=TRUE, tune.thresh=0.05, sd.thresh=NULL,
     assay.type=1, check.missing=TRUE, BPPARAM=SerialParam()) 
@@ -100,13 +100,15 @@ classifySingleR <- function(x, trained, quantile=0.8,
     ranked <- .scaled_colranks_safe(x[ref.genes,,drop=FALSE])
     all.indices <- trained$nn.indices
 
-    scores <- matrix(0, nrow(ranked), length(all.indices), dimnames=list(rownames(ranked), names(all.indices)))
-    for (u in names(all.indices)) {
-        curdex <- all.indices[[u]]
-        k <- max(1, round(nrow(curdex) * (1-quantile)))
-        nn.d <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE, get.distance=FALSE, BPPARAM=BPPARAM)
-        scores[,u] <- 1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
+    if (!bpisup(BPPARAM)) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
     }
+
+    # Parallelizing across labels rather than cells, as we often have few cells but many labels.
+    scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
+    scores <- do.call(cbind, scores)
+    rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
     labels <- colnames(scores)[max.col(scores)]
@@ -135,4 +137,11 @@ classifySingleR <- function(x, trained, quantile=0.8,
 
     rownames(output) <- colnames(x)
     output
+}
+
+#' @importFrom BiocNeighbors queryKNN
+.find_nearest_quantile <- function(ranked, index, quantile) {
+    k <- max(1, round(nrow(index) * (1-quantile)))
+    nn.d <- queryKNN(query=ranked, k=k, BNINDEX=index, get.index=FALSE, get.distance=FALSE)
+    1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
 }
