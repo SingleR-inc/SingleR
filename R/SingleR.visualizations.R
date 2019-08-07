@@ -60,19 +60,26 @@
 #' 
 #' # Compare expression of target cell to reference cells of the same type
 #' plotCellVsReference(sc.data, sc.id = 1,
-#'                     train.data, train.id = ref.sameType.as1[1])
+#'                     train.data, train.id = ref.sameType.as1[1],
+#'                     assay.type.sc = 'counts',
+#'                     assay.type.train = 'counts')
 #' 
 #' # Compare expression of target cell to reference cells of a different type
 #' ref.diffType.as1 <- seq_along(train.data$label)[-ref.sameType.as1]
 #' plotCellVsReference(sc.data, sc.id = 1,
-#'                     train.data, train.id = ref.diffType.as1[1])
+#'                     train.data, train.id = ref.diffType.as1[1],
+#'                     assay.type.sc = 'counts',
+#'                     assay.type.train = 'counts')
+#' ###
+#' ## Note: for this mock data, normalization has not been run, so we used
+#' #  the raw counts data here, but logcounts (default) is normally recommended.
 #' 
 #' @export
 #' @importFrom ggplot2 ggplot geom_point geom_smooth theme xlab ylab ggtitle theme_classic
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
-plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.sc = 1, assay.type.train = 1) {
+plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.sc = 'logcounts', assay.type.train = 'logcounts') {
     if (is(sc.data, "SingleCellExperiment")) {
         sc.data <- assay(sc.data, assay.type.sc)
     }
