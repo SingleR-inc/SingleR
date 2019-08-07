@@ -112,9 +112,11 @@ plotScoreHeatmap <- function(SingleR.results, cells.use = NULL, labels.use = NUL
                              cells.order=NULL, order.by.clusters=FALSE, silent=FALSE,
                              fontsize.row=9, ...) {
     scores <- SingleR.results$scores
-    if (!is.null(cells.use)) {
-        scores <- scores[cells.use,]
+    rownames(scores) <- rownames(SingleR.results)
+    if(is.null(cells.use)){
+        cells.use <- seq_len(nrow(SingleR.results))
     }
+    scores <- scores[cells.use,]
     if (!is.null(labels.use)) {
         scores <- scores[,labels.use]
     }
@@ -130,9 +132,8 @@ plotScoreHeatmap <- function(SingleR.results, cells.use = NULL, labels.use = NUL
     data <- data[,m>(thres-1e-6)]
     data <- t(data)
     if (!is.null(clusters)) {
-        clusters <- as.data.frame(clusters)
-        colnames(clusters) <- 'Clusters'
-        rownames(clusters) <- colnames(data)
+        names(clusters) <- rownames(SingleR.results)
+        clusters <- data.frame(Clusters = clusters[colnames(data)], row.names = colnames(data))
     }
     cluster_cols <- FALSE
     if (order.by.clusters==TRUE) {
