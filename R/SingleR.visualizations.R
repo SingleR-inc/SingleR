@@ -9,10 +9,9 @@
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
 #' @param train.id Integer scalar specifying the reference cell/sample to use.
-#' @param assay.type.sc Integer scalar or Character specifying the assay of \code{sc.data} containing the relevant assay if provided as a \linkS4class{SingleCellExperiment}.
-#' @param assay.type.train Integer scalar or Character specifying the assay of \code{train.data} containing the relevant assay if provided as a \linkS4class{SingleCellExperiment}.
-#' if \code{sc.data} or \code{train.data} is a \linkS4class{SingleCellExperiment} object.
-#' @return a gpplot scatterplot of the expression of indidivual genes, with linear regression and Spearman pariwaise correlation coefficient
+#' @param assay.type.sc Integer scalar or Character specifying the assay of \code{sc.data} containing the relevant expression data.  Used if provided \code{sc.data} is a \linkS4class{SingleCellExperiment}.
+#' @param assay.type.train Integer scalar or Character specifying the assay of \code{train.data} containing the relevant expression data.  Used if provided \code{train.data} is a \linkS4class{SingleCellExperiment}.
+#' @return a gpplot scatterplot of the expression of individual genes, with linear regression and Spearman pairwise correlation coefficient added.
 #' @details This function allows a user to manually check how cells compare to reference cells of the same type or of a different type.
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #' @examples
