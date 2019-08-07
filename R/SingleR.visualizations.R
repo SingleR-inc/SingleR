@@ -101,7 +101,7 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
 #' @param cells.use Integer or Character vector of single cells to present. If NULL, all cells are presented.
 #' @param labels.use Character vector indicating what cell types to present. If NULL, all cell types are presented.
 #' @param clustering Character vector of Factor representing cell clustering to be present as annotation in the heatmap.
-#' @param max.label Integer scalar representing the number of cell types to present. Default is 40. This can have an effect on the clustering which is performed only on the cell types presented.
+#' @param max.labels Integer scalar representing the number of cell types to present. Default is 40. This can have an effect on the clustering which is performed only on the cell types presented.
 #' @param normalize Logical that sets if scores are normalized to a 0-1 scale.  Default is TRUE.
 #' @param order.by.clusters Logical that sets if cells are ordered by the input clusters and not clustered based on scoring.  Default is FALSE. Takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector with length equal to the number of cells in the heatmap. Sets the ordering of cells/columns of the heatmap. Turns off clustering of columns based on scoring.
@@ -121,7 +121,7 @@ plotScoreHeatmap <- function(SingleR.results, cells.use = NULL, labels.use = NUL
         scores <- scores[,labels.use]
     }
     m <- apply(t(scale(t(scores))),2,max)
-    thres <- sort(m,decreasing=TRUE)[min(max.label,length(m))]
+    thres <- sort(m,decreasing=TRUE)[min(max.labels,length(m))]
     data <- as.matrix(scores)
     if (normalize==TRUE) {
         mmax <- rowMaxs(data)
@@ -142,11 +142,11 @@ plotScoreHeatmap <- function(SingleR.results, cells.use = NULL, labels.use = NUL
     } else if (!is.null(cells.order)){
         order <- cells.order
     } else {
-        order <- seq_len(ncol(args$mat))
+        order <- seq_len(ncol(data))
         cluster_cols <- TRUE
     }
     args <- list(mat = data[,order], border_color = NA, show_colnames = FALSE,
-                 clustering_method = 'ward.D2', fontsize_row = fontsize_row,
+                 clustering_method = 'ward.D2', fontsize_row = fontsize.row,
                  silent = silent, cluster_cols = cluster_cols, ...)
     if (!is.null(clusters)) {
         args$annotation_col <- clusters[order,,drop=FALSE]
