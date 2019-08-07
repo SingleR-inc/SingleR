@@ -86,12 +86,11 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
     rownames(sc.data) <- tolower(rownames(sc.data))
     rownames(train.data) <- tolower(rownames(train.data))
     A <- intersect(rownames(sc.data),rownames(train.data))
-    df <- data.frame(sc.data[A,sc.id],train.data[A,train.id])
-    colnames(df) <- c('x','y')
+    df <- data.frame(x = sc.data[A,sc.id], y = train.data[A,train.id])
     ggplot(df,aes(x=x, y=y)) + geom_point(size=0.5,alpha=0.5,color='blue') +
         geom_smooth(method='lm',color='red')+
         theme(legend.position="none") + xlab('Single cell') + ylab('Reference sample') +
-        ggtitle(paste('R =', round(1000*cor(df$x,df$y,method='spearman',use='pairwise'))/1000)) + 
+        ggtitle(paste('R =', format(round(cor(df$x,df$y,method='spearman',use='pairwise'), 3), 3))) + 
         theme_classic()
 }
 
