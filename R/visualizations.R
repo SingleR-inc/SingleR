@@ -4,15 +4,23 @@
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
 #' @param sc.id Integer scalar specifying the index of the target cell to use.
-#' Alternatively, the name of the cell.
+#' Alternatively, a string containing the name of the cell.
 #' @param train.data Numeric matrix of reference dataset expression values (usually log-transformed
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
 #' @param train.id Integer scalar specifying the reference cell/sample to use.
-#' @param assay.type.sc Integer scalar or Character specifying the assay of \code{sc.data} containing the relevant expression data.  Used if provided \code{sc.data} is a \linkS4class{SingleCellExperiment}.
-#' @param assay.type.train Integer scalar or Character specifying the assay of \code{train.data} containing the relevant expression data.  Used if provided \code{train.data} is a \linkS4class{SingleCellExperiment}.
-#' @return a gpplot scatterplot of the expression of individual genes, with linear regression and Spearman pairwise correlation coefficient added.
-#' @details This function allows a user to manually check how cells compare to reference cells of the same type or of a different type.
+#' @param assay.type.sc Integer scalar or string specifying the assay of \code{sc.data} containing the relevant expression data.  
+#' Used if \code{sc.data} is a \linkS4class{SingleCellExperiment}.
+#' @param assay.type.train Integer scalar or string specifying the assay of \code{train.data} containing the relevant expression data.  
+#' Used if provided \code{train.data} is a \linkS4class{SingleCellExperiment}.
+#'
+#' @return A \link{ggplot} object containing a scatter plot of the cell against a reference.
+#'
+#' @details 
+#' This function allows a user to manually check how an individual cell compares to reference cells of the same or different type.
+#' It generates a scatter plot of one cell's expression profile against a chosen reference where each point is an individual gene.
+#' It also displays a linear regression fit and the value of Spearman's rank correlation coefficient.
+#' 
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #' @examples
 #' ###########################################
@@ -75,7 +83,6 @@
 #' #  the raw counts data here, but logcounts (default) is normally recommended.
 #' 
 #' @export
-#' @importFrom ggplot2 ggplot geom_point geom_smooth theme xlab ylab ggtitle theme_classic
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
@@ -89,71 +96,102 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
     if (is(train.data, "list")) {
         train.data <- train.data$data
     }
+
     rownames(sc.data) <- tolower(rownames(sc.data))
     rownames(train.data) <- tolower(rownames(train.data))
     A <- intersect(rownames(sc.data),rownames(train.data))
+
     df <- data.frame(x = sc.data[A,sc.id], y = train.data[A,train.id])
-    ggplot(df,aes(x=x, y=y)) + geom_point(size=0.5,alpha=0.5,color='blue') +
-        geom_smooth(method='lm',color='red')+
-        theme(legend.position="none") + xlab('Single cell') + ylab('Reference sample') +
-        ggtitle(paste('R =', format(round(cor(df$x,df$y,method='spearman',use='pairwise'), 3), 3))) + 
-        theme_classic()
+    ggplot2::ggplot(df, ggplot2::aes_string(x="x", y="y")) + 
+        ggplot2::geom_point(size=0.5,alpha=0.5,color='blue') +
+        ggplot2::geom_smooth(method='lm',color='red') +
+        ggplot2::theme(legend.position="none") + 
+        ggplot2::xlab('Single cell') + 
+        ggplot2::ylab('Reference sample') +
+        ggplot2::ggtitle(paste('R =', format(round(cor(df$x,df$y,method='spearman',use='pairwise'), 3), 3))) + 
+        ggplot2::theme_classic()
 }
 
 #' Plot a heatmap of the scoring of cells
 #'
-#' @param SingleR.results DataFrame output from a run of \code{SingleR()} or \code{classifySingleR()}
-#' @param cells.use Integer or Character vector of single cells to present. If NULL, all cells are presented.
-#' @param labels.use Character vector indicating what cell types to present. If NULL, all cell types are presented.
-#' @param clustering Character vector of Factor representing cell clustering to be present as annotation in the heatmap.
-#' @param max.labels Integer scalar representing the number of cell types to present. Default is 40. This can have an effect on the clustering which is performed only on the cell types presented.
-#' @param normalize Logical that sets if scores are normalized to a 0-1 scale.  Default is TRUE.
-#' @param order.by.clusters Logical that sets if cells are ordered by the input clusters and not clustered based on scoring.  Default is FALSE. Takes precedence over \code{cells.order} input.
-#' @param cells.order Integer vector with length equal to the number of cells in the heatmap. Sets the ordering of cells/columns of the heatmap. Turns off clustering of columns based on scoring.
-#' @param silent Logical that sets whether the plot drawn.
+#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
+#' @param cells.use Integer or character vector specifying the single cells to show.
+#' If \code{NULL}, all cells are presented.
+#' @param labels.use Character vector indicating what labels to show.
+#' If \code{NULL}, all cell types are presented.
+#' @param clusters Character vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
+#' @param max.labels Integer scalar specifying the maximum number of labels to show.
+#' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
+#' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
+#' If set, this takes precedence over \code{cells.order} input.
+#' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
+#' If set, turns off clustering of columns based on scoring.
+#' @param silent Logical scalar that specifying whether the plot drawn.
 #' @param ... Additional parameters for heatmap control passed to \code{pheatmap()}
+#'
+#' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
+#'
+#' @details
+#' This function creates a heatmap containing the \code{\link{SingleR}} assignment scores for each cell (columns) to each reference label (rows).
+#' Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
+#'
+#' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
+#' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
+#'
+#' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
+#' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
+#' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+#'
+#' @author Daniel Bunis, based on code by Dvir Aran.
 #' @export
-#' @importFrom pheatmap pheatmap
-plotScoreHeatmap <- function(SingleR.results, cells.use = NULL, labels.use = NULL,
-                             clusters=NULL, max.labels=40, normalize=TRUE,
-                             cells.order=NULL, order.by.clusters=FALSE, silent=FALSE,
-                             fontsize.row=9, ...) {
-    scores <- SingleR.results$scores
-    rownames(scores) <- rownames(SingleR.results)
-    if(is.null(cells.use)){
-        cells.use <- seq_len(nrow(SingleR.results))
+#' @importFrom utils head
+#' @importFrom DelayedArray rowMaxs rowMins
+plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
+    clusters=NULL, max.labels=40, normalize=TRUE,
+    cells.order=NULL, order.by.clusters=FALSE, 
+    fontsize.row=9, ...)
+{
+    scores <- results$scores
+    rownames(scores) <- rownames(results)
+    if(!is.null(cells.use)){
+        scores <- scores[cells.use,]
     }
-    scores <- scores[cells.use,]
     if (!is.null(labels.use)) {
         scores <- scores[,labels.use]
     }
+
+    # NOTE: calculation of 'm' before normalization is deliberate.
     m <- apply(t(scale(t(scores))),2,max)
-    thres <- sort(m,decreasing=TRUE)[min(max.labels,length(m))]
-    data <- as.matrix(scores)
-    if (normalize==TRUE) {
-        mmax <- rowMaxs(data)
-        mmin <- rowMins(data)
-        data <- (data-mmin)/(mmax-mmin)
-        data <- data^3
+    to.keep <- head(order(m,decreasing=TRUE), max.labels)
+
+    if (normalize) {
+        mmax <- rowMaxs(scores)
+        mmin <- rowMins(scores)
+        scores <- (scores-mmin)/(mmax-mmin)
+        scores <- scores^3
     }
-    data <- data[,m>(thres-1e-6)]
-    data <- t(data)
+
+    scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
+    scores <- t(scores)
+
+    # Determining how to order the cells. 
     if (!is.null(clusters)) {
-        names(clusters) <- rownames(SingleR.results)
-        clusters <- data.frame(Clusters = clusters[colnames(data)], row.names = colnames(data))
+        names(clusters) <- rownames(results)
+        clusters <- scores.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
     }
     cluster_cols <- FALSE
-    if (order.by.clusters==TRUE) {
+    if (order.by.clusters && !is.null(clusters)) {
         order <- order(clusters$Clusters)
     } else if (!is.null(cells.order)){
         order <- cells.order
     } else {
-        order <- seq_len(ncol(data))
+        order <- seq_len(ncol(scores))
         cluster_cols <- TRUE
     }
-    args <- list(mat = data[,order], border_color = NA, show_colnames = FALSE,
-                 clustering_method = 'ward.D2', fontsize_row = fontsize.row,
-                 silent = silent, cluster_cols = cluster_cols, ...)
+
+    args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
+        clustering_method = 'ward.D2', fontsize_row = fontsize.row,
+        cluster_cols = cluster_cols, ...)
     if (!is.null(clusters)) {
         args$annotation_col <- clusters[order,,drop=FALSE]
     }
