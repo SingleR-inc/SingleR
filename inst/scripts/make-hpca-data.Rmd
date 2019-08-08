@@ -1,0 +1,51 @@
+---
+title: "Obtaining HPCA data"
+author: "Friederike Duendar"
+date: "8/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+```
+
+Current command for running SingleR cell label predictions:
+
+```
+library(SingleR)
+hpca <- getReferenceDataset(dataset="hpca") ## retrieves and loads RDA from Dvir's repo
+pred.hpca <- SingleR(test = hESCs, training = hpca$data, labels = hpca$types)
+```
+
+
+```{r}
+## retrieving the original data from the legacy github repo
+library(SingleR)
+hpca.ref <- getReferenceDataset(dataset="hpca")
+
+## get normalized exprs matrix
+mat <- hpca.ref$data
+
+## get meta data
+meta <- DataFrame(row.names = colnames(mat),
+                       label.main = hpca.ref$main_types,
+                       label.fine = hpca.ref$types)
+
+## construct SE
+se <- SummarizedExperiment(assays = list(norm.exprs = mat),
+                           colData = meta)
+
+```
+
+Saving counts and metadata to upload to `r Biocpkg("ExperimentHub")`.
+
+```{r}
+path <- file.path("SingleR", "hpca")
+dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+## saving counts
+saveRDS(mat, file = file.path(path, "exprs.rds"))
+
+## saving metadata
+saveRDS(meta, file = file.path(path, "coldata.rds") )
+```
