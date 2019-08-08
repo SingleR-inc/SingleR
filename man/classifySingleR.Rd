@@ -4,14 +4,14 @@
 \alias{classifySingleR}
 \title{Classify cells with SingleR}
 \usage{
-classifySingleR(x, trained, quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = NULL, assay.type = 1,
+classifySingleR(test, trained, quantile = 0.8, fine.tune = TRUE,
+  tune.thresh = 0.05, sd.thresh = NULL, assay.type = "logcounts",
   check.missing = TRUE, BPPARAM = SerialParam())
 }
 \arguments{
-\item{x}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
-where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
+\item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
+
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
 \item{trained}{A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.}
 
@@ -24,14 +24,14 @@ Alternatively, a \linkS4class{SingleCellExperiment} object containing such a mat
 \item{sd.thresh}{A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
 This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.}
 
-\item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{x} is a \linkS4class{SingleCellExperiment}.}
+\item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.}
 }
 \value{
-A \linkS4class{DataFrame} where each row corresponds to a cell in \code{x}.
+A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
 If \code{fine.tune=FALSE}, fields are:
 \itemize{
 \item \code{scores}, a matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
@@ -46,10 +46,10 @@ If \code{fine.tune=TRUE}, fields are:
 }
 }
 \description{
-Classify cells with SingleR
+Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.
 }
 \details{
-Consider each cell in the test set \code{x} and each label in the training set.
+Consider each cell in the test set \code{test} and each label in the training set.
 We compute Spearman's rank correlations between the test cell and all cells in the training set with the given label,
 based on the expression profiles of the genes selected by \code{trained}.
 The score is defined as the quantile of the distribution of correlations, as specified by \code{quantile}.
@@ -60,6 +60,10 @@ If \code{fine.tune=TRUE}, an additional fine-tuning step is performed for each c
 We identify all labels with scores that are no more than \code{tune.thresh} below the maximum score.
 These labels are used to identify a fresh set of marker genes, and the calculation of the score is repeated using only these genes.
 The aim is to refine the choice of markers and reduce noise when distinguishing between closely related labels.
+
+The default \code{assay.type} is set to \code{"logcounts"} simply for consistency with \code{\link{trainSingleR}}.
+In practice, the raw counts (for UMI data) or the transcript counts (for read count data) can also be used without normalization and log-transformation.
+Any monotonic transformation will have no effect the calculation of the correlation values other than for some minor differences due to numerical precision.
 }
 \examples{
 ###########################################
@@ -74,13 +78,14 @@ colnames(means) <- LETTERS[1:5]
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
-sce <- SingleCellExperiment(
+sce <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
-rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
 
+rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
 sce <- scater::logNormCounts(sce)
+
 trained <- trainSingleR(sce, sce$label)
 
 ##################################################
@@ -89,11 +94,13 @@ trained <- trainSingleR(sce, sce$label)
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
-test <- SingleCellExperiment(
+test <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
+
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
+test <- scater::logNormCounts(test)
 
 pred <- classifySingleR(test, trained)
 table(predicted=pred$labels, truth=g)

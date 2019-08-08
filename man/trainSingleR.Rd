@@ -4,16 +4,17 @@
 \alias{trainSingleR}
 \title{Train the SingleR classifier}
 \usage{
-trainSingleR(x, labels, genes = "de", sd.thresh = 1, de.n = NULL,
+trainSingleR(ref, labels, genes = "de", sd.thresh = 1, de.n = NULL,
   assay.type = "logcounts", check.missing = TRUE,
   BNPARAM = KmknnParam())
 }
 \arguments{
-\item{x}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
-where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
+\item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
+These expression values are expected to be log-transformed, see Details.
 
-\item{labels}{A character vector or factor of known labels for all cells in \code{x}.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+
+\item{labels}{A character vector or factor of known labels for all samples in \code{ref}.}
 
 \item{genes}{A string specifying the feature selection method to be used, see Details.
 
@@ -27,8 +28,8 @@ Only used when \code{genes="sd"}.}
 \item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
 Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.}
 
-\item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
-if \code{x} is a \linkS4class{SingleCellExperiment} object.}
+\item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
+if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
@@ -52,7 +53,7 @@ This function uses a training data set to select interesting features and constr
 The resulting objects can be re-used across multiple classification steps with different test data sets via \code{\link{classifySingleR}}.
 This improves efficiency by avoiding unnecessary repetition of steps during the downstream analysis.
 
-Several options are available for feature selection, usually assuming that \code{x} has been log-transformed or equivalent.
+Several options are available for feature selection:
 \itemize{
 \item \code{genes="de"} identifies genes that are differentially expressed between labels.
 This is done by identifying the median expression within each label, and computing differences between medians for each pair of labels.
@@ -63,6 +64,7 @@ This is done by identifying the median expression within each label, and computi
 The set of all features is defined as those genes with standard deviations above \code{sd.thresh}.
 \item \code{genes="all"} will not perform any feature selection.
 }
+If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
 
 Alternatively, \code{genes} can be a named list of named lists of character vectors:
 \preformatted{genes <- list(
@@ -87,8 +89,7 @@ The entry \code{genes$A} represent the genes that are upregulated in \code{A} co
 This allows the function to handle pre-defined marker lists for specific cell populations.
 However, it obviously captures less information than marker sets for the pairwise comparisons.
 
-If \code{genes} explicitly contains gene identities (as character vectors), \code{x} can be the raw counts or any monotonic transformation thereof.
-Use of log-transformed counts is only necessary for automated marker detection when \code{genes="de"} or \code{"sd"}.
+If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 }
 \examples{
 ###########################################
@@ -103,7 +104,7 @@ colnames(means) <- LETTERS[1:5]
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
-sce <- SingleCellExperiment(
+sce <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
@@ -118,17 +119,17 @@ sce <- scater::logNormCounts(sce)
 
 trained <- trainSingleR(sce, sce$label)
 trained
-trained$indices
+trained$nn.indices
+length(trained$common.genes)
 
 # Alternatively, supplying a set of label-specific markers
 # (in this case, the last 100 genes are DE for each cluster).
 last.100 <- tail(rownames(sce), 100)
-empty <- rep(list(last.100), 5)
-names(empty) <- LETTERS[1:5]
+markers <- rep(list(last.100), 5)
+names(markers) <- LETTERS[1:5]
 
-trained <- trainSingleR(sce, sce$label, genes=last.100)
-trained
-trained$indices
+trained <- trainSingleR(sce, sce$label, genes=markers)
+trained$common.genes
 
 }
 \seealso{

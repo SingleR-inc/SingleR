@@ -4,21 +4,22 @@
 \alias{SingleR}
 \title{Annotate scRNA-seq data}
 \usage{
-SingleR(test, training, labels, method = c("single", "cluster"),
+SingleR(test, ref, labels, method = c("single", "cluster"),
   clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = 1, assay.type.test = 1,
-  assay.type.train = "logcounts", check.missing = TRUE,
+  tune.thresh = 0.05, sd.thresh = 1, assay.type.test = "logcounts",
+  assay.type.ref = "logcounts", check.missing = TRUE,
   BNPARAM = KmknnParam(), BPPARAM = SerialParam())
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{training}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized, see \code{\link{trainSingleR}}).
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-This should have the same rows as or a subset of the rows in \code{test}.}
+\item{ref}{A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}).
+This should have the same rows as or a subset of the rows in \code{test}.
 
-\item{labels}{A character vector or factor of known labels for all cells in \code{training}.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+
+\item{labels}{A character vector or factor of known labels for all cells in \code{ref}.}
 
 \item{method}{String specifying whether annotation should be performed on single cells in \code{test},
 or whether they should be aggregated into cluster-level profiles prior to annotation.}
@@ -31,10 +32,10 @@ Only used if \code{method="cluster"}.}
 \item{quantile, fine.tune, tune.thresh}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
-if \code{test} is a \linkS4class{SingleCellExperiment} object.}
+if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
-\item{assay.type.train}{An integer scalar or string specifying the assay of \code{training} containing the relevant expression matrix,
-if \code{training} is a \linkS4class{SingleCellExperiment} object.}
+\item{assay.type.ref}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
+if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
@@ -47,13 +48,16 @@ A \linkS4class{DataFrame} is returned containing the annotation statistics for e
 This is identical to the output of \code{\link{classifySingleR}}.
 }
 \description{
-Returns the best annotation for each cell in a training dataset,
-given a labelled.reference dataset in the same features space.
+Returns the best annotation for each cell in a test dataset,
+given a labelled reference dataset in the same feature space.
 }
 \details{
 If \code{method="single"}, this function is effectively just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
 
 If \code{method="cluster"}, per-cell profiles are summed to obtain per-cluster profiles and annotation is performed on these clusters.
+
+The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
+If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
 }
 \examples{
 ###########################################
@@ -68,11 +72,13 @@ colnames(means) <- LETTERS[1:5]
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
-sce <- SingleCellExperiment(
+sce <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
+
 rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
+sce <- scater::logNormCounts(sce)
 
 ##################################################
 ## Mocking up some test data for classification ##
@@ -80,17 +86,17 @@ rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
-test <- SingleCellExperiment(
+test <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
+
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
+test <- scater::logNormCounts(test)
 
 ###############################
 ## Performing classification ##
 ###############################
-
-sce <- scater::logNormCounts(sce)
 
 pred <- SingleR(test, sce, labels=sce$label)
 table(predicted=pred$labels, truth=g)

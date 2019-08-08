@@ -32,6 +32,7 @@ Suggests:
     rmarkdown,
     BiocStyle,
     beachmat,
+    SingleCellExperiment,
     scater,
     scRNAseq,
     scran,
