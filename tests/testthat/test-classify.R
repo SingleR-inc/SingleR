@@ -79,6 +79,18 @@ test_that("classifySingleR behaves with no-variance cells", {
     expect_identical(out$labels[-(1:10)], ref$labels[-(1:10)])
 })
 
+test_that("classifySingleR behaves with missing values", {
+    # Can't just set the first entry to NA, as we need to ensure 
+    # that the test set contains a superset of genes in the training set.
+    sce <- BiocGenerics::rbind(test[1,], test)
+    assay(sce)[1,1] <- NA
+
+    Q <- 0.8
+    expect_warning(out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q), 'missing values')
+    ref <- classifySingleR(test, trained, fine.tune=FALSE, quantile=Q)
+    expect_identical(out, ref)
+})
+
 test_that("classifySingleR behaves with silly inputs", {
     out <- classifySingleR(test[,0], trained, fine.tune=FALSE)
     expect_identical(nrow(out$scores), 0L)

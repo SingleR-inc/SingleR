@@ -17,6 +17,7 @@
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 #' if \code{x} is a \linkS4class{SingleCellExperiment} object.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
 #' @return A \linkS4class{List} containing:
@@ -68,6 +69,9 @@
 #' This allows the function to handle pre-defined marker lists for specific cell populations.
 #' However, it obviously captures less information than marker sets for the pairwise comparisons.
 #'
+#' If \code{genes} explicitly contains gene identities (as character vectors), \code{x} can be the raw counts or any monotonic transformation thereof.
+#' Use of log-transformed counts is only necessary for automated marker detection when \code{genes="de"} or \code{"sd"}.
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
@@ -96,23 +100,30 @@
 #' ## Doing the training ##
 #' ########################
 #'
+#' # Normalizing and log-transforming for automated marker detection.
+#' sce <- scater::logNormCounts(sce)
+#'
 #' trained <- trainSingleR(sce, sce$label)
 #' trained
-#' trained$indices
+#' trained$nn.indices
+#' length(trained$common.genes)
+#'
+#' # Alternatively, supplying a set of label-specific markers
+#' # (in this case, the last 100 genes are DE for each cluster).
+#' last.100 <- tail(rownames(sce), 100)
+#' markers <- rep(list(last.100), 5)
+#' names(markers) <- LETTERS[1:5]
+#' 
+#' trained <- trainSingleR(sce, sce$label, genes=markers)
+#' trained$common.genes
 #' 
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
-#' @importFrom SummarizedExperiment assay
-#' @importFrom methods is
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
-trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, assay.type=1, BNPARAM=KmknnParam()) {
-    if (is.null(rownames(x))) {
-        stop("'x' must have row names")
-    }
-    if (is(x, "SingleCellExperiment")) {
-        x <- assay(x, i=assay.type)
-    }
+trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, 
+    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
+{
+    x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
 
     # Choosing the gene sets of interest. 
     args <- list()

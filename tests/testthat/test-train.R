@@ -9,7 +9,7 @@ test_that("trainSingleR works correctly for genes='de'", {
     # and that the NN indices are correctly constructed.
     for (u in unique(training$label)) {
         current <- u == training$label
-        expect_identical(out$original.exprs[[u]], assay(training)[,current]+0)
+        expect_identical(out$original.exprs[[u]], logcounts(training)[,current]+0)
         expect_s4_class(out$nn.indices[[u]], "BiocNeighborIndex")
         expect_identical(nrow(out$nn.indices[[u]]), sum(current))
     }
@@ -54,7 +54,7 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
     set.seed(92) # As NN index construction uses the random seed.
     ref <- trainSingleR(training, training$label, genes='de')
 
-    collected <- SingleR:::.get_genes_by_de(assay(training), training$label)
+    collected <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
     expect_identical(sort(names(collected)), sort(unique(training$label)))
     in.names <- unique(lapply(collected, names))
     expect_identical(length(in.names), 1L)
@@ -67,7 +67,7 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
 })
 
 test_that("trainSingleR works correctly for a list of genes", {
-    collected <- SingleR:::.get_genes_by_de(assay(training), training$label)
+    collected <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
 
     set.seed(92)
     ref <- trainSingleR(training, training$label, genes=collected)
@@ -86,7 +86,7 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
     ref <- trainSingleR(training, training$label, genes='de')
 
     set.seed(92)
-    out <- trainSingleR(training, training$label, genes=SingleR:::.get_genes_by_de(assay(training), training$label))
+    out <- trainSingleR(training, training$label, genes=SingleR:::.get_genes_by_de(logcounts(training), training$label))
 
     expect_identical(ref, out)
 
@@ -101,12 +101,12 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
 
 test_that("trainSingleR is robust to no-variance cells", {
     sce <- training
-    assay(sce)[,1:10] <- 0
+    logcounts(sce)[,1:10] <- 0
     out <- trainSingleR(sce, sce$label)
 
     for (u in unique(sce$label)) {
         current <- u == sce$label
-        expect_identical(out$original.exprs[[u]], assay(sce)[,current])
+        expect_identical(out$original.exprs[[u]], logcounts(sce)[,current])
         expect_s4_class(out$nn.indices[[u]], "BiocNeighborIndex")
         expect_identical(nrow(out$nn.indices[[u]]), sum(current))
     }
@@ -117,11 +117,11 @@ test_that("trainSingleR works on raw expression matrices", {
     out <- trainSingleR(training, training$label)
 
     set.seed(102)
-    alt <- trainSingleR(assay(training), training$label)
+    alt <- trainSingleR(logcounts(training), training$label)
     expect_identical(out, alt)
 
     blah <- training
-    assays(blah) <- list(stuff=matrix(0, nrow(blah), ncol(blah)), whee=assay(training))
+    assays(blah) <- list(stuff=matrix(0, nrow(blah), ncol(blah)), whee=logcounts(training))
 
     set.seed(102)
     re.alt <- trainSingleR(blah, blah$label, assay.type="whee")
@@ -130,8 +130,8 @@ test_that("trainSingleR works on raw expression matrices", {
 
 test_that("trainSingleR is invariant to simple transformations", {
     sce <- training
-    assay(sce, "shifted") <- assay(sce) + 1
-    assay(sce, "scaled") <- assay(sce) * 2
+    assay(sce, "shifted") <- logcounts(sce) + 1
+    assay(sce, "scaled") <- logcounts(sce) * 2
 
     set.seed(3523)
     out <- trainSingleR(sce, sce$label)
@@ -146,15 +146,27 @@ test_that("trainSingleR is invariant to simple transformations", {
     expect_identical(out[same.fields], alt[same.fields])
 
     # DE/SD magnitudes change upon log-transform, so don't test that.
-    assay(sce, "logcounts") <- log(assay(sce) + 1)
+    assay(sce, "double_log") <- log(logcounts(sce) + 1)
 
     set.seed(3523)
     out2 <- trainSingleR(sce, sce$label, genes='all')
     set.seed(3523)
-    alt2 <- trainSingleR(sce, sce$label, genes='all', assay.type="logcounts")
+    alt2 <- trainSingleR(sce, sce$label, genes='all', assay.type="double_log")
 
     out2$search$extra <- alt2$search$extra <- NULL
     expect_identical(out2[same.fields], alt2[same.fields])
+})
+
+test_that("trainSingleR behaves with NAs", {
+    sce <- training
+    logcounts(sce)[1,1] <- NA
+
+    set.seed(30101)
+    expect_warning(out <- trainSingleR(sce, sce$label), "missing values")
+    set.seed(30101)
+    ref <- trainSingleR(sce[-1,], sce$label)
+
+    expect_identical(out, ref)
 })
 
 test_that("trainSingleR behaves with silly inputs", {

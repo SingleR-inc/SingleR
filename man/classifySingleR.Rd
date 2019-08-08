@@ -6,7 +6,7 @@
 \usage{
 classifySingleR(x, trained, quantile = 0.8, fine.tune = TRUE,
   tune.thresh = 0.05, sd.thresh = NULL, assay.type = 1,
-  BPPARAM = SerialParam())
+  check.missing = TRUE, BPPARAM = SerialParam())
 }
 \arguments{
 \item{x}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
@@ -25,6 +25,8 @@ Alternatively, a \linkS4class{SingleCellExperiment} object containing such a mat
 This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.}
 
 \item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{x} is a \linkS4class{SingleCellExperiment}.}
+
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.}
 }
@@ -78,6 +80,7 @@ sce <- SingleCellExperiment(
 )
 rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
 
+sce <- scater::logNormCounts(sce)
 trained <- trainSingleR(sce, sce$label)
 
 ##################################################

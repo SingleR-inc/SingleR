@@ -5,16 +5,16 @@
 # One could possibly improve vectorization by grouping together test cells with the same
 # combination of topLabels, but it adds a lot of complexity and additional overhead.
 
-#' @importFrom BiocParallel bpmapply SerialParam
+#' @importFrom BiocParallel bplapply bpmapply SerialParam
 .fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info, BPPARAM=SerialParam()) {
     # Converting character vectors into integer indices.
-    genes <- rownames(exprs)
-    for (i in seq_along(de.info)) {
-        for (j in seq_along(de.info[[i]])) {
-            de.info[[i]][[j]] <- match(de.info[[i]][[j]], genes) - 1L
+    # We assume that SingleR() has already set up the backend.
+    de.info <- bplapply(de.info, function(markers, genes, labels) {
+        for (j in seq_along(markers)) {
+            markers[[j]] <- match(markers[[j]], genes) - 1L
         }
-        de.info[[i]] <- de.info[[i]][colnames(scores)]
-    }
+        markers[labels]
+    }, genes=rownames(exprs), labels=colnames(scores), BPPARAM=BPPARAM)
     de.info <- de.info[colnames(scores)]
 
     M <- .prep_for_parallel(exprs, BPPARAM)

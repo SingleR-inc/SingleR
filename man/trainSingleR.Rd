@@ -5,7 +5,8 @@
 \title{Train the SingleR classifier}
 \usage{
 trainSingleR(x, labels, genes = "de", sd.thresh = 1, de.n = NULL,
-  assay.type = 1, BNPARAM = KmknnParam())
+  assay.type = "logcounts", check.missing = TRUE,
+  BNPARAM = KmknnParam())
 }
 \arguments{
 \item{x}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
@@ -28,6 +29,8 @@ Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique 
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
 if \code{x} is a \linkS4class{SingleCellExperiment} object.}
+
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
 }
@@ -83,6 +86,9 @@ Alternatively, \code{genes} can be a named list of character vectors:
 The entry \code{genes$A} represent the genes that are upregulated in \code{A} compared to some or all other labels. 
 This allows the function to handle pre-defined marker lists for specific cell populations.
 However, it obviously captures less information than marker sets for the pairwise comparisons.
+
+If \code{genes} explicitly contains gene identities (as character vectors), \code{x} can be the raw counts or any monotonic transformation thereof.
+Use of log-transformed counts is only necessary for automated marker detection when \code{genes="de"} or \code{"sd"}.
 }
 \examples{
 ###########################################
@@ -107,7 +113,20 @@ rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
 ## Doing the training ##
 ########################
 
+# Normalizing and log-transforming for automated marker detection.
+sce <- scater::logNormCounts(sce)
+
 trained <- trainSingleR(sce, sce$label)
+trained
+trained$indices
+
+# Alternatively, supplying a set of label-specific markers
+# (in this case, the last 100 genes are DE for each cluster).
+last.100 <- tail(rownames(sce), 100)
+empty <- rep(list(last.100), 5)
+names(empty) <- LETTERS[1:5]
+
+trained <- trainSingleR(sce, sce$label, genes=last.100)
 trained
 trained$indices
 

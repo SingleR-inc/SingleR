@@ -10,6 +10,7 @@
 #' @param sd.thresh A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
 #' This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{x} is a \linkS4class{SingleCellExperiment}.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.
 #' 
 #' @return A \linkS4class{DataFrame} where each row corresponds to a cell in \code{x}.
@@ -60,6 +61,7 @@
 #' )
 #' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
 #' 
+#' sce <- scater::logNormCounts(sce)
 #' trained <- trainSingleR(sce, sce$label)
 #'
 #' ##################################################
@@ -78,23 +80,15 @@
 #' table(predicted=pred$labels, truth=g)
 #' 
 #' @export
-#' @importFrom BiocNeighbors KmknnParam bndistance queryKNN
+#' @importFrom BiocNeighbors KmknnParam bndistance 
 #' @importFrom S4Vectors List DataFrame
-#' @importFrom methods is
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom SummarizedExperiment colData<- colData assay
-#' @importFrom BiocParallel SerialParam
+#' @importFrom SummarizedExperiment colData<- colData 
+#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply
 classifySingleR <- function(x, trained, quantile=0.8, 
     fine.tune=TRUE, tune.thresh=0.05, sd.thresh=NULL,
-    assay.type=1, BPPARAM=SerialParam()) 
+    assay.type=1, check.missing=TRUE, BPPARAM=SerialParam()) 
 {
-    if (is.null(rownames(x))) {
-        stop("'x' must have row names")
-    }
-    if (is(x, "SingleCellExperiment")) {
-        original <- x
-        x <- assay(x, i=assay.type)
-    }
+    x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
 
     # Don't globally subset 'x', as fine-tuning requires all genes
     # when search.mode='sd'.
@@ -107,13 +101,15 @@ classifySingleR <- function(x, trained, quantile=0.8,
     ranked <- .scaled_colranks_safe(x[ref.genes,,drop=FALSE])
     all.indices <- trained$nn.indices
 
-    scores <- matrix(0, nrow(ranked), length(all.indices), dimnames=list(rownames(ranked), names(all.indices)))
-    for (u in names(all.indices)) {
-        curdex <- all.indices[[u]]
-        k <- max(1, round(nrow(curdex) * (1-quantile)))
-        nn.d <- queryKNN(query=ranked, k=k, BNINDEX=curdex, get.index=FALSE, get.distance=FALSE, BPPARAM=BPPARAM)
-        scores[,u] <- 1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
+    if (!bpisup(BPPARAM)) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
     }
+
+    # Parallelizing across labels rather than cells, as we often have few cells but many labels.
+    scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
+    scores <- do.call(cbind, scores)
+    rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
     labels <- colnames(scores)[max.col(scores)]
@@ -142,4 +138,11 @@ classifySingleR <- function(x, trained, quantile=0.8,
 
     rownames(output) <- colnames(x)
     output
+}
+
+#' @importFrom BiocNeighbors queryKNN
+.find_nearest_quantile <- function(ranked, index, quantile) {
+    k <- max(1, round(nrow(index) * (1-quantile)))
+    nn.d <- queryKNN(query=ranked, k=k, BNINDEX=index, get.index=FALSE, get.distance=FALSE)
+    1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
 }

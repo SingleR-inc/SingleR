@@ -1,5 +1,5 @@
 # End-to-end testing of SingleR on a dummy training/test dataset that should be near-perfectly assigned.
-# library(testthat); library(SingleR); source("setup.R")
+# library(testthat); library(SingleR); source("setup.R"); source("test-SingleR.R")
 
 test_that("SingleR works in DE mode", {
     out <- SingleR(test=test, training=training, labels=training$label, genes="de")
@@ -30,3 +30,26 @@ test_that("SingleR works with custom gene selection", {
     expect_identical(out, out2)
 })
 
+test_that("SingleR works when genes are not the same between test and training", {
+    out <- SingleR(test=test[1:800,], training=training[200:1000,], labels=training$label)
+    ref <- SingleR(test=test[200:800,], training=training[200:800,], labels=training$label)
+    expect_identical(out, ref)
+
+    expect_error(SingleR(test=test[1:200,], training=training[800:1000,], labels=training$label), "no common genes")
+})
+
+library(Matrix)
+test_that("SingleR works with non-ordinary matrices", {
+    test.s <- test
+    training.s <- training
+    assay(test.s) <- as(assay(test.s), "dgCMatrix")
+    assay(training.s) <- as(assay(training.s), "dgCMatrix")
+
+    out <- SingleR(test=test.s, training=training.s, labels=training.s$label)
+    ref <- SingleR(test=test, training=training, labels=training$label)
+    expect_identical(out, ref)
+
+    out <- SingleR(test=test.s, training=training.s, labels=training.s$label, clusters=test.s$label, method="cluster")
+    ref <- SingleR(test=test, training=training, labels=training$label, clusters=test$label, method="cluster")
+    expect_identical(out, ref)
+})

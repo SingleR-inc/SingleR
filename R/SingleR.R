@@ -3,10 +3,9 @@
 #' Returns the best annotation for each cell in a training dataset,
 #' given a labelled.reference dataset in the same features space.
 #'
-#' @param test A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
-#' where rows are genes and columns are cells.
+#' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-#' @param training A numeric matrix of single-cell expression values, like \code{test}.
+#' @param training A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized, see \code{\link{trainSingleR}}).
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
 #' This should have the same rows as or a subset of the rows in \code{test}.
 #' @param labels A character vector or factor of known labels for all cells in \code{training}.
@@ -16,9 +15,13 @@
 #' Only used if \code{method="cluster"}.
 #' @param genes,sd.thresh Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.
 #' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
-#' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
-#' if \code{x} is a \linkS4class{SingleCellExperiment} object.
+#' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
+#' if \code{test} is a \linkS4class{SingleCellExperiment} object.
+#' @param assay.type.train An integer scalar or string specifying the assay of \code{training} containing the relevant expression matrix,
+#' if \code{training} is a \linkS4class{SingleCellExperiment} object.
+#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
@@ -60,6 +63,12 @@
 #' )
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 #' 
+#' ###############################
+#' ## Performing classification ##
+#' ###############################
+#' 
+#' sce <- scater::logNormCounts(sce)
+#' 
 #' pred <- SingleR(test, sce, labels=sce$label)
 #' table(predicted=pred$labels, truth=g)
 #'
@@ -72,27 +81,39 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
-#' @importFrom DelayedArray colsum
+#' @importFrom DelayedArray colsum DelayedArray
+#' @importFrom BiocParallel SerialParam
 SingleR <- function(test, training, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, assay.type = 1, BNPARAM=KmknnParam()) 
+    tune.thresh = 0.05, sd.thresh = 1, assay.type.test = 1, assay.type.train="logcounts", 
+    check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
-    trained <- trainSingleR(training, labels, genes = genes, sd.thresh=sd.thresh, 
-        assay.type=assay.type, BNPARAM=BNPARAM)
+    test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
+    training <- .to_clean_matrix(training, assay.type.train, check.missing, msg="training")
 
-    if (is(test, "SingleCellExperiment")) {
-        test <- assay(test, assay.type)
+    keep <- intersect(rownames(test), rownames(training))
+    if (length(keep) == 0) {
+        stop("no common genes between 'test' and 'training'")
     }
+    if (!identical(keep, rownames(test))) {
+        test <- test[keep,]
+    } 
+    if (!identical(keep, rownames(training))) {
+        training <- training[keep,]
+    }
+
+    trained <- trainSingleR(training, labels, genes = genes, sd.thresh=sd.thresh, 
+        assay.type=assay.type, check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)
     if (method=="cluster") {
         if (is.null(clusters)) {
             stop("'clusters' must be specified when 'method=\"cluster\"'")
         }
-        test <- colsum(test, clusters)
+        test <- colsum(DelayedArray(test), clusters)
     }
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, assay.type=assay.type)
+        tune.thresh=tune.thresh, assay.type=assay.type, check.missing=FALSE, BPPARAM=BPPARAM)
 }

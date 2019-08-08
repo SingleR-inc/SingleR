@@ -137,20 +137,28 @@ table(pred$labels, pred3$labels)
 
 # Available reference datasets
 
-`r Biocpkg("SingleR")` comes pre-packaged with a number of training datasets generated from bulk RNA-seq of pure cell types.
-This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources.
-Each reference dataset is obtained from `r Biocpkg("ExperimentHub")` by using the relevant command:
+`r Biocpkg("SingleR")` can also directly download a number of training datasets generated from bulk RNA-seq of pure cell types.
+This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources. 
+Each reference dataset is obtained directly from the legacy SingleR Github repository by using the command:
 
-```{r, eval=FALSE}
-hpca <- HPCATrainingSet()
+```{r}
+hpca <- getReferenceDataset(dataset="hpca")
 ```
 
-This can then be directly used for annotation of our scRNA-seq dataset.
-In this case, we will use the precomputed marker genes in `de.genes` though users are free to define their own markers.
+This can then be directly used for annotation of our scRNA-seq dataset. 
+Given the large number of samples (often from very disparate lineages) in each datset, providing the `main_types` list to the `labels=` argument can be helpful.
+In this case, we will allow the marker genes to be computed and classify cell types for differentiated hESCs with the more specific `types` to the `labels=` argument.
 
-```{r, eval=FALSE}
-pred.hpca <- SingleR(test=sceG, training=hpca$data, 
-    labels=hpca$labels, genes=hpca$de.genes)
+```{r}
+hESCs <- LaMannoBrainData('human-es')
+
+# Retain common genes and normalize as above.
+common <- intersect(rownames(hESCs), rownames(hpca$data))
+hESCs <- hESCs[common,]
+hESCs <- hESCs[,colSums(counts(hESCs)) > 0]
+hESCs <- normalize(hESCs)
+hpca$data <- hpca$data[common,]
+pred.hpca <- SingleR(test=hESCs, training=hpca$data, labels=hpca$types)
 ```
 
 # Separating training from classification
