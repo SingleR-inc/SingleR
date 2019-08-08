@@ -1,0 +1,49 @@
+---
+title: SingleR data object generation
+author: Friederike Duendar
+date: "2019-08-08"
+output:
+  BiocStyle::html_document:
+    toc_float: true
+package: SingleR 
+bibliography: ref.bib
+vignette: >
+  %\VignetteIndexEntry{Using SingleR to annotate scRNA-seq data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}    
+---
+
+```{r, echo=FALSE, results="hide", message=FALSE}
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+library(BiocStyle)
+```
+
+
+# Mouse
+
+## ImmGen
+
+The ImmGen database contains a collection of 830 microarray samples [@aran2019reference].
+ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized using the robust multi-array average procedure on probe-level data using Matlab functions.
+The analysis was performed using a custom CDF file obtained from Brainarray.
+
+We classified 20 main cell types and further annotated to 253 subtypes.
+
+## Benayoun
+
+a data set of 358 mouse RNA-seq samples annotated to 28 cell types collected, processed, and shared, courtesy of Bérénice Benayoun, can also be used.
+
+
+# Human
+
+## Blueprint Epigenomics
+
+144 RNA-seq pure immune samples annotated to 28 cell types [@blueprintRef]
+
+## Encode
+
+115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
+
+
+# References
+
