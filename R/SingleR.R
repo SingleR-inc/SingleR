@@ -1,14 +1,15 @@
 #' Annotate scRNA-seq data
 #'
-#' Returns the best annotation for each cell in a training dataset,
-#' given a labelled.reference dataset in the same features space.
+#' Returns the best annotation for each cell in a test dataset,
+#' given a labelled reference dataset in the same feature space.
 #'
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-#' @param training A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized, see \code{\link{trainSingleR}}).
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}).
 #' This should have the same rows as or a subset of the rows in \code{test}.
-#' @param labels A character vector or factor of known labels for all cells in \code{training}.
+#'
+#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' @param labels A character vector or factor of known labels for all cells in \code{ref}.
 #' @param method String specifying whether annotation should be performed on single cells in \code{test},
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
@@ -17,8 +18,8 @@
 #' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \linkS4class{SingleCellExperiment} object.
-#' @param assay.type.train An integer scalar or string specifying the assay of \code{training} containing the relevant expression matrix,
-#' if \code{training} is a \linkS4class{SingleCellExperiment} object.
+#' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
+#' if \code{ref} is a \linkS4class{SingleCellExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
@@ -30,6 +31,9 @@
 #' If \code{method="single"}, this function is effectively just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
 #' 
 #' If \code{method="cluster"}, per-cell profiles are summed to obtain per-cluster profiles and annotation is performed on these clusters.
+#'
+#' The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
+#' If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
 #' 
 #' @author Aaron Lun, based on code by Dvir Aran.
 #' @examples
@@ -83,26 +87,26 @@
 #' @importFrom methods is
 #' @importFrom DelayedArray colsum DelayedArray
 #' @importFrom BiocParallel SerialParam
-SingleR <- function(test, training, labels, method = c("single", "cluster"),
+SingleR <- function(test, ref, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, assay.type.test = 1, assay.type.train="logcounts", 
+    tune.thresh = 0.05, sd.thresh = 1, assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
-    training <- .to_clean_matrix(training, assay.type.train, check.missing, msg="training")
+    ref <- .to_clean_matrix(ref, assay.type.ref, check.missing, msg="ref")
 
-    keep <- intersect(rownames(test), rownames(training))
+    keep <- intersect(rownames(test), rownames(ref))
     if (length(keep) == 0) {
-        stop("no common genes between 'test' and 'training'")
+        stop("no common genes between 'test' and 'ref'")
     }
     if (!identical(keep, rownames(test))) {
         test <- test[keep,]
     } 
-    if (!identical(keep, rownames(training))) {
-        training <- training[keep,]
+    if (!identical(keep, rownames(ref))) {
+        ref <- ref[keep,]
     }
 
-    trained <- trainSingleR(training, labels, genes = genes, sd.thresh=sd.thresh, 
+    trained <- trainSingleR(ref, labels, genes = genes, sd.thresh=sd.thresh, 
         assay.type=assay.type, check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)

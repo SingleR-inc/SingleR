@@ -1,18 +1,20 @@
-#' Plot expression of a cell versus a reference cell/sample
+#' Plot a cell versus a reference 
 #'
-#' @param sc.data Numeric matrix of single-cell expression values (usually log-transformed
+#' Plot a single cell's expression profile against that of a reference sample across all genes. 
+#' 
+#' @param test Numeric matrix of single-cell expression values (usually log-transformed
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-#' @param sc.id Integer scalar specifying the index of the target cell to use.
+#' @param test.id Integer scalar specifying the index of the target cell to use.
 #' Alternatively, a string containing the name of the cell.
-#' @param train.data Numeric matrix of reference dataset expression values (usually log-transformed
+#' @param ref Numeric matrix of reference dataset expression values (usually log-transformed
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-#' @param train.id Integer scalar specifying the reference cell/sample to use.
-#' @param assay.type.sc Integer scalar or string specifying the assay of \code{sc.data} containing the relevant expression data.  
-#' Used if \code{sc.data} is a \linkS4class{SingleCellExperiment}.
-#' @param assay.type.train Integer scalar or string specifying the assay of \code{train.data} containing the relevant expression data.  
-#' Used if provided \code{train.data} is a \linkS4class{SingleCellExperiment}.
+#' @param ref.id Integer scalar specifying the reference cell/sample to use.
+#' @param assay.type.sc Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
+#' Used if \code{test} is a \linkS4class{SingleCellExperiment}.
+#' @param assay.type.train Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
+#' Used if provided \code{ref} is a \linkS4class{SingleCellExperiment}.
 #'
 #' @return A \link{ggplot} object containing a scatter plot of the cell against a reference.
 #'
@@ -32,29 +34,29 @@
 #' same.type <- grep(pred$labels[1], sce$label)
 #' 
 #' # Compare expression of target cell to a reference cell of the same type
-#' plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = same.type[1])
+#' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = same.type[1])
 #' 
 #' # Compare expression of target cell to reference cells of a different type
 #' diff.type <- seq_along(pred$labels)[-ref.sameType.as1]
-#' plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = diff.type[1])
+#' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = diff.type[1])
 #' 
 #' @export
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
-plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.sc = 'logcounts', assay.type.train = 'logcounts') {
-    if (is(sc.data, "SingleCellExperiment")) {
-        sc.data <- assay(sc.data, assay.type.sc)
+plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.sc = 'logcounts', assay.type.train = 'logcounts') {
+    if (is(test, "SingleCellExperiment")) {
+        test <- assay(test, assay.type.sc)
     }
-    if (is(train.data, "SingleCellExperiment")) {
-        train.data <- assay(train.data, assay.type.train)
+    if (is(ref, "SingleCellExperiment")) {
+        ref <- assay(ref, assay.type.train)
     }
 
-    rownames(sc.data) <- tolower(rownames(sc.data))
-    rownames(train.data) <- tolower(rownames(train.data))
-    A <- intersect(rownames(sc.data),rownames(train.data))
+    rownames(test) <- tolower(rownames(test))
+    rownames(ref) <- tolower(rownames(ref))
+    A <- intersect(rownames(test),rownames(ref))
 
-    df <- data.frame(x = sc.data[A,sc.id], y = train.data[A,train.id])
+    df <- data.frame(x = test[A,test.id], y = ref[A,ref.id])
     ggplot2::ggplot(df, ggplot2::aes_string(x="x", y="y")) + 
         ggplot2::geom_point(size=0.5,alpha=0.5,color='blue') +
         ggplot2::geom_smooth(method='lm',color='red') +
@@ -65,13 +67,15 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
         ggplot2::theme_classic()
 }
 
-#' Plot a heatmap of the scoring of cells
+#' Plot a score heatmap
+#'
+#' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 #'
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
 #' @param cells.use Integer or character vector specifying the single cells to show.
 #' If \code{NULL}, all cells are presented.
 #' @param labels.use Character vector indicating what labels to show.
-#' If \code{NULL}, all cell types are presented.
+#' If \code{NULL}, all labels available in \code{results} are presented.
 #' @param clusters Character vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
