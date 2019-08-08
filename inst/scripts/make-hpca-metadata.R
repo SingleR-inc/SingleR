@@ -1,10 +1,10 @@
 write.csv(file="../extdata/metadata-hpca.csv", 
           data.frame(
-              Title = sprintf("Nestorowa HSC %s", c("counts", "colData")), # This can be the exact file name (if self-describing) or a more complete description.
+              Title = sprintf("Human Primary Cell Atlas data %s", c("exprs", "colData")), # This can be the exact file name (if self-describing) or a more complete description.
               Description = sprintf("%s human primary cell atlas data with 38 main cell types (169 subtypes)", 
                                     c("Matrix or norm. expression", "Per-sample metadata: cell type labels")),
-              RDataPath = file.path(path <- file.path("SingleR", "hpca"), 
-                                    c("exprs.rds", "coldata.rds")),
+              RDataPath = file.path("SingleR", "hpca","1.0.0"), 
+                                    c("exprs.rds", "coldata.rds"),
               BiocVersion="3.10", # The first Bioconductor version the resource was made available for.
               Genome=NA, # Can be NA.
               SourceType="RDA", #  Format of original data, e.g., FASTA, BAM, BigWig, etc. ‘getValidSourceTypes()’ for currently acceptable values
