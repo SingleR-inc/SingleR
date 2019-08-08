@@ -18,6 +18,9 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 library(BiocStyle)
 ```
 
+The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides the following RDA files:
+
+`immgen`, `mouse.rna.seq`, `blueprint_encode`, `hpca`
 
 # Mouse
 
@@ -31,19 +34,23 @@ We classified 20 main cell types and further annotated to 253 subtypes.
 
 ## Benayoun
 
-a data set of 358 mouse RNA-seq samples annotated to 28 cell types collected, processed, and shared, courtesy of Bérénice Benayoun, can also be used.
+a data set of 358 mouse RNA-seq samples annotated to 28 cell types collected, processed, and shared, courtesy of Bérénice Benayoun, can also be used. [@Benayoun2019]
 
+>Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3) 
 
 # Human
 
-## Blueprint Epigenomics
+## Blueprint and ENCODE
 
-144 RNA-seq pure immune samples annotated to 28 cell types [@blueprintRef]
+Blueprint: 144 RNA-seq pure immune samples annotated to 28 cell types [@blueprintRef]
+ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
 
-## Encode
+Altogether, 259 samples classified to 43 cell types.
 
-115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
+## Human Primary Cell Atlas
 
+Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
+contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef]
 
 # References
 
