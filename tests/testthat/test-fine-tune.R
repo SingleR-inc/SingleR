@@ -36,9 +36,10 @@
         ref <- references[[u]]
         ref <- as.matrix(ref[common,,drop=FALSE])
 
-        # We a 'k'-based method for selecting the quantile, for consistency with classifySingleR.
+        # We use a 'k'-based method for selecting the quantile, for consistency with classifySingleR.
         k <- max(1, round((1-quantile) * ncol(ref)))
         cur.cor <- cor(cur.exprs, ref, method="spearman")
+        cur.cor[is.na(cur.cor)] <- 0
         cur.scores[u] <- -sort(-cur.cor, partial=k)[k]
     }
 
