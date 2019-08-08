@@ -5,7 +5,7 @@
 #' @param ref A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
 #' These expression values are expected to be log-transformed, see Details.
 #' 
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param labels A character vector or factor of known labels for all samples in \code{ref}.
 #' @param genes A string specifying the feature selection method to be used, see Details.
 #' 
@@ -17,7 +17,7 @@
 #' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-#' if \code{ref} is a \linkS4class{SingleCellExperiment} object.
+#' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
@@ -91,7 +91,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SingleCellExperiment(
+#' sce <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )

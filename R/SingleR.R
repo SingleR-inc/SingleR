@@ -4,11 +4,11 @@
 #' given a labelled reference dataset in the same feature space.
 #'
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}).
 #' This should have the same rows as or a subset of the rows in \code{test}.
 #'
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param labels A character vector or factor of known labels for all cells in \code{ref}.
 #' @param method String specifying whether annotation should be performed on single cells in \code{test},
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
@@ -17,9 +17,9 @@
 #' @param genes,sd.thresh Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.
 #' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
-#' if \code{test} is a \linkS4class{SingleCellExperiment} object.
+#' if \code{test} is a \linkS4class{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-#' if \code{ref} is a \linkS4class{SingleCellExperiment} object.
+#' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
@@ -49,7 +49,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SingleCellExperiment(
+#' sce <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
@@ -61,7 +61,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' test <- SingleCellExperiment(
+#' test <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
@@ -83,7 +83,7 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam
 #' @importFrom SummarizedExperiment assay
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
+#' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
 #' @importFrom DelayedArray colsum DelayedArray
 #' @importFrom BiocParallel SerialParam

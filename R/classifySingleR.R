@@ -4,14 +4,14 @@
 #' 
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #'
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
+#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param trained A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
 #' @param quantile A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param sd.thresh A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
 #' This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.
-#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SingleCellExperiment}.
+#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.
 #' 
@@ -61,7 +61,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SingleCellExperiment(
+#' sce <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
@@ -76,7 +76,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' test <- SingleCellExperiment(
+#' test <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )

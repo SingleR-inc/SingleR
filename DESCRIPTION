@@ -10,11 +10,10 @@ Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell
     types to infer the cell of origin of each single cell independently. 
 License: GPL-3 + file LICENSE
-Depends: SingleCellExperiment
+Depends: SummarizedExperiment
 Imports: 
     methods,
     S4Vectors,
-    SummarizedExperiment,
     DelayedArray,
     DelayedMatrixStats,
     BiocNeighbors,
