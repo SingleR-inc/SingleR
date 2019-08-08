@@ -23,64 +23,20 @@
 #' 
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #' @examples
-#' ###########################################
-#' ## Mocking up some example training data ##
-#' ###########################################
-#'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' train.data <- SingleCellExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
-#' )
-#' rownames(train.data) <- sprintf("GENE_%s", seq_len(nrow(train.data)))
-#'
-#' ##################################################
-#' ## Mocking up some test data for classification ##
-#' ##################################################
-#'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sc.data <- SingleCellExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
-#' )
-#' rownames(sc.data) <- sprintf("GENE_%s", seq_len(nrow(sc.data)))
+#' # Running the SingleR() example.
+#' example(SingleR, echo=FALSE)
+#' test <- scater::logNormCounts(test)
 #' 
-#' #####################
-#' ## Running SingleR ##
-#' #####################
+#' # Checking if cell#1 resembles reference-set cells of its assigned label.
+#' pred$labels[1]
+#' same.type <- grep(pred$labels[1], sce$label)
 #' 
-#' pred <- SingleR(sc.data, train.data, labels=train.data$label)
-#' table(predicted=pred$labels, truth=g)
-#' 
-#' ##### Check if cell#1 resembles reference-set cells of the same type
-#' # Identify reference cells of the same type as cell#1
-#'   #This cell is type...
-#'   pred$labels[1]
-#' ref.sameType.as1 <- grep(pred$labels[1], train.data$label)
-#' 
-#' # Compare expression of target cell to reference cells of the same type
-#' plotCellVsReference(sc.data, sc.id = 1,
-#'                     train.data, train.id = ref.sameType.as1[1],
-#'                     assay.type.sc = 'counts',
-#'                     assay.type.train = 'counts')
+#' # Compare expression of target cell to a reference cell of the same type
+#' plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = same.type[1])
 #' 
 #' # Compare expression of target cell to reference cells of a different type
-#' ref.diffType.as1 <- seq_along(train.data$label)[-ref.sameType.as1]
-#' plotCellVsReference(sc.data, sc.id = 1,
-#'                     train.data, train.id = ref.diffType.as1[1],
-#'                     assay.type.sc = 'counts',
-#'                     assay.type.train = 'counts')
-#' ###
-#' ## Note: for this mock data, normalization has not been run, so we used
-#' #  the raw counts data here, but logcounts (default) is normally recommended.
+#' diff.type <- seq_along(pred$labels)[-ref.sameType.as1]
+#' plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = diff.type[1])
 #' 
 #' @export
 #' @importFrom SummarizedExperiment assay
@@ -92,9 +48,6 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
     }
     if (is(train.data, "SingleCellExperiment")) {
         train.data <- assay(train.data, assay.type.train)
-    }
-    if (is(train.data, "list")) {
-        train.data <- train.data$data
     }
 
     rownames(sc.data) <- tolower(rownames(sc.data))
