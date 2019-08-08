@@ -19,6 +19,8 @@ training <- SingleCellExperiment(
 )
 rownames(training) <- sprintf("GENE_%s", seq_len(nrow(training)))
 
+training <- scater::logNormCounts(training)
+
 ##################################################
 ## Mocking up some test data for classification ##
 ##################################################
