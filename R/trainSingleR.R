@@ -105,7 +105,17 @@
 #'
 #' trained <- trainSingleR(sce, sce$label)
 #' trained
-#' trained$indices
+#' trained$nn.indices
+#' length(trained$common.genes)
+#'
+#' # Alternatively, supplying a set of label-specific markers
+#' # (in this case, the last 100 genes are DE for each cluster).
+#' last.100 <- tail(rownames(sce), 100)
+#' markers <- rep(list(last.100), 5)
+#' names(markers) <- LETTERS[1:5]
+#' 
+#' trained <- trainSingleR(sce, sce$label, genes=markers)
+#' trained$common.genes
 #' 
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
