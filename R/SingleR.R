@@ -53,7 +53,9 @@
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
+#' 
 #' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
+#' sce <- scater::logNormCounts(sce)
 #'
 #' ##################################################
 #' ## Mocking up some test data for classification ##
@@ -65,13 +67,13 @@
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
+#'
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
+#' test <- scater::logNormCounts(test)
 #' 
 #' ###############################
 #' ## Performing classification ##
 #' ###############################
-#' 
-#' sce <- scater::logNormCounts(sce)
 #' 
 #' pred <- SingleR(test, sce, labels=sce$label)
 #' table(predicted=pred$labels, truth=g)
