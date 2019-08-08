@@ -24,15 +24,15 @@ library(SingleR)
 hpca.ref <- getReferenceDataset(dataset="hpca")
 
 ## get normalized exprs matrix
-exprs <- hpca.ref$data
+normcounts <- hpca.ref$data
 
 ## get meta data
-meta <- DataFrame(row.names = colnames(exprs),
+meta <- DataFrame(row.names = colnames(normcounts),
                        label.main = hpca.ref$main_types,
                        label.fine = hpca.ref$types)
 
 ## construct SE
-se <- SummarizedExperiment(assays = list(norm.exprs = exprs),
+se <- SummarizedExperiment(assays = list(normcounts = normcounts),
                            colData = meta)
 
 ```
@@ -44,7 +44,7 @@ path <- file.path("SingleR", "hpca")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
 ## saving counts
-saveRDS(exprs, file = file.path(path, "exprs.rds", "1.0.0"))
+saveRDS(normcounts, file = file.path(path, "normcounts.rds", "1.0.0"))
 
 ## saving metadata
 saveRDS(meta, file = file.path(path, "coldata.rds", "1.0.0") )
