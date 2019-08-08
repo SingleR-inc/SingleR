@@ -1,0 +1,59 @@
+---
+title: "SinglR Data Wrangling"
+author: "Friederike Duendar"
+date: "8/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+```
+
+Current command for running SingleR cell label predictions:
+
+```
+library(SingleR)
+hpca <- getReferenceDataset(dataset="hpca") ## retrieves and loads RDA from Dvir's repo
+pred.hpca <- SingleR(test = hESCs, training = hpca$data, labels = hpca$types)
+```
+
+>Goal: save all the individual components to file and use them to reconstruct a SummarizedExperiment object on the client side when they pull down the content.
+
+```
+cd /scratchLocal/frd2007/sandbox/SingleR/
+~/miniconda3/envs/biocdevel/bin/R
+```
+
+```{r}
+devtools::load_all()
+library(magrittr)
+library(SummarizedExperiment)
+
+hpca.ref <- getReferenceDataset(dataset="hpca")
+names(hpca.ref)
+#[1] "data"          "types"         "main_types"    "name"         
+#[5] "sd.thres"      "de.genes"      "de.genes.main"
+
+## get normalized exprs matrix
+hpca.mat <- hpca.ref$data
+
+## get meta data
+hpca.meta <- DataFrame(row.names = colnames(hpca.mat),
+                       label.main = hpca.ref$main_types,
+                       label.fine = hpca.ref$types)
+
+## construct SE
+hpca.se <- SummarizedExperiment(assays = list(norm.exprs = hpca.mat),
+                                colData = hpca.meta)
+
+```
+
+```
+> dim(hpca.mat)
+#[1] 19363   713
+> colnames(hpca.mat) %>% head
+#[1] "GSM112490" "GSM112491" "GSM112540" "GSM112541" "GSM112661" "GSM112664"
+> table(is.na(hpca.mat))
+#   FALSE 
+#13805819 
+```
