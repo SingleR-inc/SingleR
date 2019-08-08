@@ -6,16 +6,15 @@
 \usage{
 SingleR(test, training, labels, method = c("single", "cluster"),
   clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = 1, assay.type = 1,
-  check.missing = TRUE, BNPARAM = KmknnParam(),
-  BPPARAM = SerialParam())
+  tune.thresh = 0.05, sd.thresh = 1, assay.type.test = 1,
+  assay.type.train = "logcounts", check.missing = TRUE,
+  BNPARAM = KmknnParam(), BPPARAM = SerialParam())
 }
 \arguments{
-\item{test}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
-where rows are genes and columns are cells.
+\item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
 
-\item{training}{A numeric matrix of single-cell expression values, like \code{test}.
+\item{training}{A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized, see \code{\link{trainSingleR}}).
 Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
 This should have the same rows as or a subset of the rows in \code{test}.}
 
@@ -31,8 +30,11 @@ Only used if \code{method="cluster"}.}
 
 \item{quantile, fine.tune, tune.thresh}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
-\item{assay.type}{An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
-if \code{x} is a \linkS4class{SingleCellExperiment} object.}
+\item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
+if \code{test} is a \linkS4class{SingleCellExperiment} object.}
+
+\item{assay.type.train}{An integer scalar or string specifying the assay of \code{training} containing the relevant expression matrix,
+if \code{training} is a \linkS4class{SingleCellExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
@@ -83,6 +85,12 @@ test <- SingleCellExperiment(
     colData=DataFrame(label=g)
 )
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
+
+###############################
+## Performing classification ##
+###############################
+
+sce <- scater::logNormCounts(sce)
 
 pred <- SingleR(test, sce, labels=sce$label)
 table(predicted=pred$labels, truth=g)
