@@ -37,7 +37,7 @@
 #' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = same.type[1])
 #' 
 #' # Compare expression of target cell to reference cells of a different type
-#' diff.type <- seq_along(pred$labels)[-ref.sameType.as1]
+#' diff.type <- seq_along(pred$labels)[-same.type]
 #' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = diff.type[1])
 #' 
 #' @export
