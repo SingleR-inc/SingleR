@@ -96,6 +96,17 @@ plotCellVsReference <- function(sc.data, sc.id, train.data,train.id, assay.type.
 #' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
+#'
+#' @examples
+#' # Running the SingleR() example.
+#' example(SingleR, echo=FALSE)
+#'
+#' # Creating the heatmap.
+#' plotScoreHeatmap(pred)
+#'
+#' # Creating a heatmap with clusters.
+#' plotScoreHeatmap(pred, clusters=test$label)
+#' 
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
@@ -104,8 +115,14 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     cells.order=NULL, order.by.clusters=FALSE, 
     fontsize.row=9, ...)
 {
+    # As pheatmap simply must have rownames,
+    # otherwise the annotation_col doesn't work.
+    if (is.null(rownames(results))) {
+        rownames(results) <- seq_len(nrow(results))
+    }
     scores <- results$scores
     rownames(scores) <- rownames(results)
+
     if(!is.null(cells.use)){
         scores <- scores[cells.use,]
     }
@@ -114,7 +131,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
 
     # NOTE: calculation of 'm' before normalization is deliberate.
-    m <- apply(t(scale(t(scores))),2,max)
+    m <- rowMaxs(scale(t(scores)))
     to.keep <- head(order(m,decreasing=TRUE), max.labels)
 
     if (normalize) {
@@ -130,7 +147,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Determining how to order the cells. 
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
-        clusters <- scores.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
+        clusters <- data.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
     }
     cluster_cols <- FALSE
     if (order.by.clusters && !is.null(clusters)) {
@@ -145,8 +162,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
         clustering_method = 'ward.D2', fontsize_row = fontsize.row,
         cluster_cols = cluster_cols, ...)
+
     if (!is.null(clusters)) {
         args$annotation_col <- clusters[order,,drop=FALSE]
     }
+
     do.call(pheatmap::pheatmap, args)
 }
