@@ -69,6 +69,9 @@
 #' This allows the function to handle pre-defined marker lists for specific cell populations.
 #' However, it obviously captures less information than marker sets for the pairwise comparisons.
 #'
+#' If \code{genes} explicitly contains gene identities (as character vectors), \code{x} can be the raw counts or any monotonic transformation thereof.
+#' Use of log-transformed counts is only necessary for automated marker detection when \code{genes="de"} or \code{"sd"}.
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
@@ -97,6 +100,9 @@
 #' ## Doing the training ##
 #' ########################
 #'
+#' # Normalizing and log-transforming for automated marker detection.
+#' sce <- scater::logNormCounts(sce)
+#'
 #' trained <- trainSingleR(sce, sce$label)
 #' trained
 #' trained$indices
@@ -105,7 +111,7 @@
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
 trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, 
-    assay.type=1, check.missing=TRUE, BNPARAM=KmknnParam()) 
+    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
     x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
 

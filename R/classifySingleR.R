@@ -61,6 +61,7 @@
 #' )
 #' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
 #' 
+#' sce <- scater::logNormCounts(sce)
 #' trained <- trainSingleR(sce, sce$label)
 #'
 #' ##################################################
