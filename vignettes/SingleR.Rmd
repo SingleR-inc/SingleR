@@ -54,14 +54,14 @@ sceG <- sceG[common,]
 ```
 
 One should normally do quality control at this point, but for brevity's sake, we will just remove the empty or unlabelled libraries here.
-We then compute log-normalized expression values.
+We then compute log-normalized expression values, ignoring spike-ins in the Grun dataset by setting `use_altexps=FALSE`.
 
 ```{r}
 library(scater)
 sceM <- sceM[,!is.na(sceM$label)]
 sceM <- logNormCounts(sceM)
 sceG <- sceG[,colSums(counts(sceG)) > 0]
-sceG <- logNormCounts(sceG)
+sceG <- logNormCounts(sceG, use_altexps=FALSE)
 ```
 
 The @muraro2016singlecell dataset contains labels so we will use this as our reference dataset.
