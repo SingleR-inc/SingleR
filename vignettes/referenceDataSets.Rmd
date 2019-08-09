@@ -23,17 +23,41 @@ The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/dat
 `immgen`, `mouse.rna.seq`, `blueprint_encode`, `hpca`
 
 These refer to Robjects with normalized expression values from large'ish collections
-of human (`blueprint_encode`, `hpca`) and mouse (`immgen`, `mouse.rna.seq`) samples.
-These represent bulk RNA-seq data from purified cell populations, i.e. the cell type
-labels of the samples were mostly derived based on the sorting/purification strategy,
-not via in silico prediction methods.
+of human (`blueprint_encode`, `hpca`) and mouse (`immgen`, `mouse.rna.seq`) samples
+and represent bulk RNA-seq (and microarray) data from purified cell populations.
+That means that the cell labels of the samples were mostly derived based on the
+respective sorting/purification strategy, not via *in silico* prediction methods.
+
+If you want to use either one of these reference data sets as your training data 
+set with the main `SingleR` function, you can locally cache the normalized expression
+values and cell type labels with the respective functions shown here.
+The data retrieval functions will return a single R object of the `SummarizedExperiment` 
+class with the normalized expression values stored in a gene-by-sample matrix in 
+the `assay` slot (`"normcounts"`) and the sample labels as part of `colData(SE)`.
+
+Each reference collection comes with its own data retrieval function.
+The general usage is shown here for data from HPCA:
+
+```
+## retrieve the reference data from the HPCA
+hpca.se <- HumanPrimaryCellAtlasData()
+
+## use the norm. expression values & cell type labels to assign cell type labels
+## to the cells contained within <your_SCE>
+predictLabels_with_hpca <- SingleR(test = your_SCE,
+                             training = assay(hpca.se, "normcounts"), 
+                             labels = colData(hpca.se)$label.main)
+```
+
 
 # Mouse reference data
 
 ## ImmGen
 
 The ImmGen database contains a collection of 830 microarray samples [@aran2019reference].
-ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized using the robust multi-array average procedure on probe-level data using Matlab functions.
+ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the 
+Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized 
+using the robust multi-array average procedure on probe-level data using Matlab functions.
 The analysis was performed using a custom CDF file obtained from Brainarray.
 
 There are 20 main cell types and 253 cell subtypes.
@@ -62,7 +86,7 @@ Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO da
 contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef].
 
 ```{r eval=FALSE}
-hpca <- HumanPrimaryCellAtlasData()
+hpca.se <- HumanPrimaryCellAtlasData()
 ```
 
 
