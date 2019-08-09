@@ -30,7 +30,7 @@ If set, turns off clustering of columns based on scoring.}
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
 
-\item{...}{Additional parameters for heatmap control passed to \code{pheatmap()}}
+\item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 
 \item{silent}{Logical scalar that specifying whether the plot drawn.}
 }

@@ -84,7 +84,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.sc = 'log
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
 #' If set, turns off clustering of columns based on scoring.
 #' @param silent Logical scalar that specifying whether the plot drawn.
-#' @param ... Additional parameters for heatmap control passed to \code{pheatmap()}
+#' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
