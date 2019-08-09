@@ -30,7 +30,7 @@
 #' 
 #' @export
 #' @importFrom SummarizedExperiment rowData
-get_data_hpca <- function() {
+HumanPrimaryCellAtlasData <- function() {
     version <- "1.0.0"
     se <- .create_se(file.path("hpca", version), has.rowdata=FALSE)
 }

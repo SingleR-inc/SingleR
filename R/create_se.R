@@ -2,7 +2,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment
 .create_se <- function(dataset, hub = ExperimentHub(), assays="normcounts",
                        has.rowdata=TRUE, has.coldata=TRUE, suffix=NULL) {
-    host <- file.path("singleR", dataset)
+    host <- file.path("SingleR", dataset)
     if (is.null(suffix)) {
         suffix <- ""
     } else {
