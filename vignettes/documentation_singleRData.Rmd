@@ -1,5 +1,5 @@
 ---
-title: SingleR data object generation
+title: SingleR-provided reference data sets
 author: Friederike Duendar
 date: "2019-08-08"
 output:
@@ -22,7 +22,13 @@ The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/dat
 
 `immgen`, `mouse.rna.seq`, `blueprint_encode`, `hpca`
 
-# Mouse
+These refer to Robjects with normalized expression values from large'ish collections
+of human (`blueprint_encode`, `hpca`) and mouse (`immgen`, `mouse.rna.seq`) samples.
+These represent bulk RNA-seq data from purified cell populations, i.e. the cell type
+labels of the samples were mostly derived based on the sorting/purification strategy,
+not via in silico prediction methods.
+
+# Mouse reference data
 
 ## ImmGen
 
@@ -30,15 +36,18 @@ The ImmGen database contains a collection of 830 microarray samples [@aran2019re
 ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized using the robust multi-array average procedure on probe-level data using Matlab functions.
 The analysis was performed using a custom CDF file obtained from Brainarray.
 
-We classified 20 main cell types and further annotated to 253 subtypes.
+There are 20 main cell types and 253 cell subtypes.
 
-## Benayoun
+## mouse.rna.seq
 
-a data set of 358 mouse RNA-seq samples annotated to 28 cell types collected, processed, and shared, courtesy of Bérénice Benayoun, can also be used. [@Benayoun2019]
+This data set was contributed by the Benayoun Lab.
+It entails 358 mouse RNA-seq samples annotated to 28 cell types [@Benayoun2019].
 
->Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3) 
+The RNA-seq data were processed as follows:
 
-# Human
+>Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3). [@Benayoun2019]
+
+# Human reference data
 
 ## Blueprint and ENCODE
 
@@ -50,7 +59,12 @@ Altogether, 259 samples classified to 43 cell types.
 ## Human Primary Cell Atlas
 
 Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
-contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef]
+contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef].
+
+```{r eval=FALSE}
+hpca <- HumanPrimaryCellAtlasData()
+```
+
 
 # References
 
