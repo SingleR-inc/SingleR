@@ -43,27 +43,39 @@ In this manner, the burden of interpreting clusters and defining marker genes on
 ## Obtaining the data 
 
 Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package [@muraro2016singlecell;@grun2016denovo].
-The aim will be to use one pre-labelled dataset to annotate the other unlabelled dataset.
-We restrict our analysis to the common genes between the two datasets.
+The aim is to use one pre-labelled dataset to annotate the other unlabelled dataset.
 
 ```{r}
 library(scRNAseq)
 sceM <- MuraroPancreasData()
 sceG <- GrunPancreasData()
+```
 
+We restrict our analysis to the common genes between the two datasets.
+
+```{r}
 common <- intersect(rownames(sceM), rownames(sceG))
 sceM <- sceM[common,]
 sceG <- sceG[common,]
 ```
 
-One should normally do quality control at this point, but for brevity's sake, we will just remove the empty or unlabelled libraries here.
-We then compute log-normalized expression values, ignoring spike-ins in the Grun dataset by setting `use_altexps=FALSE`.
+One should normally do cell-based quality control at this point, but for brevity's sake, 
+we will just remove the empty or unlabelled libraries here.
+
+```{r}
+sceM <- sceM[,!is.na(sceM$label)]
+sceG <- sceG[,colSums(counts(sceG)) > 0]
+```
+
+We then compute the log-normalized expression values that will be used by `SingleR()` for annotation.
 
 ```{r}
 library(scater)
-sceM <- sceM[,!is.na(sceM$label)]
 sceM <- logNormCounts(sceM)
-sceG <- sceG[,colSums(counts(sceG)) > 0]
+
+# Some of the cells have no spike-in counts, so we 
+# set use_altexps=FALSE to avoid normalization errors.
+# This is fine as we don't use the spike-ins anyway.
 sceG <- logNormCounts(sceG, use_altexps=FALSE)
 ```
 
@@ -73,7 +85,7 @@ The @muraro2016singlecell dataset contains labels so we will use this as our ref
 table(sceM$label)
 ```
 
-For the sake of speed, we will subset the @grun2016denovo dataset to the first 100 cells in this demonstration.
+To speed up this demonstration, we will subset the @grun2016denovo dataset to the first 100 cells.
 
 ```{r}
 sceG <- sceG[,1:100]
@@ -144,16 +156,18 @@ pred3 <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=label.markers)
 table(pred$labels, pred3$labels)
 ```
 
-## Visualization
-`r Biocpkg("SingleR")` has a few basic, yet powerful visualizations available. 
+# Visualizing annotation statistics
+
+`r Biocpkg("SingleR")` provides a few basic yet powerful visualization tools.
 We can use `plotCellVsReference()` to manually check how an individual cell in our test set compares to a reference cell of the same or different type. 
-It creates a scatter plot of the chosen cell's expression profile against the specified reference where each point is an individual gene, along with the linear regression fit and Spearman's rank correlation coefficient.
+This function creates a scatter plot of the chosen cell's expression profile against the specified reference where each point is an individual gene, along with the linear regression fit and Spearman's rank correlation coefficient.
 
 ```{r}
 # Get first cell label from our predictions - "acinar" in this case.
 pred$labels[1]
 
-# Get all cells in reference set with "acinar" label and plot against the first in this list.
+# Get all cells in reference set with "acinar" label and plot against the first
+# in this list.
 same.type <- grep(pred$labels[1], sceM$label)
 plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = same.type[1])
 
@@ -162,47 +176,55 @@ diff.type <- seq_along(pred$labels)[-same.type]
 plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = diff.type[1])
 ```
 
-`plotScoreHeatmap()` can be used to visualize the scores for all cells across all reference labels.
+Another useful function is `plotScoreHeatmap()`, which visualizes the scores for all cells across all reference labels.
+This allows users to inspect the confidence of the predicted labels across the dataset.
 
 ```{r}
 plotScoreHeatmap(pred)
 ```
 
-We can also display clusters (or other metadata information) for each cell by setting the `clusters` argument. In this case, we also display which donor the cells came from.
+We can also display clusters (or other metadata information) for each cell by setting the `clusters` argument. 
+In this case, we also display which donor the cells came from.
 
 ```{r}
 plotScoreHeatmap(pred, clusters=sceG$donor)
 ```
 
-As `plotScoreHeatmap()` uses `pheatmap` for plotting, additional arguments can be passed to adjust the heatmap as needed.
+`plotScoreHeatmap()` uses `r CRANpkg("pheatmap")` for plotting, so additional arguments can be passed to adjust the heatmap as needed.
 
 # Available reference datasets
 
 `r Biocpkg("SingleR")` also directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources. Run `?getReferenceDataset` for more information about the available reference datasets.
+This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources -
+see `?getReferenceDataset` for more information. 
 Each reference dataset is obtained using the `getReferenceDataSet()` function:
 
 ```{r}
 hpca <- getReferenceDataset(dataset="hpca")
 ```
 
-This can then be directly used for annotation of our scRNA-seq dataset. 
+This can then be used for annotation of a scRNA-seq dataset.
+To illustrate, we will use a hESC dataset from `r Biocpkg("scRNAseq")` [@lamanno2016molecular].
+Again, we will subset this test dataset for the sake of speed.
+
+```{r}
+hESCs <- LaMannoBrainData('human-es')
+hESCs <- hESCs[,1:100]
+```
+
+We subset to the common genes and we generate log-normalized expression values as previously described.
+
+```{r}
+common <- intersect(rownames(hESCs), rownames(hpca$data))
+hpca$data <- hpca$data[common,]
+hESCs <- hESCs[common,]
+hESCs <- logNormCounts(hESCs)
+```
+
 Given the large number of samples (often from very disparate lineages) in each datset, providing the `main_types` list to the `labels=` argument can be helpful.
 In this case, we will allow the marker genes to be computed and classify cell types for differentiated hESCs with the more specific `types` to the `labels=` argument.
 
 ```{r}
-# Obtain a human ESC dataset (subsetting for speed).
-hESCs <- LaMannoBrainData('human-es')
-hESCs <- hESCs[,1:100]
-
-# Retain common genes and normalize as above.
-common <- intersect(rownames(hESCs), rownames(hpca$data))
-hESCs <- hESCs[common,]
-hESCs <- hESCs[,colSums(counts(hESCs)) > 0]
-hESCs <- logNormCounts(hESCs)
-hpca$data <- hpca$data[common,]
-
-# Annotate the samples:
 pred.hpca <- SingleR(test=hESCs, ref=hpca$data, labels=hpca$types)
 table(pred.hpca$labels)
 ```
