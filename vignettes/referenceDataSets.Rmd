@@ -39,6 +39,7 @@ Each reference collection comes with its own data retrieval function.
 The general usage is shown here for data from HPCA:
 
 ```
+library(SingleR)
 ## retrieve the reference data from the HPCA
 hpca.se <- HumanPrimaryCellAtlasData()
 
@@ -50,9 +51,9 @@ predictLabels_with_hpca <- SingleR(test = your_SCE,
 ```
 
 
-# Mouse reference data
+## Mouse reference data
 
-## ImmGen
+### ImmGen
 
 The ImmGen database contains a collection of 830 microarray samples [@aran2019reference].
 ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the 
@@ -62,7 +63,7 @@ The analysis was performed using a custom CDF file obtained from Brainarray.
 
 There are 20 main cell types and 253 cell subtypes.
 
-## mouse.rna.seq
+### mouse.rna.seq
 
 This data set was contributed by the Benayoun Lab.
 It entails 358 mouse RNA-seq samples annotated to 28 cell types [@Benayoun2019].
@@ -71,16 +72,16 @@ The RNA-seq data were processed as follows:
 
 >Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3). [@Benayoun2019]
 
-# Human reference data
+## Human reference data
 
-## Blueprint and ENCODE
+### Blueprint and ENCODE
 
 Blueprint: 144 RNA-seq pure immune samples annotated to 28 cell types [@blueprintRef]
 ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
 
 Altogether, 259 samples classified to 43 cell types.
 
-## Human Primary Cell Atlas
+### Human Primary Cell Atlas
 
 Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
 contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef].
