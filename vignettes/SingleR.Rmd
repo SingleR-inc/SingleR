@@ -59,9 +59,9 @@ We then compute log-normalized expression values.
 ```{r}
 library(scater)
 sceM <- sceM[,!is.na(sceM$label)]
-sceM <- normalize(sceM)
+sceM <- logNormCounts(sceM)
 sceG <- sceG[,colSums(counts(sceG)) > 0]
-sceG <- normalize(sceG)
+sceG <- logNormCounts(sceG)
 ```
 
 The @muraro2016singlecell dataset contains labels so we will use this as our reference dataset.
@@ -149,6 +149,7 @@ It creates a scatter plot of the chosen cell's expression profile against the sp
 ```{r}
 # Get first cell label from our predictions - "acinar" in this case.
 pred$labels[1]
+
 # Get all cells in reference set with "acinar" label and plot against the first in this list.
 same.type <- grep(pred$labels[1], sceM$label)
 plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = same.type[1])
@@ -195,7 +196,7 @@ hESCs <- hESCs[,1:100]
 common <- intersect(rownames(hESCs), rownames(hpca$data))
 hESCs <- hESCs[common,]
 hESCs <- hESCs[,colSums(counts(hESCs)) > 0]
-hESCs <- normalize(hESCs)
+hESCs <- logNormCounts(hESCs)
 hpca$data <- hpca$data[common,]
 
 # Annotate the samples:
