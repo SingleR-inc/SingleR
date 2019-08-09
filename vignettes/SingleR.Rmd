@@ -1,7 +1,7 @@
 ---
 title: Using SingleR to annotate single-cell RNA-seq data
-author: Aaron Lun
-date: "Revised: 17 October 2018"
+author: Aaron Lun, Jared Andrews
+date: "Revised: 8 October 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
@@ -54,7 +54,7 @@ sceG <- sceG[common,]
 ```
 
 One should normally do quality control at this point, but for brevity's sake, we will just remove the empty or unlabelled libraries here.
-We then compute log-normalized expression values^[This is only necessary for the marker gene detection step.].
+We then compute log-normalized expression values.
 
 ```{r}
 library(scater)
@@ -141,10 +141,41 @@ pred3 <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=label.markers)
 table(pred$labels, pred3$labels)
 ```
 
+## Visualization
+`r Biocpkg("SingleR")` has a few basic, yet powerful visualizations available. 
+We can use `plotCellVsReference()` to manually check how an individual cell in our test set compares to a reference cell of the same or different type. 
+It creates a scatter plot of the chosen cell's expression profile against the specified reference where each point is an individual gene, along with the linear regression fit and Spearman's rank correlation coefficient.
+
+```{r}
+# Get first cell label from our predictions - "acinar" in this case.
+pred$labels[1]
+# Get all cells in reference set with "acinar" label and plot against the first in this list.
+same.type <- grep(pred$labels[1], sceM$label)
+plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = same.type[1])
+
+# And now compare to a cell of a different type than our cell of interest.
+diff.type <- seq_along(pred$labels)[-same.type]
+plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = diff.type[1])
+```
+
+`plotScoreHeatmap()` can be used to visualize the scores for all cells across all reference labels.
+
+```{r}
+plotScoreHeatmap(pred)
+```
+
+We can also display clusters (or other metadata information) for each cell by setting the `clusters` argument. In this case, we also display which donor the cells came from.
+
+```{r}
+plotScoreHeatmap(pred, clusters=sceG$donor)
+```
+
+As `plotScoreHeatmap()` uses `pheatmap` for plotting, additional arguments can be passed to adjust the heatmap as needed.
+
 # Available reference datasets
 
 `r Biocpkg("SingleR")` also directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources. 
+This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources. Run `?getReferenceDataset` for more information about the available reference datasets.
 Each reference dataset is obtained using the `getReferenceDataSet()` function:
 
 ```{r}
