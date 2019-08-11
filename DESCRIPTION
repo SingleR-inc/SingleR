@@ -43,3 +43,12 @@ Suggests:
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
+Remotes:
+    bioc::SummarizedExperiment,
+    bioc::S4Vectors,
+    bioc::DelayedArray,
+    bioc::DelayedMatrixStats,
+    bioc::BiocNeighbors,
+    bioc::BiocParallel,
+    bioc::BiocFileCache,
+    bioc::beachmat
