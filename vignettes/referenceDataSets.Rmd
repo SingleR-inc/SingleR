@@ -58,7 +58,7 @@ predictLabels_with_hpca <- SingleR(test = your_SCE,
 The ImmGen database contains a collection of 830 microarray samples [@aran2019reference].
 ImmGen raw expression data of phases 1 and 2 were downloaded as CEL files from the 
 Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized 
-using the robust multi-array average procedure on probe-level data using Matlab functions.
+using the robust multi-array average (RMA) procedure on probe-level data using Matlab functions.
 The analysis was performed using a custom CDF file obtained from Brainarray.
 
 There are 20 main cell types and 253 cell subtypes.
