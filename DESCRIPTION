@@ -39,7 +39,8 @@ Suggests:
     Matrix,
     BiocGenerics,
     ggplot2,
-    pheatmap
+    pheatmap,
+    BiocSingular
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
@@ -57,4 +58,5 @@ Remotes:
     bioc::scater,
     bioc::scRNAseq,
     bioc::scran,
-    bioc::BiocGenerics
+    bioc::BiocGenerics,
+    bioc::BiocSingular
