@@ -10,7 +10,7 @@ library(BiocStyle)
 knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 ```
 
-Dvir Aran's original `SingleR` github repository contains Robjects with normalized expression values from reference data sets such as those collected by Blueprint & Encode, the Human Primary Cell Atlas, and ImmGen.
+Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with normalized expression values from reference data sets such as those collected by Blueprint & Encode, the Human Primary Cell Atlas, and ImmGen.
 These expression data are based on (bulk) RNA-seq or microarrays from purified cell populations; hence, every sample represents the transcriptome of a specific cell type and is well suited to be used as a general training data set for the typical `SingleR` analysis.
 
 For now, we're going to retrieve the processed data from the legacy `SingleR` repository:
