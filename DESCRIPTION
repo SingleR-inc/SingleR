@@ -51,4 +51,10 @@ Remotes:
     bioc::BiocNeighbors,
     bioc::BiocParallel,
     bioc::BiocFileCache,
-    bioc::beachmat
+    bioc::beachmat,
+    bioc::BiocStyle,
+    bioc::SingleCellExperiment,
+    bioc::scater,
+    bioc::scRNAseq,
+    bioc::scran,
+    bioc::BiocGenerics
