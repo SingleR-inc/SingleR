@@ -68,7 +68,7 @@ test_that("classifySingleR behaves sensibly with very large 'quantile' settings"
 
 test_that("classifySingleR behaves with no-variance cells", {
     sce <- test 
-    assay(sce)[,1:10] <- 0
+    logcounts(sce)[,1:10] <- 0
 
     Q <- 0.2
     out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q)
@@ -83,7 +83,7 @@ test_that("classifySingleR behaves with missing values", {
     # Can't just set the first entry to NA, as we need to ensure 
     # that the test set contains a superset of genes in the training set.
     sce <- BiocGenerics::rbind(test[1,], test)
-    assay(sce)[1,1] <- NA
+    logcounts(sce)[1,1] <- NA
 
     Q <- 0.8
     expect_warning(out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q), 'missing values')

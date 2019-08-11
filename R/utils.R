@@ -1,12 +1,12 @@
 #' @importFrom SummarizedExperiment assay
 #' @importFrom DelayedMatrixStats rowAnyNAs
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
+#' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom DelayedArray DelayedArray
 .to_clean_matrix <- function(x, assay.type, check.missing, msg="x") {
     if (is.null(rownames(x))) {
         stop(sprintf("'%s' must have row names", msg))
     }
-    if (is(x, "SingleCellExperiment")) {
+    if (is(x, "SummarizedExperiment")) {
         x <- assay(x, i=assay.type)
     }
 

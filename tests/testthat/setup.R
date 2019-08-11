@@ -17,8 +17,8 @@ training <- SingleCellExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
-rownames(training) <- sprintf("GENE_%s", seq_len(nrow(training)))
 
+rownames(training) <- sprintf("GENE_%s", seq_len(nrow(training)))
 training <- scater::logNormCounts(training)
 
 ##################################################
@@ -31,4 +31,6 @@ test <- SingleCellExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
     colData=DataFrame(label=g)
 )
+
 rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
+test <- scater::logNormCounts(test)

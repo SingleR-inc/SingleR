@@ -36,7 +36,7 @@
         ref <- references[[u]]
         ref <- as.matrix(ref[common,,drop=FALSE])
 
-        # We a 'k'-based method for selecting the quantile, for consistency with classifySingleR.
+        # We use a 'k'-based method for selecting the quantile, for consistency with classifySingleR.
         k <- max(1, round((1-quantile) * ncol(ref)))
         cur.cor <- cor(cur.exprs, ref, method="spearman")
         cur.scores[u] <- -sort(-cur.cor, partial=k)[k]
@@ -132,7 +132,7 @@ test_that("fine-tuning DE marker selection works", {
 })
 
 test_that("fine-tuning SD selection works", {
-    trained <- trainSingleR(training, training$label, genes='sd')
+    trained <- trainSingleR(training, training$label, genes='sd', sd.thresh=0.5)
 
     mat <- trained$search$extra
     lab <- c("A", "B", "C")
@@ -191,15 +191,15 @@ test_that("fine-tuning by DE runs without errors", {
 })
 
 test_that("fine-tuning by SD runs without errors", {
-    trained <- trainSingleR(training, training$label, genes='sd')
+    trained <- trainSingleR(training, training$label, genes='sd', sd.thresh=0.5) # turning down the threshold.
     pred <- classifySingleR(test, trained, fine.tune=FALSE)
 
     for (Q in c(0, 0.21, 0.51, 0.81, 1)) { # Minor offsets to avoid problems with numerical precision.
         for (thresh in c(0, 0.05, 0.1)) {
             tuned <- SingleR:::.fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
-                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
+                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=0.5)
             ref <- .fine_tune_sd_ref(assay(test)[,1:10], pred$scores, trained$original.exprs, 
-                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
+                 quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=0.5)
 
             expect_equal(colnames(pred$scores)[tuned+1], ref)
         }
@@ -233,7 +233,7 @@ test_that("fine-tuning works in the body of the function", {
     ref <- classifySingleR(test, trained)
     expect_true("first.labels" %in% colnames(ref))
 
-    trained <- trainSingleR(training, training$label, genes='sd')
+    trained <- trainSingleR(training, training$label, genes='sd', sd.thresh=0.5)
     ref <- classifySingleR(test, trained)
     expect_true("first.labels" %in% colnames(ref))
 })

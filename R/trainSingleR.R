@@ -2,10 +2,11 @@
 #'
 #' Train the SingleR classifier on a reference dataset with known labels.
 #' 
-#' @param x A numeric matrix of single-cell expression values (usually log-transformed or otherwise variance-stabilized),
-#' where rows are genes and columns are cells.
-#' Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.
-#' @param labels A character vector or factor of known labels for all cells in \code{x}.
+#' @param ref A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
+#' These expression values are expected to be log-transformed, see Details.
+#' 
+#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+#' @param labels A character vector or factor of known labels for all samples in \code{ref}.
 #' @param genes A string specifying the feature selection method to be used, see Details.
 #' 
 #' Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
@@ -15,8 +16,8 @@
 #' Only used when \code{genes="sd"}.
 #' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
-#' @param assay.type An integer scalar or string specifying the assay of \code{x} containing the relevant expression matrix,
-#' if \code{x} is a \linkS4class{SingleCellExperiment} object.
+#' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
+#' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
@@ -34,7 +35,7 @@
 #' The resulting objects can be re-used across multiple classification steps with different test data sets via \code{\link{classifySingleR}}.
 #' This improves efficiency by avoiding unnecessary repetition of steps during the downstream analysis.
 #' 
-#' Several options are available for feature selection, usually assuming that \code{x} has been log-transformed or equivalent.
+#' Several options are available for feature selection:
 #' \itemize{
 #' \item \code{genes="de"} identifies genes that are differentially expressed between labels.
 #' This is done by identifying the median expression within each label, and computing differences between medians for each pair of labels.
@@ -45,6 +46,7 @@
 #' The set of all features is defined as those genes with standard deviations above \code{sd.thresh}.
 #' \item \code{genes="all"} will not perform any feature selection.
 #' }
+#' If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
 #'
 #' Alternatively, \code{genes} can be a named list of named lists of character vectors:
 #' \preformatted{genes <- list(
@@ -69,8 +71,7 @@
 #' This allows the function to handle pre-defined marker lists for specific cell populations.
 #' However, it obviously captures less information than marker sets for the pairwise comparisons.
 #'
-#' If \code{genes} explicitly contains gene identities (as character vectors), \code{x} can be the raw counts or any monotonic transformation thereof.
-#' Use of log-transformed counts is only necessary for automated marker detection when \code{genes="de"} or \code{"sd"}.
+#' If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 #'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
@@ -90,7 +91,7 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SingleCellExperiment(
+#' sce <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
@@ -120,10 +121,10 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
-trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL, 
+trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL, 
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
-    x <- .to_clean_matrix(x, assay.type, check.missing, msg="x")
+    ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
 
     # Choosing the gene sets of interest. 
     args <- list()
@@ -141,16 +142,16 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL,
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
-            extra <- .get_genes_by_de(x, labels, de.n=de.n)
+            extra <- .get_genes_by_de(ref, labels, de.n=de.n)
             common <- unique(unlist(extra))
         } else if (genes=="sd") {
-            sd.out <- .get_genes_by_sd(x, labels, sd.thresh=sd.thresh)
+            sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh)
             common <- sd.out$genes
             extra <- sd.out$mat
             args$sd.thresh <- sd.thresh
         } else {
-            common <- rownames(x)
-            extra <- .median_by_label(x, labels)
+            common <- rownames(ref)
+            extra <- .median_by_label(ref, labels)
             genes <- "sd"
             args$sd.thresh <- sd.thresh
         }
@@ -162,7 +163,7 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL,
     indices <- original <- List()
     for (u in unique(labels)) {
         # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
-        current <- x[,labels==u,drop=FALSE] 
+        current <- ref[,labels==u,drop=FALSE] 
 
         # Coerce to double to make life easier for the C++ code later.
         if (!is.double(current[0,])) {
@@ -183,9 +184,9 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL,
 }
 
 #' @importFrom utils head
-.get_genes_by_de <- function(x, labels, de.n=NULL) {
+.get_genes_by_de <- function(ref, labels, de.n=NULL) {
     ulabels <- unique(labels)
-    mat <- .median_by_label(x, labels)
+    mat <- .median_by_label(ref, labels)
     if (is.null(de.n)) {
         de.n <- round(500*(2/3)^log2(ncol(mat)))
     }
@@ -204,8 +205,8 @@ trainSingleR <- function(x, labels, genes="de", sd.thresh=1, de.n=NULL,
 }
 
 #' @importFrom DelayedMatrixStats rowSds
-.get_genes_by_sd <- function(x, labels, sd.thresh=1) {
-    mat <- .median_by_label(x, labels)
+.get_genes_by_sd <- function(ref, labels, sd.thresh=1) {
+    mat <- .median_by_label(ref, labels)
     sd <- rowSds(mat)
     list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
 }

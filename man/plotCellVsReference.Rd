@@ -2,36 +2,36 @@
 % Please edit documentation in R/visualizations.R
 \name{plotCellVsReference}
 \alias{plotCellVsReference}
-\title{Plot expression of a cell versus a reference cell/sample}
+\title{Plot a cell versus a reference}
 \usage{
-plotCellVsReference(sc.data, sc.id, train.data, train.id,
+plotCellVsReference(test, test.id, ref, ref.id,
   assay.type.sc = "logcounts", assay.type.train = "logcounts")
 }
 \arguments{
-\item{sc.data}{Numeric matrix of single-cell expression values (usually log-transformed
+\item{test}{Numeric matrix of single-cell expression values (usually log-transformed
 or otherwise variance-stabilized), where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{sc.id}{Integer scalar specifying the index of the target cell to use.
+\item{test.id}{Integer scalar specifying the index of the target cell to use.
 Alternatively, a string containing the name of the cell.}
 
-\item{train.data}{Numeric matrix of reference dataset expression values (usually log-transformed
+\item{ref}{Numeric matrix of reference dataset expression values (usually log-transformed
 or otherwise variance-stabilized), where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SingleCellExperiment} object containing such a matrix.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{train.id}{Integer scalar specifying the reference cell/sample to use.}
+\item{ref.id}{Integer scalar specifying the reference cell/sample to use.}
 
-\item{assay.type.sc}{Integer scalar or string specifying the assay of \code{sc.data} containing the relevant expression data.
-Used if \code{sc.data} is a \linkS4class{SingleCellExperiment}.}
+\item{assay.type.sc}{Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.
+Used if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
-\item{assay.type.train}{Integer scalar or string specifying the assay of \code{train.data} containing the relevant expression data.
-Used if provided \code{train.data} is a \linkS4class{SingleCellExperiment}.}
+\item{assay.type.train}{Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.
+Used if provided \code{ref} is a \linkS4class{SummarizedExperiment}.}
 }
 \value{
 A \link{ggplot} object containing a scatter plot of the cell against a reference.
 }
 \description{
-Plot expression of a cell versus a reference cell/sample
+Plot a single cell's expression profile against that of a reference sample across all genes.
 }
 \details{
 This function allows a user to manually check how an individual cell compares to reference cells of the same or different type.
@@ -48,11 +48,11 @@ pred$labels[1]
 same.type <- grep(pred$labels[1], sce$label)
 
 # Compare expression of target cell to a reference cell of the same type
-plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = same.type[1])
+plotCellVsReference(test, test.id = 1, ref = sce, ref.id = same.type[1])
 
 # Compare expression of target cell to reference cells of a different type
-diff.type <- seq_along(pred$labels)[-ref.sameType.as1]
-plotCellVsReference(test, sc.id = 1, train.data = sce, train.id = diff.type[1])
+diff.type <- seq_along(pred$labels)[-same.type]
+plotCellVsReference(test, test.id = 1, ref = sce, ref.id = diff.type[1])
 
 }
 \author{

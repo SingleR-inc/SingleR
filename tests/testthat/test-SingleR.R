@@ -2,15 +2,15 @@
 # library(testthat); library(SingleR); source("setup.R"); source("test-SingleR.R")
 
 test_that("SingleR works in DE mode", {
-    out <- SingleR(test=test, training=training, labels=training$label, genes="de")
+    out <- SingleR(test=test, ref=training, labels=training$label, genes="de")
     tab <- table(out$labels, test$label)
     expect_true(sum(diag(tab))/sum(tab) > 0.95)
 })
 
 test_that("SingleR works in SD mode", {
-    out <- SingleR(test=test, training=training, labels=training$label, genes="sd")
+    out <- SingleR(test=test, ref=training, labels=training$label, genes="sd")
     tab <- table(out$labels, test$label)
-    expect_true(sum(diag(tab))/sum(tab) > 0.95)
+    expect_true(sum(diag(tab))/sum(tab) > 0.85) # not as good as 'de'.
 })
 
 test_that("SingleR works with custom gene selection", {
@@ -21,21 +21,21 @@ test_that("SingleR works with custom gene selection", {
     more.collected <- rep(list(collected), length(all.labs))
     names(more.collected) <- all.labs
 
-    out <- SingleR(test=test, training=training, labels=training$label, genes=more.collected)
+    out <- SingleR(test=test, ref=training, labels=training$label, genes=more.collected)
     tab <- table(out$labels, test$label)
     expect_true(sum(diag(tab))/sum(tab) > 0.95)
     
     # We should get, in this case, the same result with a list of vectors.
-    out2 <- SingleR(test=test, training=training, labels=training$label, genes=collected)
+    out2 <- SingleR(test=test, ref=training, labels=training$label, genes=collected)
     expect_identical(out, out2)
 })
 
 test_that("SingleR works when genes are not the same between test and training", {
-    out <- SingleR(test=test[1:800,], training=training[200:1000,], labels=training$label)
-    ref <- SingleR(test=test[200:800,], training=training[200:800,], labels=training$label)
+    out <- SingleR(test=test[1:800,], ref=training[200:1000,], labels=training$label)
+    ref <- SingleR(test=test[200:800,], ref=training[200:800,], labels=training$label)
     expect_identical(out, ref)
 
-    expect_error(SingleR(test=test[1:200,], training=training[800:1000,], labels=training$label), "no common genes")
+    expect_error(SingleR(test=test[1:200,], ref=training[800:1000,], labels=training$label), "no common genes")
 })
 
 library(Matrix)
@@ -45,11 +45,11 @@ test_that("SingleR works with non-ordinary matrices", {
     assay(test.s) <- as(assay(test.s), "dgCMatrix")
     assay(training.s) <- as(assay(training.s), "dgCMatrix")
 
-    out <- SingleR(test=test.s, training=training.s, labels=training.s$label)
-    ref <- SingleR(test=test, training=training, labels=training$label)
+    out <- SingleR(test=test.s, ref=training.s, labels=training.s$label)
+    ref <- SingleR(test=test, ref=training, labels=training$label)
     expect_identical(out, ref)
 
-    out <- SingleR(test=test.s, training=training.s, labels=training.s$label, clusters=test.s$label, method="cluster")
-    ref <- SingleR(test=test, training=training, labels=training$label, clusters=test$label, method="cluster")
+    out <- SingleR(test=test.s, ref=training.s, labels=training.s$label, clusters=test.s$label, method="cluster")
+    ref <- SingleR(test=test, ref=training, labels=training$label, clusters=test$label, method="cluster")
     expect_identical(out, ref)
 })

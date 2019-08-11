@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualizations.R
 \name{plotScoreHeatmap}
 \alias{plotScoreHeatmap}
-\title{Plot a heatmap of the scoring of cells}
+\title{Plot a score heatmap}
 \usage{
 plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
   clusters = NULL, max.labels = 40, normalize = TRUE,
@@ -16,7 +16,7 @@ plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
 If \code{NULL}, all cells are presented.}
 
 \item{labels.use}{Character vector indicating what labels to show.
-If \code{NULL}, all cell types are presented.}
+If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{clusters}{Character vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.}
 
@@ -30,7 +30,7 @@ If set, turns off clustering of columns based on scoring.}
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
 
-\item{...}{Additional parameters for heatmap control passed to \code{pheatmap()}}
+\item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 
 \item{silent}{Logical scalar that specifying whether the plot drawn.}
 }
@@ -38,7 +38,7 @@ If set, this takes precedence over \code{cells.order} input.}
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 }
 \description{
-Plot a heatmap of the scoring of cells
+Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 }
 \details{
 This function creates a heatmap containing the \code{\link{SingleR}} assignment scores for each cell (columns) to each reference label (rows).
