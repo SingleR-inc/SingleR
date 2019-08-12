@@ -1,5 +1,5 @@
 ---
-title: "Obtaining mouse reference data from the Benayoun Lab study of aging mice"
+title: "Obtaining mouse reference data (RNA-seq) from sorted cell populations"
 author: "Friederike Duendar"
 date: "8/9/2019"
 output: html_document
