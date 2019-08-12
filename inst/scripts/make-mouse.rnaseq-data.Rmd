@@ -1,9 +1,10 @@
 ---
-title: "Obtaining reference data from Blueprint and ENCODE"
+title: "Obtaining mouse reference data from the Benayoun Lab study of aging mice"
 author: "Friederike Duendar"
 date: "8/9/2019"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 library(BiocStyle)
@@ -16,7 +17,7 @@ These expression data are based on (bulk) RNA-seq or microarrays from purified c
 For now, we're going to retrieve the processed data from the legacy `SingleR` repository:
 
 ```{r retrieve_from_github}
-dataset <- "blueprint_encode" 
+dataset <- "mouse.rnaseq" 
 full.url <- sprintf("https://github.com/dviraran/SingleR/blob/master/data/%s.rda?raw=true", dataset)
 bfc <- BiocFileCache::BiocFileCache(ask=FALSE)
 ref <- BiocFileCache::bfcrpath(bfc, full.url)
@@ -26,25 +27,13 @@ ref.set <- get(dataset, envir = env)
 ```
 
 The original objects contain numerous nested lists.
-We only need the matrix of normalized expression values and the labels assigned to
+We only need the **matrix of normalized expression values** and the **labels** assigned to
 each sample/cell.
 
 Extract the normalized expression matrix:
 
 ```{r get_normcounts}
 normcounts <- ref.set$data
-```
-
-There's a problem with the naming of the samples -- there's a duplicated name:
-
-```{r}
-table(duplicated(colnames(normcounts)))
-```
-
-Uniquifying the colnames:
-
-```{r}
-colnames(normcounts) <- paste(colnames(normcounts), 1:ncol(normcounts), sep = ".")
 ```
 
 Extract cell labels, which represent the metadata:
