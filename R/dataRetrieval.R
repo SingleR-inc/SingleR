@@ -44,7 +44,7 @@
 HumanPrimaryCellAtlasData <- function() {
     version <- "1.0.0"
     se <- .create_se(file.path("hpca", version),
-                     assays="normcounts", rm_NA = NULL,
+                     assays="normcounts", rm.NA = NULL,
                      has.rowdata = FALSE, has.coldata = TRUE,
                      has.rowdata=FALSE)
 }
@@ -71,7 +71,7 @@ HumanPrimaryCellAtlasData <- function() {
 #' The data will be downloaded from ExperimentHub,
 #' returning a \linkS4class{SummarizedExperiment} object for further use.
 #'
-#' @param rm_NA Either one of "rows", "cols", "both", NULL to specify how missing
+#' @param rm.NA Either one of "rows", "cols", "both", NULL to specify how missing
 #' values should be handled. "rows" will remove genes with at least one missing
 #' value, "cols" will remove samples with at least one missing value. Default:
 #' "rows".
@@ -95,7 +95,7 @@ HumanPrimaryCellAtlasData <- function() {
 #' \emph{Nature Immunology} 20, 163–172. doi: 10.1038/s41590-018-0276-y
 #' 
 #' @examples
-#' ref.se <- BlueprintEncodeData(rm_NA = "rows")
+#' ref.se <- BlueprintEncodeData(rm.NA = "rows")
 #' 
 #' \dontrun{
 #' ## use the reference data to predict labels for the cells of your scRNA-seq data
@@ -104,11 +104,12 @@ HumanPrimaryCellAtlasData <- function() {
 #'                            labels = colData(ref.se)$label.main)
 #' }
 #' @export
-BlueprintEncodeData <- function(rm_NA = c("rows","cols","both","none")){
+#' 
+BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")){
     version <- "1.0.0"
-    rm_NA <- match.arg(rm_NA)
+    rm.NA <- match.arg(rm.NA)
     se <- .create_se(file.path("blueprint_encode", version), 
-                     assays="normcounts", rm_NA = rm_NA,
+                     assays="normcounts", rm.NA = rm.NA,
                      has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -153,10 +154,11 @@ BlueprintEncodeData <- function(rm_NA = c("rows","cols","both","none")){
 #'                            labels = colData(ref.se)$label.main)
 #' }
 #' @export
+#' 
 ImmGenData <- function(){
     version <- "1.0.0"
     se <- .create_se(file.path("immgen", version), 
-                     assays="normcounts", rm_NA = NULL,
+                     assays="normcounts", rm.NA = NULL,
                      has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -196,10 +198,11 @@ ImmGenData <- function(){
 #'                            labels = colData(ref.se)$label.main)
 #' }                  
 #' @export
+#' 
 MouseBulkData <- function(){
     version <- "1.0.0"
     se <- .create_se(file.path("mouse.rnaseq", version), 
-                     assays="normcounts", rm_NA = NULL,
+                     assays="normcounts", rm.NA = NULL,
                      has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -212,7 +215,7 @@ MouseBulkData <- function(){
 #' 
 #' @param dataset string indicating the name of the reference data set to be
 #' retrieved. Choices are: c("hpca", "blueprint_encode", "immgen", "mouse.rnaseq")
-#' @param rm_NA indicate how to handle NA's. Valid choices are "rows" (remove
+#' @param rm.NA indicate how to handle NA's. Valid choices are "rows" (remove
 #' genes with at least one missing value), "cols" (remove samples with at least
 #' one missing value), "both" (remove samples as well as genes that have at least
 #' one missing value, respectively), "none" or NULL.
@@ -222,7 +225,7 @@ MouseBulkData <- function(){
 #' @importFrom SummarizedExperiment rowData
 .create_se <- function(dataset = c("hpca", "blueprint_encode", "immgen", "mouse.rnaseq"),
                        hub = ExperimentHub(), assays="normcounts",
-                       rm_NA = c("rows","cols","both","none"),
+                       rm.NA = c("rows","cols","both","none"),
                        has.rowdata=FALSE, has.coldata=TRUE) {
     
     ## TEMPORARY CODE for pulling data directly from github until it is 
@@ -232,9 +235,9 @@ MouseBulkData <- function(){
     colnames(nrmcnts) <- paste(colnames(nrmcnts), 1:ncol(nrmcnts), sep = ".")
     
     ## handling NA's
-    if(!is.null(rm_NA)){
-        rm_NA <- match.arg(rm_NA)
-        nrmcnts <- .rm_NAs(nrmcnts, rm_NA)
+    if(!is.null(rm.NA)){
+        rm.NA <- match.arg(rm.NA)
+        nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
     }
     
     ## defining colDAta
@@ -256,9 +259,9 @@ MouseBulkData <- function(){
     for (a in assays) {
         nrmcnts <- hub[hub$rdatapath==file.path(host, sprintf("%s%s.rds", a, suffix))][[1]]
         
-        if(!is.null(rm_NA)){
-            rm_NA <- match.arg(rm_NA)
-            nrmcnts <- .rm_NAs(nrmcnts, rm_NA)
+        if(!is.null(rm.NA)){
+            rm.NA <- match.arg(rm.NA)
+            nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
         }
         all.assays[[a]] <- nrmcnts
     }
@@ -280,9 +283,9 @@ MouseBulkData <- function(){
 #' Handle NAs in expression matrix
 #' 
 #' @param mat matrix of expression values
-#' @param rm_NA choices: "rows", "cols", "both"
-.rm_NAs <- function(mat, rm_NA = "rows"){
-    if(rm_NA == "rows" | rm_NA == "both"){
+#' @param rm.NA choices: "rows", "cols", "both"
+.rm_NAs <- function(mat, rm.NA = "rows"){
+    if(rm.NA == "rows" | rm.NA == "both"){
         keep_rows <- apply(mat, 1, function(x) all(!is.na(x)))
         if( length(keep_rows[keep_rows]) > 0){
             mat <- mat[keep_rows, ]
@@ -292,7 +295,7 @@ MouseBulkData <- function(){
         
     }
     
-    if(rm_NA == "cols" | rm_NA == "both"){
+    if(rm.NA == "cols" | rm.NA == "both"){
         keep_cols <- apply(mat, 2, function(x) all(!is.na(x)))
         if( length(keep_cols[keep_cols]) > 0){
             mat <- mat[ , keep_cols]
