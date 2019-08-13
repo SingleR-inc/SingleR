@@ -195,38 +195,48 @@ plotScoreHeatmap(pred, clusters=sceG$donor)
 # Available reference datasets
 
 `r Biocpkg("SingleR")` also directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-This makes use of Immgen, Blueprint+Encode, the Human Primary Cell Atlas and other resources -
-see `?getReferenceDataset` for more information. 
-Each reference dataset is obtained using the `getReferenceDataSet()` function:
+There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project). For more details see the vignette dedicated to the reference data sets" `r Biocpkg("SingleR", vignette = "ReferenceDataSets")`.
+
+Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `ImmGenData`, `MouseBulkData`.
+Here, we show an example with data from HPCA:
 
 ```{r}
-hpca <- getReferenceDataset(dataset="hpca")
+## yields a SummarizedExperiment object
+hpca.se <- HumanPrimaryCellAtlasData()
 ```
 
-This can then be used for annotation of a scRNA-seq dataset.
-To illustrate, we will use a hESC dataset from `r Biocpkg("scRNAseq")` [@lamanno2016molecular].
-Again, we will subset this test dataset for the sake of speed.
+The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
+To illustrate this, we will use a hESC dataset from `r Biocpkg("scRNAseq")` [@lamanno2016molecular].
+Again, we will subset this test dataset to 100 cells for the sake of speed.
 
 ```{r}
 hESCs <- scRNAseq::LaMannoBrainData('human-es')
-hESCs <- hESCs[,1:100]
+hESCs <- hESCs[,1:100] # for demo-purposes only!
 ```
 
-We subset to the common genes and we generate log-normalized expression values as previously described.
+We then subset to genes that are present in the scRNA-seq data to be annotated and
+the reference data set before we log-normalize the expression values of the hESC data set.
 
 ```{r}
+## subset
 common <- intersect(rownames(hESCs), rownames(hpca$data))
+hpca.se <- hpca.se[common,]
 hESCs <- hESCs[common,]
-hESCs <- logNormCounts(hESCs)
 
-hpca$data <- hpca$data[common,]
+## normalize
+hESCs <- logNormCounts(hESCs)
 ```
 
-Given the large number of samples (often from very disparate lineages) in each datset, providing the `main_types` list to the `labels=` argument can be helpful.
-In this case, we will allow the marker genes to be computed and classify cell types for differentiated hESCs with the more specific `types` to the `labels=` argument.
+The reference data sets all come with two sets of cell labels: `label.main` and
+`label.fine`. 
+The "main" labels tend to be less fine-grained than the "fine" labels, e.g. instead of specifying different subsets of T cells, the main labels will lump them all together under the label "T cells". For more details about the individual cell type labels available for the different reference data sets, see the vignette `r Biocpkg("SingleR", vignette = "ReferenceDataSets")`.
+
+For our example, we will use the more specific fine-grained cell type labels.
 
 ```{r}
-pred.hpca <- SingleR(test=hESCs, ref=hpca$data, labels=hpca$types)
+pred.hpca <- SingleR(test = hESCs,
+                     ref = assay(hpca.se, "normcounts"),
+                     labels = hpca.se$labels.fine)
 table(pred.hpca$labels)
 ```
 
