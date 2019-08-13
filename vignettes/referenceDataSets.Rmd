@@ -1,6 +1,6 @@
 ---
 title: SingleR-provided reference data sets
-author: Friederike Duendar
+author: Friederike Dündar
 date: "2019-08-08"
 output:
   BiocStyle::html_document:

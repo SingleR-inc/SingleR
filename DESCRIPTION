@@ -7,6 +7,7 @@ Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "c
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"),
     person("Daniel", "Bunis", role="ctb"),
     person("Jared", "Andrews", role="ctb"))
+    person("Duendar", "Friederike", email = "frd2007@med.cornell.edu", role="ctb"))
 Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell
     types to infer the cell of origin of each single cell independently. 
