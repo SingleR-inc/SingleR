@@ -285,7 +285,7 @@ MouseBulkData <- function(){
 #' @param mat matrix of expression values
 #' @param rm.NA choices: "rows", "cols", "both"
 .rm_NAs <- function(mat, rm.NA = "rows"){
-    if(rm.NA == "rows" | rm.NA == "both"){
+    if(rm.NA == "rows" || rm.NA == "both"){
         keep_rows <- apply(mat, 1, function(x) all(!is.na(x)))
         if( length(keep_rows[keep_rows]) > 0){
             mat <- mat[keep_rows, ]
@@ -295,7 +295,7 @@ MouseBulkData <- function(){
         
     }
     
-    if(rm.NA == "cols" | rm.NA == "both"){
+    if(rm.NA == "cols" || rm.NA == "both"){
         keep_cols <- apply(mat, 2, function(x) all(!is.na(x)))
         if( length(keep_cols[keep_cols]) > 0){
             mat <- mat[ , keep_cols]

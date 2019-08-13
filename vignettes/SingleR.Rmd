@@ -209,7 +209,6 @@ Again, we will subset this test dataset for the sake of speed.
 
 ```{r}
 hESCs <- scRNAseq::LaMannoBrainData('human-es')
-hESCs <- LaMannoBrainData('human-es')
 hESCs <- hESCs[,1:100]
 ```
 
