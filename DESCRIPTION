@@ -3,8 +3,8 @@ Type: Package
 Title: Reference-Based Single-Cell RNA-seq Annotation
 Version: 0.98.5
 Date: 2019-08-13
-Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph", "cre")),
-    person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"),
+Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cre")),
+    person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cph")),
     person("Daniel", "Bunis", role="ctb"),
     person("Jared", "Andrews", role="ctb"),
     person("Friederike", "Düendar", role="ctb"))
@@ -23,7 +23,8 @@ Imports:
     stats,
     utils,
     Rcpp,
-    BiocFileCache
+    BiocFileCache,
+    ExperimentHub
 LinkingTo:
     Rcpp,
     beachmat
@@ -41,6 +42,14 @@ Suggests:
     BiocGenerics,
     ggplot2,
     pheatmap
+biocViews: 
+    SingleCell, 
+    GeneExpression, 
+    Transcriptomics, 
+    Classification, 
+    Clustering,
+    Annotation,
+    ExperimentHub
 SystemRequirements: C++11
 VignetteBuilder: knitr
 Encoding: UTF-8
