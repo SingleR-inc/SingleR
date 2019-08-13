@@ -44,19 +44,3 @@ Suggests:
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
-Remotes:
-    bioc::release/SummarizedExperiment,
-    bioc::release/S4Vectors,
-    bioc::release/DelayedArray,
-    bioc::release/DelayedMatrixStats,
-    bioc::release/BiocNeighbors,
-    bioc::release/BiocParallel,
-    bioc::release/BiocFileCache,
-    bioc::release/beachmat,
-    bioc::release/BiocStyle,
-    bioc::release/SingleCellExperiment,
-    bioc::release/scater,
-    bioc::release/scRNAseq,
-    bioc::release/scran,
-    bioc::release/BiocGenerics,
-    bioc::release/BiocSingular
