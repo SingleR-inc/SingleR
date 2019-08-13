@@ -1,0 +1,60 @@
+---
+title: "Obtaining mouse reference data from the Immunological Genome Project"
+author: "Friederike Duendar"
+date: "8/9/2019"
+output: html_document
+---
+
+c("hpca", "blueprint_encode", 
+    "immgen", "mouse.rnaseq")
+
+```{r setup, include=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+```
+
+Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with normalized expression values from reference data sets such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen).
+These expression data are based on (bulk) RNA-seq or microarrays from purified cell populations; hence, every sample represents the transcriptome of a specific cell type and is well suited to be used as a general training data set for the typical `SingleR` analysis.
+
+For now, we're going to retrieve the processed data from the legacy `SingleR` repository:
+
+```{r retrieve_from_github}
+dataset <- "immgen" 
+full.url <- sprintf("https://github.com/dviraran/SingleR/blob/master/data/%s.rda?raw=true", dataset)
+bfc <- BiocFileCache::BiocFileCache(ask=FALSE)
+ref <- BiocFileCache::bfcrpath(bfc, full.url)
+env <- new.env()
+load(ref, envir = env)
+ref.set <- get(dataset, envir = env)
+```
+
+The original objects contain numerous nested lists.
+We only need the **matrix of normalized expression values** and the **labels** assigned to
+each sample/cell.
+
+Extract the normalized expression matrix:
+
+```{r get_normcounts}
+normcounts <- ref.set$data
+```
+
+Extract cell labels, which represent the metadata:
+
+```{r get_coldata}
+coldata <- S4Vectors::DataFrame(row.names = colnames(normcounts),
+                       label.main = ref.set$main_types,
+                       label.fine = ref.set$types)
+```
+
+Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
+
+```{r save_for_ExpHub}
+path <- file.path("SingleR", dataset)
+dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+## saving counts
+saveRDS(normcounts, file = file.path(path, "normcounts.rds", "1.0.0"))
+
+## saving metadata
+saveRDS(coldata, file = file.path(path, "coldata.rds", "1.0.0") )
+```
