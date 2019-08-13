@@ -8,35 +8,37 @@ training.exp <- assay(training,1)
 
 test_that("we can produce expression comparison scatterplots with plotCellVsReference", {
     expect_error(plotCellVsReference(
-        test = test,1,
-        ref = training,1,
-        5, 5), NULL)
+        test = test, test.id = 1,
+        ref = training, ref.id = 1,
+        assay.type.test = 5, assay.type.ref = 5), NULL)
     expect_s3_class(plotCellVsReference(
-        test = test, 1,
-        ref = training, 1,
-        1, 1), "ggplot")
+        test = test, test.id = 1,
+        ref = training, ref.id = 1,
+        assay.type.test = 1, assay.type.ref = 1), "ggplot")
     expect_s3_class(P <- plotCellVsReference(
-        test = test, 1,
-        ref = training, 1), "ggplot")
+        test = test, test.id = 1,
+        ref = training, ref.id = 1), "ggplot")
     expect_s3_class(plotCellVsReference(
-        test = test.exp, 1,
-        ref = training.exp, 1), "ggplot")
+        test = test.exp, test.id = 1,
+        ref = training.exp, ref.id = 1), "ggplot")
     expect_s3_class(plotCellVsReference(
-        test = test, 1,
-        ref = training.exp, 1,
-        1,5), "ggplot")
+        test = test, test.id = 1,
+        ref = training.exp, ref.id = 1,
+        assay.type.test = 1, assay.type.ref = 5), "ggplot")
     expect_s3_class(plotCellVsReference(
-        test = test.exp, 1,
-        ref = training, 1,
-        5,1), "ggplot")
+        test = test.exp, test.id = 1,
+        ref = training, ref.id = 1,
+        assay.type.test = 5, assay.type.ref = 1), "ggplot")
     expect_false(isTRUE(all.equal(
         P,
-        P2 <- plotCellVsReference(test = test, 2,
-        ref = training, 1))))
+        P2 <- plotCellVsReference(
+            test = test, test.id = 2,
+            ref = training, ref.id = 1))))
     expect_false(isTRUE(all.equal(
         P, 
-        P3 <- plotCellVsReference(test = test, 1,
-        ref = training, 2))))
+        P3 <- plotCellVsReference(
+            test = test, test.id = 1,
+            ref = training, ref.id = 2))))
     expect_false(isTRUE(all.equal(P2, P3)))
 })
 
