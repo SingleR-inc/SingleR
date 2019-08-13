@@ -176,15 +176,6 @@ MouseBulkData <- function(){
 ### Helper function
 #####################################################################
 
-#' Create a SummarizedExperiment object using data from ExperimentHub
-#' 
-#' @param dataset string indicating the name of the reference data set to be
-#' retrieved. Choices are: c("hpca", "blueprint_encode", "immgen", "mouse.rnaseq")
-#' @param rm.NA indicate how to handle NA's. Valid choices are "rows" (remove
-#' genes with at least one missing value), "cols" (remove samples with at least
-#' one missing value), "both" (remove samples as well as genes that have at least
-#' one missing value, respectively), "none" or NULL.
-#' 
 #' @importFrom ExperimentHub ExperimentHub
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom SummarizedExperiment rowData
@@ -243,12 +234,6 @@ MouseBulkData <- function(){
     do.call(SummarizedExperiment, c(list(assays=all.assays), args))
 }
 
-
-#' Handle NAs in expression matrix
-#' 
-#' @param mat matrix of expression values
-#' @param rm.NA choices: "rows", "cols", "both"
-#'
 #' @importFrom DelayedMatrixStats rowAnyNAs colAnyNAs
 #' @importFrom DelayedArray DelayedArray
 .rm_NAs <- function(mat, rm.NA = "rows"){
