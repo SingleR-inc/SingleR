@@ -39,8 +39,7 @@ Suggests:
     Matrix,
     BiocGenerics,
     ggplot2,
-    pheatmap,
-    BiocSingular
+    pheatmap
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
