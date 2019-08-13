@@ -6,7 +6,8 @@ Date: 2019-08-13
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph", "cre")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role="ctb"),
     person("Daniel", "Bunis", role="ctb"),
-    person("Jared", "Andrews", role="ctb"))
+    person("Jared", "Andrews", role="ctb"),
+    person("Friederike", "Düendar", role="ctb"))
 Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell
     types to infer the cell of origin of each single cell independently. 
