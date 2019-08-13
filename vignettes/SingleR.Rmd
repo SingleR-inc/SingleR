@@ -11,7 +11,7 @@ output:
 package: SingleR 
 bibliography: ref.bib
 vignette: >
-  %\VignetteIndexEntry{Using SingleR to annotate scRNA-seq data}
+  %\VignetteIndexEntry{1. Annotating scRNA-seq data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}    
 ---

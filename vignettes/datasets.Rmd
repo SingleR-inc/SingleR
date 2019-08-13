@@ -1,5 +1,5 @@
 ---
-title: SingleR-provided reference data sets
+title: Annotated reference data sets in _SingleR_
 author: Friederike Düendar
 date: "Revised: Auguest 13, 2019"
 output:
@@ -8,7 +8,7 @@ output:
 package: SingleR 
 bibliography: ref.bib
 vignette: >
-  %\VignetteIndexEntry{Using SingleR to annotate scRNA-seq data}
+  %\VignetteIndexEntry{2. Available reference datasets}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}    
 ---
