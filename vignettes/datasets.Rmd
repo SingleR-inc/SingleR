@@ -18,9 +18,9 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 library(BiocStyle)
 ```
 
-The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides the following RDA files:
+# Introduction
 
-`immgen`, `mouse.rna.seq`, `blueprint_encode`, `hpca`
+The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files for `immgen`, `mouse.rna.seq`, `blueprint_encode` and `hpca`.
 
 These refer to Robjects with normalized expression values from large'ish collections
 of human (`blueprint_encode`, `hpca`) and mouse (`immgen`, `mouse.rna.seq`) samples
@@ -34,28 +34,18 @@ values and cell type labels with the respective functions shown here.
 The data retrieval functions will return a single R object of the `SummarizedExperiment` 
 class with the normalized expression values stored in a gene-by-sample matrix in 
 the `assay` slot (`"normcounts"`) and the sample labels as part of `colData(SE)`.
-
-Each reference collection comes with its own data retrieval function.
 The general usage is shown here for data from HPCA:
 
-```
+```{r}
 library(SingleR)
-## retrieve the reference data from the HPCA
 hpca.se <- HumanPrimaryCellAtlasData()
-
-## use the norm. expression values & cell type labels to assign cell type labels
-## to the cells contained within <your_SCE>
-predictLabels_with_hpca <- SingleR(test = your_SCE,
-                             training = assay(hpca.se, "normcounts"), 
-                             labels = colData(hpca.se)$label.main)
 ```
 
+# Mouse reference data
 
-## Mouse reference data
+## The Immunological Genome Project (ImmGen)
 
-### The Immunological Genome Project (ImmGen)
-
->The Immunological Genome Project is a collaborative group of immunologists and computational biologists who are generating a complete microarray dissection of gene expression and its regulation in the immune system of the mouse. The project encompasses the innate and adaptive immune systems, surveying all cell types of the myeloid and lymphoid lineages with a focus on primary cells directly *ex vivo*. [Source](http://www.immgen.org/)
+> The Immunological Genome Project is a collaborative group of immunologists and computational biologists who are generating a complete microarray dissection of gene expression and its regulation in the immune system of the mouse. The project encompasses the innate and adaptive immune systems, surveying all cell types of the myeloid and lymphoid lineages with a focus on primary cells directly *ex vivo*. [Source](http://www.immgen.org/)
 
 830 microarray samples of ImmGen raw expression data (phases 1 and 2) were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized 
 using the robust multi-array average (RMA) procedure on probe-level data using Matlab functions.
@@ -63,25 +53,7 @@ The analysis was performed using a custom CDF file obtained from Brainarray  [@a
 
 There are **20 main cell types** (B cells, B cells, pro, Basophils, DC, Endothelial cells, Eosinophils, Epithelial cells, Fibroblasts, ILC, Macrophages, Mast cells, Microglia, Monocytes, Neutrophils, NK cells, NKT, Stem cells, Stromal cells, T cells, Tgd) and **253 cell subtypes**.
 
-```{r eval=FALSE}
-library(SingleR)
-## retrieve the reference data from the HPCA
-immgen.se <- ImmGenData()
-
-## see the main cell type labels
-sort(unique(immgen.se$label.main))
-
-## see the >253 immunological cell type labels
-sort(unique(immgen.se$label.fine))
-
-## use the norm. expression values & cell type labels of your choice to predict
-## the cells present in your scRNA-seq data set
-predictLabels_with_immgen <- SingleR(test = your_SCE,
-                             training = assay(immgen.se, "normcounts"), 
-                             labels = colData(immgen.se)$label.main)
-```
-
-### Mouse bulk RNA-seq samples of pure cell populations
+## Mouse bulk RNA-seq samples of pure cell populations
 
 The dataset entails **358 mouse RNA-seq** samples annotated to **18 main cell types**: Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes, Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
 
@@ -91,24 +63,18 @@ The RNA-seq data were downloaded from GEO and processed by the Benayoun Lab as f
 
 >Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3). 
 
-## Human reference data
+# Human reference data
 
-### Blueprint and ENCODE
+## Blueprint and ENCODE
 
 Blueprint: 144 RNA-seq pure immune samples annotated to 28 cell types [@blueprintRef]
 ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
 
 Altogether, 259 samples classified to 43 cell types.
 
-### Human Primary Cell Atlas
+## Human Primary Cell Atlas
 
 Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
 contains 713 microarray samples classified to 38 main cell types and further annotated to 169 subtypes [@hpcaRef].
 
-```{r eval=FALSE}
-hpca.se <- HumanPrimaryCellAtlasData()
-```
-
-
 # References
-
