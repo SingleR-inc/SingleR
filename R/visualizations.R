@@ -11,9 +11,9 @@
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param ref.id Integer scalar specifying the reference cell/sample to use.
-#' @param test.assay.type Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
+#' @param assay.type.test Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
 #' Used if \code{test} is a \linkS4class{SummarizedExperiment}.
-#' @param ref.assay.type Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
+#' @param assay.type.ref Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
 #' Used if provided \code{ref} is a \linkS4class{SummarizedExperiment}.
 #'
 #' @return A \link{ggplot} object containing a scatter plot of the cell against a reference.
@@ -44,12 +44,12 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
-plotCellVsReference <- function(test, test.id, ref, ref.id, test.assay.type = 'logcounts', ref.assay.type = 'logcounts') {
+plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'logcounts', assay.type.ref = 'logcounts') {
     if (is(test, "SummarizedExperiment")) {
-        test <- assay(test, test.assay.type)
+        test <- assay(test, assay.type.test)
     }
     if (is(ref, "SummarizedExperiment")) {
-        ref <- assay(ref, ref.assay.type)
+        ref <- assay(ref, assay.type.ref)
     }
 
     rownames(test) <- tolower(rownames(test))
