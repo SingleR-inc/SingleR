@@ -4,7 +4,7 @@ author:
 - name: Aaron Lun 
 - name: Jared M. Andrews
   affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
-date: "Revised: 8 October 2019"
+date: "Revised: August 13, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
