@@ -217,17 +217,17 @@ MouseBulkData <- function(){
     ## extract normalized values --------
     all.assays <- list()
     for (a in assays) {
-        nrmcnts <- hub[hub$rdatapath==file.path(host, sprintf("%s%s.rds", a, suffix))][[1]]
+        nrmcnts <- hub[hub$rdatapath==file.path(host, paste0(a, ".rds"))][[1]]
         all.assays[[a]] <- .rm_NAs(nrmcnts, rm.NA)
     }
     
     ## get metadata ----------------------
     args <- list()
     if (has.coldata) {
-        args$colData <- hub[hub$rdatapath==file.path(host, sprintf("coldata%s.rds", suffix))][[1]]
+        args$colData <- hub[hub$rdatapath==file.path(host, "coldata.rds")][[1]]
     }
     if (has.rowdata) {
-        args$rowData <- hub[hub$rdatapath==file.path(host, sprintf("rowdata%s.rds", suffix))][[1]]
+        args$rowData <- hub[hub$rdatapath==file.path(host, "rowdata.rds")][[1]]
     }
     
     ## make the final SE object ----------

@@ -109,7 +109,7 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
     }
 
     trained <- trainSingleR(ref, labels, genes = genes, sd.thresh=sd.thresh, 
-        assay.type=assay.type, check.missing=FALSE, BNPARAM=BNPARAM)
+        check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)
     if (method=="cluster") {
@@ -121,5 +121,5 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, assay.type=assay.type, check.missing=FALSE, BPPARAM=BPPARAM)
+        tune.thresh=tune.thresh, check.missing=FALSE, BPPARAM=BPPARAM)
 }
