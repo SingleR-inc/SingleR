@@ -2,19 +2,16 @@
 #'
 #' Plot a single cell's expression profile against that of a reference sample across all genes. 
 #' 
-#' @param test Numeric matrix of single-cell expression values (usually log-transformed
-#' or otherwise variance-stabilized), where rows are genes and columns are cells.
+#' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param test.id Integer scalar specifying the index of the target cell to use.
-#' Alternatively, a string containing the name of the cell.
-#' @param ref Numeric matrix of reference dataset expression values (usually log-transformed
-#' or otherwise variance-stabilized), where rows are genes and columns are cells.
+#' @param test.id Integer scalar or character specifying the index or name of the target cell to use.
+#' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param ref.id Integer scalar specifying the reference cell/sample to use.
+#' @param ref.id Integer scalar or character specifying the index or name of the reference cell/sample to use.
 #' @param assay.type.test Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
 #' Used if \code{test} is a \linkS4class{SummarizedExperiment}.
 #' @param assay.type.ref Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
-#' Used if provided \code{ref} is a \linkS4class{SummarizedExperiment}.
+#' Used if \code{ref} is a \linkS4class{SummarizedExperiment}.
 #'
 #' @return A \link[ggplot2]{ggplot} object containing a scatter plot of the cell against a reference.
 #'
@@ -111,6 +108,16 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' # Creating a heatmap with clusters.
 #' plotScoreHeatmap(pred, clusters=test$label)
 #' 
+#' #To only show certain labels, you can use labels.use or max.labels
+#' #We can also turn off the normalization with Normalize = FALSE
+#' plotScoreHeatmap(pred, clusters=test$label, labels.use = c("A","B","D"))
+#' plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
+#' plotScoreHeatmap(pred, clusters=test$label, normalize = FALSE)
+#' 
+#' #We can pass extra tweaks the heatmap as well
+#' plotScoreHeatmap(pred, clusters=test$label, fontsize.row = 9)
+#' plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
+#' 
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
@@ -172,3 +179,5 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     do.call(pheatmap::pheatmap, args)
 }
+
+
