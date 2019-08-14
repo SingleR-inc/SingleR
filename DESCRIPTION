@@ -11,7 +11,9 @@ Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell
     types to infer the cell of origin of each single cell independently. 
 License: GPL-3 + file LICENSE
-Depends: SummarizedExperiment
+Depends:
+    R (>= 3.6.0)
+    SummarizedExperiment
 Imports: 
     methods,
     S4Vectors,
@@ -40,6 +42,7 @@ Suggests:
     BiocGenerics,
     ggplot2,
     pheatmap
+SystemRequirements: C++11
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
