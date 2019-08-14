@@ -197,10 +197,18 @@ MouseBulkData <- function(){
     ref.set <- get(dirname(dataset), envir = env)
 
     nrmcnts <- ref.set$data
-    colnames(nrmcnts) <- paste(colnames(nrmcnts), 1:ncol(nrmcnts), sep = ".")
-    
     nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
-    
+
+    new.names <- colnames(nrmcnts)
+    indices <- split(seq_along(new.names), new.names)
+    for (j in names(indices)) {
+        idx <- indices[[j]]
+        if (length(idx) > 1L) {
+            new.names[idx] <- sprintf("%s.%i", j, seq_along(idx))
+        }
+    }
+    colnames(nrmcnts) <- new.names
+
     coldata <- DataFrame(row.names = colnames(nrmcnts),
         label.main = ref.set$main_types,
         label.fine = ref.set$types)
