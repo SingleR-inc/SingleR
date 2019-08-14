@@ -12,13 +12,13 @@
 #' This function provides normalized expression values 713 microarray sampes of 
 #' the Human Primary Cell Atlas (HPCA) (Mabbott et al., 2013).
 #' These 713 samples were processed and normalized as described in Aran, Looney &
-#' Liu et al. (2019) and each sample has been assigned to one of 38 main cell types
-#' and 169 subtypes.
+#' Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
+#' and 157 subtypes.
 #'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #'
 #' @references
 #' Mabbott et al. (2013).
@@ -70,7 +70,7 @@ HumanPrimaryCellAtlasData <- function() {
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #'
 #' @references
 #' The ENCODE Project Consortium (2012).
@@ -116,7 +116,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #' 
 #' @references
 #' The Immunological Genome Project (2008).
@@ -154,18 +154,20 @@ ImmGenData <- function(){
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #' 
 #' @references
 #' Benayoun B et al. (2019).
 #' Remodeling of epigenome and transcriptome landscapes with aging in mice reveals widespread induction of inflammatory responses.
 #' \emph{Genome Research}. doi: 10.1101/gr.240093.118
 #' 
+#' Code at: \code{https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT/RNAseq_datasets_for_Deconvolution/2017-01-18}
+#' 
 #' @examples
-#' ref.se <- MouseBulkData()
+#' ref.se <- MouseData()
 #' 
 #' @export
-MouseBulkData <- function(){
+MouseData <- function(){
     version <- "1.0.0"
     .create_se(file.path("mouse.rnaseq", version), 
         assays="normcounts", rm.NA = "none",
