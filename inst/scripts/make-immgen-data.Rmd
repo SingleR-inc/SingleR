@@ -1,6 +1,6 @@
 ---
 title: "Obtaining mouse reference data from the Immunological Genome Project"
-author: "Friederike Duendar"
+author: "Friederike Dündar"
 date: "8/9/2019"
 output: html_document
 ---
@@ -13,8 +13,9 @@ library(BiocStyle)
 knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 ```
 
-Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with normalized expression values from reference data sets such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen).
-These expression data are based on (bulk) RNA-seq or microarrays from purified cell populations; hence, every sample represents the transcriptome of a specific cell type and is well suited to be used as a general training data set for the typical `SingleR` analysis.
+Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with **normalized expression values from reference data sets** such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen).
+These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
+Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical `SingleR` analysis.
 
 For now, we're going to retrieve the processed data from the legacy `SingleR` repository:
 
