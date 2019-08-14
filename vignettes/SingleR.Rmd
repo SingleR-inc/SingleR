@@ -199,7 +199,7 @@ plotScoreHeatmap(pred, clusters=sceG$donor)
 There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project). 
 For more details see the vignette dedicated to the `r Biocpkg("SingleR", vignette = "datasets.html", label="reference datasets")`.
 
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `ImmGenData`, `MouseBulkData`.
+Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `ImmGenData`, `MouseData`.
 Here, we show an example with data from HPCA:
 
 ```{r}
