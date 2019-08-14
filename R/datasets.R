@@ -14,10 +14,9 @@
 #' These 713 samples were processed and normalized as described in Aran, Looney &
 #' Liu et al. (2019) and each sample has been assigned to one of 38 main cell types
 #' and 169 subtypes.
-#' The cell type labels are stored in the colData of the returned \linkS4class{SummarizedExperiment}.
 #'
-#'
-#' @return A \linkS4class{SummarizedExperiment} object.
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Duendar
 #'
@@ -32,23 +31,14 @@
 #' @examples
 #' ref.se <- HumanPrimaryCellAtlasData()
 #'
-#'  \dontrun{
-#' ## use the reference data to predict labels for the cells of your scRNA-seq data
-#' predicted_labels <- SingleR(test = your_SCE,
-#'                            training = assay(ref.se, "normcounts"), 
-#'                            labels = colData(ref.se)$label.main)
-#' }
-#' 
 #' @export
 #' @importFrom SummarizedExperiment rowData
 HumanPrimaryCellAtlasData <- function() {
     version <- "1.0.0"
-    se <- .create_se(file.path("hpca", version),
-                     assays="normcounts", rm.NA = NULL,
-                     has.rowdata = FALSE, has.coldata = TRUE,
-                     has.rowdata=FALSE)
+    .create_se(file.path("hpca", version),
+        assays="normcounts", rm.NA = "none",
+        has.rowdata = FALSE, has.coldata = TRUE)
 }
-
 
 #' Obtain human bulk RNA-seq data from Blueprint and ENCODE
 #'
@@ -71,14 +61,14 @@ HumanPrimaryCellAtlasData <- function() {
 #' The data will be downloaded from ExperimentHub,
 #' returning a \linkS4class{SummarizedExperiment} object for further use.
 #'
-#' @param rm.NA Either one of "rows", "cols", "both", NULL to specify how missing
-#' values should be handled. "rows" will remove genes with at least one missing
-#' value, "cols" will remove samples with at least one missing value. Default:
-#' "rows".
+#' @param rm.NA String specifying how missing values should be handled.
+#' \code{"rows"} will remove genes with at least one missing value, 
+#' \code{"cols"} will remove samples with at least one missing value,
+#' \code{"both"} will remove any gene or sample with at least one missing value,
+#' and \code{"none"} will not perform any removal.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object where \code{assay(..., "normcounts")}
-#' contains the normalized expression values and \code{colData()} can be used to 
-#' extract the cell type labels of every sample.
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Duendar
 #'
@@ -96,23 +86,15 @@ HumanPrimaryCellAtlasData <- function() {
 #' 
 #' @examples
 #' ref.se <- BlueprintEncodeData(rm.NA = "rows")
-#' 
-#' \dontrun{
-#' ## use the reference data to predict labels for the cells of your scRNA-seq data
-#' predicted_labels <- SingleR(test = your_SCE,
-#'                            training = assay(ref.se, "normcounts"), 
-#'                            labels = colData(ref.se)$label.main)
-#' }
+#'
 #' @export
-#' 
-BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")){
+BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
     version <- "1.0.0"
     rm.NA <- match.arg(rm.NA)
-    se <- .create_se(file.path("blueprint_encode", version), 
-                     assays="normcounts", rm.NA = rm.NA,
-                     has.rowdata = FALSE, has.coldata = TRUE)
+    .create_se(file.path("blueprint_encode", version), 
+        assays="normcounts", rm.NA = rm.NA,
+        has.rowdata = FALSE, has.coldata = TRUE)
 }
-
 
 #' Obtain mouse bulk expression data from the Immunologic Genome Project
 #'
@@ -130,9 +112,9 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")){
 #' 
 #' The data will be downloaded from ExperimentHub,
 #' returning a \linkS4class{SummarizedExperiment} object for further use.
-#' @return A \linkS4class{SummarizedExperiment} object where \code{assay(..., "normcounts")}
-#' contains the normalized expression values and \code{colData()} can be used to 
-#' extract the cell type labels of every sample.
+#'
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Duendar
 #' 
@@ -147,21 +129,13 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")){
 #' @examples
 #' ref.se <- ImmGenData()
 #' 
-#' \dontrun{
-#' ## use the reference data to predict labels for the cells of your scRNA-seq data
-#' predicted_labels <- SingleR(test = your_SCE,
-#'                            training = assay(ref.se, "normcounts"), 
-#'                            labels = colData(ref.se)$label.main)
-#' }
 #' @export
-#' 
 ImmGenData <- function(){
     version <- "1.0.0"
-    se <- .create_se(file.path("immgen", version), 
-                     assays="normcounts", rm.NA = NULL,
-                     has.rowdata = FALSE, has.coldata = TRUE)
+    .create_se(file.path("immgen", version), 
+        assays="normcounts", rm.NA = "none",
+        has.rowdata = FALSE, has.coldata = TRUE)
 }
-
 
 #' Obtain mouse bulk expression data of sorted cell populations (RNA-seq)
 #'
@@ -177,9 +151,8 @@ ImmGenData <- function(){
 #' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
 #' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
 #' 
-#' @return A \linkS4class{SummarizedExperiment} object where \code{assay(..., "normcounts")}
-#' contains the normalized expression values and \code{colData()} can be used to 
-#' extract the cell type labels of every sample.
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Duendar
 #' 
@@ -191,61 +164,48 @@ ImmGenData <- function(){
 #' @examples
 #' ref.se <- MouseBulkData()
 #' 
-#' \dontrun{
-#' ## use the reference data to predict labels for the cells of your scRNA-seq data
-#' predicted_labels <- SingleR(test = your_SCE,
-#'                            training = assay(ref.se, "normcounts"), 
-#'                            labels = colData(ref.se)$label.main)
-#' }                  
 #' @export
-#' 
 MouseBulkData <- function(){
     version <- "1.0.0"
-    se <- .create_se(file.path("mouse.rnaseq", version), 
-                     assays="normcounts", rm.NA = NULL,
-                     has.rowdata = FALSE, has.coldata = TRUE)
+    .create_se(file.path("mouse.rnaseq", version), 
+        assays="normcounts", rm.NA = "none",
+        has.rowdata = FALSE, has.coldata = TRUE)
 }
-
 
 #####################################################################
 ### Helper function
 #####################################################################
 
-#' Create a SummarizedExperiment object using data from ExperimentHub
-#' 
-#' @param dataset string indicating the name of the reference data set to be
-#' retrieved. Choices are: c("hpca", "blueprint_encode", "immgen", "mouse.rnaseq")
-#' @param rm.NA indicate how to handle NA's. Valid choices are "rows" (remove
-#' genes with at least one missing value), "cols" (remove samples with at least
-#' one missing value), "both" (remove samples as well as genes that have at least
-#' one missing value, respectively), "none" or NULL.
-#' 
 #' @importFrom ExperimentHub ExperimentHub
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom SummarizedExperiment rowData
-.create_se <- function(dataset = c("hpca", "blueprint_encode", "immgen", "mouse.rnaseq"),
-                       hub = ExperimentHub(), assays="normcounts",
-                       rm.NA = c("rows","cols","both","none"),
-                       has.rowdata=FALSE, has.coldata=TRUE) {
+#' @importFrom BiocFileCache BiocFileCache bfcrpath
+#' @importFrom S4Vectors DataFrame
+.create_se <- function(dataset, hub = ExperimentHub(), assays="normcounts",
+    rm.NA = c("rows","cols","both","none"), has.rowdata=FALSE, has.coldata=TRUE) 
+{
+    rm.NA <- match.arg(rm.NA)
     
     ## TEMPORARY CODE for pulling data directly from github until it is 
     ## available on ExHub =====================================================
-    ref.set <- getReferenceDataset(dataset=dataset)
+    full.url <- sprintf("https://github.com/dviraran/SingleR/blob/master/data/%s.rda?raw=true", dirname(dataset))
+    bfc <- BiocFileCache(ask=FALSE)
+    ref <- bfcrpath(bfc, full.url)
+
+    env <- new.env()
+    load(ref, envir = env)
+    ref.set <- get(dirname(dataset), envir = env)
+
     nrmcnts <- ref.set$data
     colnames(nrmcnts) <- paste(colnames(nrmcnts), 1:ncol(nrmcnts), sep = ".")
     
-    ## handling NA's
-    if(!is.null(rm.NA)){
-        rm.NA <- match.arg(rm.NA)
-        nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
-    }
+    nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
     
-    ## defining colDAta
-    coldata <- S4Vectors::DataFrame(row.names = colnames(nrmcnts),
-                                    label.main = ref.set$main_types,
-                                    label.fine = ref.set$types)
+    coldata <- DataFrame(row.names = colnames(nrmcnts),
+        label.main = ref.set$main_types,
+        label.fine = ref.set$types)
     ref.se <- SummarizedExperiment(assays = list(normcounts = nrmcnts),
-                                   colData = coldata)
+        colData = coldata)
     
     return(ref.se)
     
@@ -257,52 +217,46 @@ MouseBulkData <- function(){
     ## extract normalized values --------
     all.assays <- list()
     for (a in assays) {
-        nrmcnts <- hub[hub$rdatapath==file.path(host, sprintf("%s%s.rds", a, suffix))][[1]]
-        
-        if(!is.null(rm.NA)){
-            rm.NA <- match.arg(rm.NA)
-            nrmcnts <- .rm_NAs(nrmcnts, rm.NA)
-        }
-        all.assays[[a]] <- nrmcnts
+        nrmcnts <- hub[hub$rdatapath==file.path(host, paste0(a, ".rds"))][[1]]
+        all.assays[[a]] <- .rm_NAs(nrmcnts, rm.NA)
     }
     
     ## get metadata ----------------------
     args <- list()
     if (has.coldata) {
-        args$colData <- hub[hub$rdatapath==file.path(host, sprintf("coldata%s.rds", suffix))][[1]]
+        args$colData <- hub[hub$rdatapath==file.path(host, "coldata.rds")][[1]]
     }
     if (has.rowdata) {
-        args$rowData <- hub[hub$rdatapath==file.path(host, sprintf("rowdata%s.rds", suffix))][[1]]
+        args$rowData <- hub[hub$rdatapath==file.path(host, "rowdata.rds")][[1]]
     }
     
     ## make the final SE object ----------
     do.call(SummarizedExperiment, c(list(assays=all.assays), args))
 }
 
-
-#' Handle NAs in expression matrix
-#' 
-#' @param mat matrix of expression values
-#' @param rm.NA choices: "rows", "cols", "both"
+#' @importFrom DelayedMatrixStats rowAnyNAs colAnyNAs
+#' @importFrom DelayedArray DelayedArray
 .rm_NAs <- function(mat, rm.NA = "rows"){
+    # Identify them first before removal, to ensure that 
+    # the same rows are columns are removed with 'both'.
     if(rm.NA == "rows" || rm.NA == "both"){
-        keep_rows <- apply(mat, 1, function(x) all(!is.na(x)))
-        if( length(keep_rows[keep_rows]) > 0){
-            mat <- mat[keep_rows, ]
-        }else{
-            warning("The number of rows (genes) with NAs equals the *total* number of genes. We're going to ignore your wish to eliminate rows with NAs.")
-        }
-        
+        keep_rows <- !rowAnyNAs(DelayedArray(mat))
+    } else {
+        keep_rows <- !logical(nrow(mat))
     }
-    
-    if(rm.NA == "cols" || rm.NA == "both"){
-        keep_cols <- apply(mat, 2, function(x) all(!is.na(x)))
-        if( length(keep_cols[keep_cols]) > 0){
-            mat <- mat[ , keep_cols]
-        }else{
-            warning("The number of columns (samples) with NAs equals the *total* number of samples. We're going to ignore your wish to eliminate columns with NAs.")
-        }
+
+    if (rm.NA=="cols" || rm.NA == "both") {
+        keep_cols <- !colAnyNAs(DelayedArray(mat))
+    } else {
+        keep_cols <- !logical(ncol(mat))
     }
-    
-    return(mat)
+
+    # Avoid making unnecessary copies if possible.
+    if (!all(keep_rows)) {
+        mat <- mat[keep_rows,,drop=FALSE]
+    }
+    if (!all(keep_cols)) {
+        mat <- mat[,keep_cols,drop=FALSE]
+    }
+    mat
 }

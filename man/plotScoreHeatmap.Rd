@@ -6,8 +6,7 @@
 \usage{
 plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
   clusters = NULL, max.labels = 40, normalize = TRUE,
-  cells.order = NULL, order.by.clusters = FALSE, fontsize.row = 9,
-  ...)
+  cells.order = NULL, order.by.clusters = FALSE, ...)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -31,8 +30,6 @@ If set, turns off clustering of columns based on scoring.}
 If set, this takes precedence over \code{cells.order} input.}
 
 \item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
-
-\item{silent}{Logical scalar that specifying whether the plot drawn.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.

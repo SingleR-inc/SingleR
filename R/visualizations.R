@@ -11,12 +11,12 @@
 #' or otherwise variance-stabilized), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param ref.id Integer scalar specifying the reference cell/sample to use.
-#' @param assay.type.sc Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
+#' @param assay.type.test Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
 #' Used if \code{test} is a \linkS4class{SummarizedExperiment}.
-#' @param assay.type.train Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
+#' @param assay.type.ref Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
 #' Used if provided \code{ref} is a \linkS4class{SummarizedExperiment}.
 #'
-#' @return A \link{ggplot} object containing a scatter plot of the cell against a reference.
+#' @return A \link[ggplot2]{ggplot} object containing a scatter plot of the cell against a reference.
 #'
 #' @details 
 #' This function allows a user to manually check how an individual cell compares to reference cells of the same or different type.
@@ -44,12 +44,13 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
-plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.sc = 'logcounts', assay.type.train = 'logcounts') {
+#' @importFrom stats cor
+plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'logcounts', assay.type.ref = 'logcounts') {
     if (is(test, "SummarizedExperiment")) {
-        test <- assay(test, assay.type.sc)
+        test <- assay(test, assay.type.test)
     }
     if (is(ref, "SummarizedExperiment")) {
-        ref <- assay(ref, assay.type.train)
+        ref <- assay(ref, assay.type.ref)
     }
 
     rownames(test) <- tolower(rownames(test))
@@ -83,7 +84,6 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.sc = 'log
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
 #' If set, turns off clustering of columns based on scoring.
-#' @param silent Logical scalar that specifying whether the plot drawn.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -117,7 +117,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.sc = 'log
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters=NULL, max.labels=40, normalize=TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
-    fontsize.row=9, ...)
+    ...)
 {
     # As pheatmap simply must have rownames,
     # otherwise the annotation_col doesn't work.
@@ -164,8 +164,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
 
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
-        clustering_method = 'ward.D2', fontsize_row = fontsize.row,
-        cluster_cols = cluster_cols, ...)
+        clustering_method = 'ward.D2', cluster_cols = cluster_cols, ...)
 
     if (!is.null(clusters)) {
         args$annotation_col <- clusters[order,,drop=FALSE]
