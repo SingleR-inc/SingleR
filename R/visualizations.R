@@ -4,10 +4,10 @@
 #' 
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param test.id Integer scalar or character specifying the index or name of the target cell to use.
+#' @param test.id Integer scalar or string specifying the index or name of the target cell to use.
 #' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}), where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param ref.id Integer scalar or character specifying the index or name of the reference cell/sample to use.
+#' @param ref.id Integer scalar or string specifying the index or name of the reference cell/sample to use.
 #' @param assay.type.test Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
 #' Used if \code{test} is a \linkS4class{SummarizedExperiment}.
 #' @param assay.type.ref Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
@@ -70,11 +70,11 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 #'
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
-#' @param cells.use Integer or character vector specifying the single cells to show.
+#' @param cells.use Integer or string vector specifying the single cells to show.
 #' If \code{NULL}, all cells are presented.
-#' @param labels.use Character vector indicating what labels to show.
+#' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param clusters Character vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
+#' @param clusters String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
@@ -102,19 +102,20 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' # Running the SingleR() example.
 #' example(SingleR, echo=FALSE)
 #'
-#' # Creating the heatmap.
+#' # Creating a heatmap that shows cells showed.
 #' plotScoreHeatmap(pred)
 #'
 #' # Creating a heatmap with clusters.
 #' plotScoreHeatmap(pred, clusters=test$label)
-#' 
-#' #To only show certain labels, you can use labels.use or max.labels
-#' #We can also turn off the normalization with Normalize = FALSE
-#' plotScoreHeatmap(pred, clusters=test$label, labels.use = c("A","B","D"))
-#' plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
+#'
+#' # We can also turn off the normalization with Normalize = FALSE
 #' plotScoreHeatmap(pred, clusters=test$label, normalize = FALSE)
 #' 
-#' #We can pass extra tweaks the heatmap as well
+#' # To only show certain labels, you can use labels.use or max.labels
+#' plotScoreHeatmap(pred, clusters=test$label, labels.use = c("A","B","D"))
+#' plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
+#' 
+#' # We can pass extra tweaks the heatmap as well
 #' plotScoreHeatmap(pred, clusters=test$label, fontsize.row = 9)
 #' plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
 #' 
