@@ -12,13 +12,13 @@
 #' This function provides normalized expression values 713 microarray sampes of 
 #' the Human Primary Cell Atlas (HPCA) (Mabbott et al., 2013).
 #' These 713 samples were processed and normalized as described in Aran, Looney &
-#' Liu et al. (2019) and each sample has been assigned to one of 38 main cell types
-#' and 169 subtypes.
+#' Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
+#' and 157 subtypes.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #'
 #' @references
 #' Mabbott et al. (2013).
@@ -36,7 +36,7 @@
 HumanPrimaryCellAtlasData <- function() {
     version <- "1.0.0"
     .create_se(file.path("hpca", version),
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -67,10 +67,10 @@ HumanPrimaryCellAtlasData <- function() {
 #' \code{"both"} will remove any gene or sample with at least one missing value,
 #' and \code{"none"} will not perform any removal.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #'
 #' @references
 #' The ENCODE Project Consortium (2012).
@@ -92,7 +92,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
     version <- "1.0.0"
     rm.NA <- match.arg(rm.NA)
     .create_se(file.path("blueprint_encode", version), 
-        assays="normcounts", rm.NA = rm.NA,
+        assays="logcounts", rm.NA = rm.NA,
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -113,10 +113,10 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
 #' The data will be downloaded from ExperimentHub,
 #' returning a \linkS4class{SummarizedExperiment} object for further use.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #' 
 #' @references
 #' The Immunological Genome Project (2008).
@@ -133,7 +133,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
 ImmGenData <- function(){
     version <- "1.0.0"
     .create_se(file.path("immgen", version), 
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -151,24 +151,26 @@ ImmGenData <- function(){
 #' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
 #' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
 #' 
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
-#' @author Friederike Duendar
+#' @author Friederike Dündar
 #' 
 #' @references
 #' Benayoun B et al. (2019).
 #' Remodeling of epigenome and transcriptome landscapes with aging in mice reveals widespread induction of inflammatory responses.
 #' \emph{Genome Research}. doi: 10.1101/gr.240093.118
 #' 
+#' Code at: \code{https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT/RNAseq_datasets_for_Deconvolution/2017-01-18}
+#' 
 #' @examples
-#' ref.se <- MouseBulkData()
+#' ref.se <- MouseRNAseqData()
 #' 
 #' @export
-MouseBulkData <- function(){
+MouseRNAseqData <- function(){
     version <- "1.0.0"
     .create_se(file.path("mouse.rnaseq", version), 
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -181,7 +183,7 @@ MouseBulkData <- function(){
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom BiocFileCache BiocFileCache bfcrpath
 #' @importFrom S4Vectors DataFrame
-.create_se <- function(dataset, hub = ExperimentHub(), assays="normcounts",
+.create_se <- function(dataset, hub = ExperimentHub(), assays="logcounts",
     rm.NA = c("rows","cols","both","none"), has.rowdata=FALSE, has.coldata=TRUE) 
 {
     rm.NA <- match.arg(rm.NA)
@@ -212,7 +214,7 @@ MouseBulkData <- function(){
     coldata <- DataFrame(row.names = colnames(nrmcnts),
         label.main = ref.set$main_types,
         label.fine = ref.set$types)
-    ref.se <- SummarizedExperiment(assays = list(normcounts = nrmcnts),
+    ref.se <- SummarizedExperiment(assays = list(logcounts = nrmcnts),
         colData = coldata)
     
     return(ref.se)

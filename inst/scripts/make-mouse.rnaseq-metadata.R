@@ -1,10 +1,10 @@
 write.csv(file="../extdata/metadata-mouse.rnaseq.csv", 
           data.frame(
-              Title = sprintf("Mouse bulk RNA-seq %s", c("normcounts", "colData")), # This can be the exact file name (if self-describing) or a more complete description.
+              Title = sprintf("Mouse bulk RNA-seq %s", c("logcounts", "colData")), # This can be the exact file name (if self-describing) or a more complete description.
               Description = sprintf("%s 358 bulk RNA-seq samples of sorted cell types collected from GEO", 
                                     c("Matrix of normalized expression values from", "Per-sample metadata containing the cell type labels of")),
               RDataPath = file.path("SingleR", "mouse.rnaseq","1.0.0"), 
-              c("normcounts.rds", "coldata.rds"),
+              c("logcounts.rds", "coldata.rds"),
               BiocVersion="3.10", # The first Bioconductor version the resource was made available for.
               Genome=NA, # Can be NA.
               SourceType="RDA", #  Format of original data, e.g., FASTA, BAM, BigWig, etc. ‘getValidSourceTypes()’ for currently acceptable values
