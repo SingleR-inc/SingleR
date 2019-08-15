@@ -22,7 +22,6 @@ void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collecte
     std::sort(collected.begin(), collected.end());
 
     // Computing tied ranks. 
-    double accumulated_rank=0;
     size_t cur_rank=0;
     auto cIt=collected.begin();
     outgoing.clear();
