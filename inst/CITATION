@@ -1,0 +1,23 @@
+bibentry(
+    bibtype = "article",
+    author = c(
+        person("Dvir", "Aran"), 
+        person(c("Agnieszka", "P."), "Looney"), 
+        person("Leqian", "Liu"), 
+        person("Esther", "Wu"), 
+        person("Valerie", "Fong"), 
+        person("Austin", "Hsu"), 
+        person("Suzanna", "Chak"),
+        person(c("Ram", "P."), "Naikawadi"), 
+        person(c("Paul", "J."), "Wolters"),
+        person(c("Adam", "R."), "Abate"),
+        person(c("Atul", "J."), "Butte"),
+        person("Mallar", "Bhattacharya")),
+    title="Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage",
+    journal="Nat. Immunol.",
+    year="2019",
+    volume="20",
+    pages="163-172",
+    doi = "10.1038/s41590-018-0276-y"
+)
+
