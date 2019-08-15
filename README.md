@@ -101,6 +101,6 @@ Using broad labels can reduce the time to under 15 minutes, though run times wil
 ## Contributors
 
 SingleR was originally developed by Dvir Aran. 
-This refactor was initiated by Aaron Lun, with additional contributions from Daniel Bunis, Friederike Düendar, and Jared Andrews.
+This refactor was initiated by Aaron Lun, with additional contributions from Daniel Bunis, Friederike Dündar, and Jared Andrews.
 
 [Issues](https://github.com/LTLA/SingleR/issues) and [pull requests](https://github.com/LTLA/SingleR/pulls) are welcome.

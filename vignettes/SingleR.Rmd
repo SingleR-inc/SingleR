@@ -38,7 +38,7 @@ Specifically, for each test cell:
 Automatic annotation provides a convenient way of transferring biological knowledge across datasets.
 In this manner, the burden of interpreting clusters and defining marker genes only has to be done once.
 
-`SingleR` is workflow/package agnostic - as long as you can provide it a normalized count matrix, you can use it.
+`r Biocpkg("SingleR")` is workflow/package agnostic - as long as you can provide it a normalized count matrix, you can use it.
 
 # Demonstration on pancreas data
 
