@@ -15,7 +15,7 @@
 #' Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
 #' and 157 subtypes.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Dündar
@@ -36,7 +36,7 @@
 HumanPrimaryCellAtlasData <- function() {
     version <- "1.0.0"
     .create_se(file.path("hpca", version),
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -67,7 +67,7 @@ HumanPrimaryCellAtlasData <- function() {
 #' \code{"both"} will remove any gene or sample with at least one missing value,
 #' and \code{"none"} will not perform any removal.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Dündar
@@ -92,7 +92,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
     version <- "1.0.0"
     rm.NA <- match.arg(rm.NA)
     .create_se(file.path("blueprint_encode", version), 
-        assays="normcounts", rm.NA = rm.NA,
+        assays="logcounts", rm.NA = rm.NA,
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -113,7 +113,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
 #' The data will be downloaded from ExperimentHub,
 #' returning a \linkS4class{SummarizedExperiment} object for further use.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Dündar
@@ -133,7 +133,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none")) {
 ImmGenData <- function(){
     version <- "1.0.0"
     .create_se(file.path("immgen", version), 
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -151,7 +151,7 @@ ImmGenData <- function(){
 #' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
 #' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
 #' 
-#' @return A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+#' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 #'
 #' @author Friederike Dündar
@@ -164,13 +164,13 @@ ImmGenData <- function(){
 #' Code at: \code{https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT/RNAseq_datasets_for_Deconvolution/2017-01-18}
 #' 
 #' @examples
-#' ref.se <- MouseData()
+#' ref.se <- MouseRNAseqData()
 #' 
 #' @export
-MouseData <- function(){
+MouseRNAseqData <- function(){
     version <- "1.0.0"
     .create_se(file.path("mouse.rnaseq", version), 
-        assays="normcounts", rm.NA = "none",
+        assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
@@ -183,7 +183,7 @@ MouseData <- function(){
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom BiocFileCache BiocFileCache bfcrpath
 #' @importFrom S4Vectors DataFrame
-.create_se <- function(dataset, hub = ExperimentHub(), assays="normcounts",
+.create_se <- function(dataset, hub = ExperimentHub(), assays="logcounts",
     rm.NA = c("rows","cols","both","none"), has.rowdata=FALSE, has.coldata=TRUE) 
 {
     rm.NA <- match.arg(rm.NA)
@@ -214,7 +214,7 @@ MouseData <- function(){
     coldata <- DataFrame(row.names = colnames(nrmcnts),
         label.main = ref.set$main_types,
         label.fine = ref.set$types)
-    ref.se <- SummarizedExperiment(assays = list(normcounts = nrmcnts),
+    ref.se <- SummarizedExperiment(assays = list(logcounts = nrmcnts),
         colData = coldata)
     
     return(ref.se)

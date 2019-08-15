@@ -32,14 +32,14 @@ each sample/cell.
 
 Extract the normalized expression matrix:
 
-```{r get_normcounts}
-normcounts <- ref.set$data
+```{r get_logcounts}
+logcounts <- ref.set$data
 ```
 
 Extract cell labels, which represent the metadata:
 
 ```{r get_coldata}
-coldata <- S4Vectors::DataFrame(row.names = colnames(normcounts),
+coldata <- S4Vectors::DataFrame(row.names = colnames(logcounts),
                        label.main = ref.set$main_types,
                        label.fine = ref.set$types)
 ```
@@ -51,7 +51,7 @@ path <- file.path("SingleR", dataset)
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
 ## saving counts
-saveRDS(normcounts, file = file.path(path, "normcounts.rds", "1.0.0"))
+saveRDS(logcounts, file = file.path(path, "logcounts.rds", "1.0.0"))
 
 ## saving metadata
 saveRDS(coldata, file = file.path(path, "coldata.rds", "1.0.0") )

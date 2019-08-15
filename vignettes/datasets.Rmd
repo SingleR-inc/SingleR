@@ -37,18 +37,18 @@ The bulk RNA-seq and microarray data sets of the first three reference data sets
 |`HumanPrimaryCellAtlasData()`|	human	| 713	| microarrays of sorted cell populations	| 37 |	157 |
 | `BlueprintEncodeData()` |	human	| 259	| RNA-seq |	24 | 43 |
 |`ImmGenData()`|	mouse	| 830	 | microarrays of sorted cell populations|	20|	253|
-|`MouseData()`|	mouse	|358	|RNA-seq|	18	|28|
+|`MouseRNAseqData()`|	mouse	|358	|RNA-seq|	18	|28|
 
 # Using a reference data set as training data with `SingleR`
 
 If you want to use either one of these reference data sets as your training data 
 set with the main `SingleR` function, you can locally cache the normalized expression
 values and cell type labels with the respective functions shown here.
-Each data set has a dedicated function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `ImmGenData`, `MouseData`.
+Each data set has a dedicated function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `ImmGenData`, `MouseRNAseqData`.
 
 The data retrieval functions will return a single R object of the `SummarizedExperiment` 
 class with the normalized expression values stored in a gene-by-sample matrix in 
-the `assay` slot (`"normcounts"`) and the sample labels as part of `colData(SE)`.
+the `assay` slot (`"logcounts"`) and the sample labels as part of `colData(SE)`.
 The general usage is shown here for data from HPCA:
 
 ```{r}
@@ -67,7 +67,7 @@ hESCs <- logNormCounts(hESCs)
 
 ## determine labels for the scRNA-seq data at hand using the reference data 
 pred.hpca <- SingleR(test = hESCs, ref = hpca.se, 
-    labels = hpca.se$label.fine, assay.type.ref = "normcounts")
+    labels = hpca.se$label.fine, assay.type.ref = "logcounts")
 ```
 
 # Mouse reference data
