@@ -7,7 +7,7 @@
 ImmGenData()
 }
 \value{
-A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 }
 \description{
@@ -39,5 +39,5 @@ Processing described in Aran, Looney & Liu et al. (2019).
 \emph{Nature Immunology} 20, 163–172. doi: 10.1038/s41590-018-0276-y
 }
 \author{
-Friederike Duendar
+Friederike Dündar
 }

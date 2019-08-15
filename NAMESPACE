@@ -3,7 +3,7 @@
 export(BlueprintEncodeData)
 export(HumanPrimaryCellAtlasData)
 export(ImmGenData)
-export(MouseBulkData)
+export(MouseRNAseqData)
 export(SingleR)
 export(classifySingleR)
 export(plotCellVsReference)

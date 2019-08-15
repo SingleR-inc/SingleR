@@ -8,24 +8,21 @@ plotCellVsReference(test, test.id, ref, ref.id,
   assay.type.test = "logcounts", assay.type.ref = "logcounts")
 }
 \arguments{
-\item{test}{Numeric matrix of single-cell expression values (usually log-transformed
-or otherwise variance-stabilized), where rows are genes and columns are cells.
+\item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{test.id}{Integer scalar specifying the index of the target cell to use.
-Alternatively, a string containing the name of the cell.}
+\item{test.id}{Integer scalar or string specifying the index or name of the target cell to use.}
 
-\item{ref}{Numeric matrix of reference dataset expression values (usually log-transformed
-or otherwise variance-stabilized), where rows are genes and columns are cells.
+\item{ref}{A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}), where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{ref.id}{Integer scalar specifying the reference cell/sample to use.}
+\item{ref.id}{Integer scalar or string specifying the index or name of the reference cell/sample to use.}
 
 \item{assay.type.test}{Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.
 Used if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
 \item{assay.type.ref}{Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.
-Used if provided \code{ref} is a \linkS4class{SummarizedExperiment}.}
+Used if \code{ref} is a \linkS4class{SummarizedExperiment}.}
 }
 \value{
 A \link[ggplot2]{ggplot} object containing a scatter plot of the cell against a reference.

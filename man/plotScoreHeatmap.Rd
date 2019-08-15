@@ -11,13 +11,13 @@ plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
 
-\item{cells.use}{Integer or character vector specifying the single cells to show.
+\item{cells.use}{Integer or string vector specifying the single cells to show.
 If \code{NULL}, all cells are presented.}
 
-\item{labels.use}{Character vector indicating what labels to show.
+\item{labels.use}{String vector indicating what labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{clusters}{Character vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.}
+\item{clusters}{String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.}
 
 \item{max.labels}{Integer scalar specifying the maximum number of labels to show.}
 
@@ -52,11 +52,22 @@ Note that this transformation is done \emph{after} the choice of the top \code{m
 # Running the SingleR() example.
 example(SingleR, echo=FALSE)
 
-# Creating the heatmap.
+# Creating a heatmap that shows cells showed.
 plotScoreHeatmap(pred)
 
 # Creating a heatmap with clusters.
 plotScoreHeatmap(pred, clusters=test$label)
+
+# We can also turn off the normalization with Normalize = FALSE
+plotScoreHeatmap(pred, clusters=test$label, normalize = FALSE)
+
+# To only show certain labels, you can use labels.use or max.labels
+plotScoreHeatmap(pred, clusters=test$label, labels.use = c("A","B","D"))
+plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
+
+# We can pass extra tweaks the heatmap as well
+plotScoreHeatmap(pred, clusters=test$label, fontsize.row = 9)
+plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
 
 }
 \author{

@@ -7,7 +7,7 @@
 HumanPrimaryCellAtlasData()
 }
 \value{
-A \linkS4class{SummarizedExperiment} object with a \code{"normcounts"} assay
+A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 containing the normalized expression values and cell type labels in the \code{\link{colData}}.
 }
 \description{
@@ -19,8 +19,8 @@ returning a \linkS4class{SummarizedExperiment} object for further use.
 This function provides normalized expression values 713 microarray sampes of 
 the Human Primary Cell Atlas (HPCA) (Mabbott et al., 2013).
 These 713 samples were processed and normalized as described in Aran, Looney &
-Liu et al. (2019) and each sample has been assigned to one of 38 main cell types
-and 169 subtypes.
+Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
+and 157 subtypes.
 }
 \examples{
 ref.se <- HumanPrimaryCellAtlasData()
@@ -35,5 +35,5 @@ Processing described in Aran, Looney & Liu et al. (2019).
 \emph{Nature Immunology} 20, 163–172. doi: 10.1038/s41590-018-0276-y
 }
 \author{
-Friederike Duendar
+Friederike Dündar
 }
