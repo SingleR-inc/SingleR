@@ -56,18 +56,20 @@ library(SingleR)
 hpca.se <- HumanPrimaryCellAtlasData()
 
 ## example scRNA-seq data
+library(scRNAseq)
 hESCs <- LaMannoBrainData('human-es')
 hESCs <- hESCs[,1:100] # for demo-purposes only!
 
 ## focus on genes that are common between your scRNA-seq and the reference data
+library(scater)
 common <- intersect(rownames(hESCs), rownames(hpca.se))
 hpca.se <- hpca.se[common,]
 hESCs <- hESCs[common,]
 hESCs <- logNormCounts(hESCs)
 
 ## determine labels for the scRNA-seq data at hand using the reference data 
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, 
-    labels = hpca.se$label.fine, assay.type.ref = "logcounts")
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.main)
+table(pred.hpca$labels)
 ```
 
 # Mouse reference data

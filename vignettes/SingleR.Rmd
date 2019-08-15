@@ -235,8 +235,7 @@ For more details about the individual cell type labels available for the differe
 For our example, we will use the more specific fine-grained cell type labels.
 
 ```{r}
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, 
-    labels = hpca.se$label.fine, assay.type.ref="logcounts")
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.fine)
 table(pred.hpca$labels)
 ```
 
