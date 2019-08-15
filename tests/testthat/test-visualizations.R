@@ -57,9 +57,9 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
-    expect_s3_class(plotScoreHeatmap(results = pred, fontsize.row = 5), "pheatmap")
 })
 
 test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHeatmap.", {
     expect_s3_class(plotScoreHeatmap(results = pred, cutree_col = 3), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(results = pred, fontsize.row = 5), "pheatmap")
 })
