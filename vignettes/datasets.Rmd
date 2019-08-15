@@ -16,7 +16,7 @@ vignette: >
 ---
 
 ```{r, echo=FALSE, results="hide", message=FALSE}
-knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE, eval=FALSE)
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 library(BiocStyle)
 ```
 
@@ -36,8 +36,8 @@ The bulk RNA-seq and microarray data sets of the first three reference data sets
 |------------------|----------|----------|-------------|----------------------|------------|
 |`HumanPrimaryCellAtlasData()`|	human	| 713	| microarrays of sorted cell populations	| 37 |	157 |
 | `BlueprintEncodeData()` |	human	| 259	| RNA-seq |	24 | 43 |
-|`ImmGenData`|	mouse	| 830	 | microarrays of sorted cell populations|	20|	253|
-|`MouseData`|	mouse	|358	|RNA-seq|	18	|28|
+|`ImmGenData()`|	mouse	| 830	 | microarrays of sorted cell populations|	20|	253|
+|`MouseData()`|	mouse	|358	|RNA-seq|	18	|28|
 
 # Using a reference data set as training data with `SingleR`
 
