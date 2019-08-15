@@ -1,6 +1,6 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 0.99.0
+Version: 0.99.1
 Date: 2019-08-14
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
@@ -48,8 +48,7 @@ biocViews:
     Transcriptomics, 
     Classification, 
     Clustering,
-    Annotation,
-    ExperimentHub
+    Annotation
 SystemRequirements: C++11
 VignetteBuilder: knitr
 Encoding: UTF-8

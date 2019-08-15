@@ -1,63 +1,106 @@
 # SingleR - Single-cell Recognition
 
-Recent advances in single cell RNA-seq (scRNA-seq) have enabled an unprecedented level of granularity in characterizing gene expression changes in disease models. Multiple single cell analysis methodologies have been developed to detect gene expression changes and to cluster cells by similarity of gene expression. However, the classification of clusters by cell type relies heavily on known marker genes, and the annotation of clusters is performed manually. This strategy suffers from subjectivity and limits adequate differentiation of closely related cell subsets. Here, we present SingleR, a novel computational method for unbiased cell type recognition of scRNA-seq. SingleR leverages reference transcriptomic datasets of pure cell types to infer the cell of origin of each of the single cells independently. SingleR’s annotations combined with Seurat, a processing and analysis package designed for scRNA-seq, provide a powerful tool for the investigation of scRNA-seq data. We developed an R package to generate annotated scRNA-seq objects, that can then use the SingleR web tool for visualization and further analysis of the data – <http://comphealth.ucsf.edu/SingleR>.
+Recent advances in single cell RNA-seq (scRNA-seq) have enabled an unprecedented level of granularity in characterizing gene expression changes in disease models. 
+Multiple single cell analysis methodologies have been developed to detect gene expression changes and to cluster cells by similarity of gene expression. 
+However, the classification of clusters by cell type relies heavily on known marker genes, and the annotation of clusters is performed manually. 
+This strategy suffers from subjectivity and limits adequate differentiation of closely related cell subsets. 
+Here, we present SingleR, a novel computational method for unbiased cell type recognition of scRNA-seq. 
+SingleR leverages reference transcriptomic datasets of pure cell types to infer the cell of origin of each of the single cells independently. 
 
 For more informations please refer to the manuscript: [Aran, Looney, Liu et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage. Nature Immunology (2019)](https://www.nature.com/articles/s41590-018-0276-y)
 
-# Install
+## Install
 
 ```R
-devtools::install_github('dviraran/SingleR')
-# this might take long, though mostly because of the installation of Seurat.
+devtools::install_github('LTLA/SingleR')
 ```
 
-# Updates
+## Updates
 
-**12.18.2018**: The SingleR browser has been upgraded allowing to use datasets with >100K single-cells. In addition, to make it more user friendly, the object used for SingleR has been upgraded as well to an S4 object. The web browser only accepts the new S4 objects. 
+**08.14.2019**
+This repository contains a simplified, more performant version of `SingleR`. 
+It is currently in the process of being added to Bioconductor. 
+The original repository can be found [here](https://github.com/dviraran/SingleR). 
+This version does not support the browser application that accompanied the original version.
 
-However, the functions in the package (outside of the browser) have not been yet been modified to work with new object. Thus, to use the browser, please convert the SingleR object (the object created by the CreateSingleR functions) to the S4 object using the following code:
+## Usage
 
-```R
-singler.new = convertSingleR2Browser(singler)
-saveRDS(singler.new,file=paste0(singler.new@project.name,'.rds')
-```
+The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels.
+The package directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
+There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project).
+More details can be found in the datasets vignette.
 
-The new SingleR S4 object simlifies the access SingleR annotations and allows multipe identity columns (orig.ident) and clustering columns. See ?'SingleR-class' for more details.
+Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `ImmGenData()`, `MouseBulkData()`.
+Here, we show an example with data from HPCA:
 
-**11.6.2018**: The Seurat team has roled out Seurat version 3.0 with many changes to the function names and variables. It is important to note that SingleR is independent of Seurat, and only requires xy representation of the single-cells, which can be obtained by any function. However, SingleR provides wrapper functions to streamline the analysis with Seuart which are affected by these changes. SingleR is now updated to run with Seurat 3.0, but it is still in beta mode. 
-
-Best practice is to create the single-cell object first. Then, create the SingleR object with the same cells used in the single-cell object (after filtering low quality cells). Finally, copy to relevant fields to the SingleR object. The new t-SNE representations are in 
-`sc@reductions$tsne@cell.embeddings`.
-
-# Usage
 
 ```R
 library(SingleR)
-
-# Simplest use is running the wrapper function that creates both a SingleR and Seurat object:
-
-# counts.file maybe a tab delimited text file, 10X directory or a matrix. annot is a tab delimited 
-# text file or a data.frame with the original identities. normalize.gene.length should be true if 
-# the data comes from a full-length platform. min.genes, min.cells, npca and regress.out are passed 
-# to Seurat to create a Seurat object object:
-singler = CreateSinglerSeuratObject(counts.file, annot, project.name,
-  min.genes = 500, technology, species = "Human" (or "Mouse"), citation,
-  normalize.gene.length = F, min.cells = 2, npca = 10
-  regress.out = "nUMI", reduce.seurat.object = T)
-
-# The object can then be saved and uploaded to the SingleR web-app for further analysis and visualization or using functions available in the SingleR package (see vignette).
-save(singler,file=paste0(project.name,'.RData')
+hpca.se <- HumanPrimaryCellAtlasData()
 ```
 
-For more details on creating a SingleR object see [SingleR - create object](http://comphealth.ucsf.edu/SingleR/SingleR_create.html).
+The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
+To illustrate this, we will use a hESC dataset from the `scRNAseq` pacakge, subsetted for the sake of speed.
 
-For more details about the SingleR method see [SingleR Supplementary Information 1](http://comphealth.ucsf.edu/SingleR/SupplementaryInformation1.html).
+```R
+library(scRNAseq)
+library(scater)
 
-For examples of SingleR usage see [SingleR Supplementary Information 2](http://comphealth.ucsf.edu/SingleR/SupplementaryInformation2.html).
+hESCs <- LaMannoBrainData('human-es')
+hESCs <- hESCs[,1:100] # for demo-purposes only!
 
-The fine-tuning process of SingleR may take very long, and in the current setting is not feasible for large datasets. Thus, for datasets with tens of thousands of cells it is recommended to run SingleR on subsets of the full data and then combine them together. See an example of analyzing 242,533 from the [Microwell-Seq Mouse Cell Atlas](http://comphealth.ucsf.edu/SingleR/SingleR.MCA.html).
+# Grab the common genes between the sets.
+common <- intersect(rownames(hESCs), rownames(hpca.se))
+hpca.se <- hpca.se[common,]
+hESCs <- hESCs[common,]
 
-# Contributors
+# Test and reference sets should always be log normalized. The included reference sets are already normalized. 
+hESCs <- logNormCounts(hESCs)
+```
 
-SingleR was developed by Dvir Aran. Please contact Dvir Aran: dvir.aran at ucsf edu for any questions or suggestions.
+The reference data sets all come with two sets of cell labels, `label.main` and `label.fine`. 
+The "main" labels tend to be less fine-grained than the "fine" labels, e.g., instead of specifying different subsets of T cells, the main labels will lump them all together under the label "T cells". 
+For our example, we will use the more specific fine-grained cell type labels.
 
+```R
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, 
+    labels = hpca.se$label.fine, assay.type.ref = "normcounts")
+table(pred.hpca$labels)
+```
+
+We can now visualize our results via `plotScoreHeatmap()`, which visualizes the scores for all cells across all reference labels.
+This allows users to inspect the confidence of the predicted labels across the dataset.
+
+```R
+plotScoreHeatmap(pred.hpca)
+```
+
+This is the most basic use of `SingleR()`, more advanced examples can be found in the vignette.
+
+### Usage with Seurat/SingleCellExperiment objects
+
+`SingleR()` is made to be workflow/package agnostic - if you can get a matrix of normalized counts, you can use it.
+`SingleCellExperiment` objects can be used directly. 
+`Seurat` objects can be converted to `SingleCellExperiment` objects via Seurat's `as.SingleCellExperiment()` function or their normalized counts can be retrieved via `GetAssayData` or `FetchData`.
+
+`SingleR` results labels can be easily added back to the metadata of these objects as well:
+
+```R
+seurat.obj[["SingleR.labels"]] <- singler.results$labels
+
+# Or if `method="cluster"` was used:
+seurat.obj[["SingleR.cluster.labels"]] <- 
+        singler.results$labels[match(seurat.obj@meta.data[["my.input.clusters"]], singler.results$clusts)]
+```
+
+## Scalability
+
+`SingleR` performs well on large numbers of cells - annotating 100k cells with fine-grain labels typically takes under an hour using a single processing core. 
+Using broad labels can reduce the time to under 15 minutes, though run times will vary between datasets and the reference dataset used.
+
+## Contributors
+
+SingleR was originally developed by Dvir Aran. 
+This refactor was initiated by Aaron Lun, with additional contributions from Daniel Bunis, Friederike Dündar, and Jared Andrews.
+
+[Issues](https://github.com/LTLA/SingleR/issues) and [pull requests](https://github.com/LTLA/SingleR/pulls) are welcome.
