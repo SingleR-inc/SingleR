@@ -8,7 +8,8 @@ HumanPrimaryCellAtlasData()
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
-containing the normalized expression values and cell type labels in the \code{\link{colData}}.
+containing the log-normalized expression values, along with cell type labels in the 
+\code{\link{colData}}.
 }
 \description{
 Download and cache the normalized expression values of the data stored in
@@ -16,9 +17,9 @@ the Human Primary Cell Atlas. The data will be downloaded from ExperimentHub,
 returning a \linkS4class{SummarizedExperiment} object for further use.
 }
 \details{
-This function provides normalized expression values 713 microarray sampes of 
+This function provides normalized expression values 713 microarray samples of 
 the Human Primary Cell Atlas (HPCA) (Mabbott et al., 2013).
-These 713 samples were processed and normalized as described in Aran, Looney &
+These 713 samples were processed and normalized as described in Aran, Looney and 
 Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
 and 157 subtypes.
 }
@@ -27,12 +28,13 @@ ref.se <- HumanPrimaryCellAtlasData()
 
 }
 \references{
-Mabbott et al. (2013).
-An expression atlas of human primary cells: Inference of gene function from coexpression networks.
-\emph{BMC Genomics}. doi: 10.1186/1471-2164-14-632
+Mabbott NA et al. (2013).
+An expression atlas of human primary cells: inference of gene function from coexpression networks.
+\emph{BMC Genomics} 14, Article 632. 
 
-Processing described in Aran, Looney & Liu et al. (2019). 
-\emph{Nature Immunology} 20, 163–172. doi: 10.1038/s41590-018-0276-y
+Aran D, Looney AP, Liu L et al. (2019). 
+Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage.
+\emph{Nat. Immunol.} 20, 163–172.
 }
 \author{
 Friederike Dündar

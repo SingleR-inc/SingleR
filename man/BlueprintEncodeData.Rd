@@ -15,7 +15,8 @@ and \code{"none"} will not perform any removal.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
-containing the normalized expression values and cell type labels in the \code{\link{colData}}.
+containing the log-normalized expression values, along with cell type labels in the 
+\code{\link{colData}}.
 }
 \description{
 Download and cache the normalized expression values of 259 RNA-seq samples of
@@ -30,7 +31,7 @@ cells (Martens and Stunnenberg, 2013; The ENCODE Consortium, 2012).
  ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types.
  Altogether, 259 samples with 43 cell types.
 
-The samples were processed and normalized as described in Aran, Looney &
+The samples were processed and normalized as described in Aran, Looney and
 Liu et al. (2019); i.e. the raw RNA-seq counts were downloaded from Blueprint
 and ENCODE in 2016 and normalized via edgeR (TPMs).
 
@@ -44,14 +45,15 @@ ref.se <- BlueprintEncodeData(rm.NA = "rows")
 \references{
 The ENCODE Project Consortium (2012).
 An integrated encyclopedia of DNA elements in the human genome.
-\emph{Nature}. doi: 10.1038/nature11247
+\emph{Nature} 489, pages 57–74.
 
-Martens & Stunnenberg (2013). 
-BLUEPRINT: Mapping human blood cell epigenomes.
-\emph{Haematologica}. doi: 10.3324/haematol.2013.094243
+Martens JHA and Stunnenberg HG (2013). 
+BLUEPRINT: mapping human blood cell epigenomes.
+\emph{Haematologica} 98, 1487–1489.
 
-Processing described in Aran, Looney & Liu et al. (2019). 
-\emph{Nature Immunology} 20, 163–172. doi: 10.1038/s41590-018-0276-y
+Aran D, Looney AP, Liu L et al. (2019). 
+Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage.
+\emph{Nat. Immunol.} 20, 163–172.
 }
 \author{
 Friederike Dündar

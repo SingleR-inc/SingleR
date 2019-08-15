@@ -35,6 +35,11 @@
 #' The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
 #' If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
 #' 
+#' @references
+#' Aran D, Looney AP, Liu L et al. (2019).
+#' Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage.
+#' \emph{Nat. Immunology} 20, 163–172.
+#'
 #' @author Aaron Lun, based on code by Dvir Aran.
 #' @examples
 #' ###########################################

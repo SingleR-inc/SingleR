@@ -106,6 +106,11 @@ pred2 <- SingleR(test, sce, labels=sce$label,
 table(predicted=pred2$labels, truth=rownames(pred2))
 
 }
+\references{
+Aran D, Looney AP, Liu L et al. (2019).
+Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage.
+\emph{Nat. Immunology} 20, 163–172.
+}
 \author{
 Aaron Lun, based on code by Dvir Aran.
 }

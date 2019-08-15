@@ -8,7 +8,8 @@ MouseRNAseqData()
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
-containing the normalized expression values and cell type labels in the \code{\link{colData}}.
+containing the log-normalized expression values, along with cell type labels in the 
+\code{\link{colData}}.
 }
 \description{
 Download and cache the normalized expression values of 358 bulk RNA-seq samples
@@ -31,9 +32,9 @@ ref.se <- MouseRNAseqData()
 \references{
 Benayoun B et al. (2019).
 Remodeling of epigenome and transcriptome landscapes with aging in mice reveals widespread induction of inflammatory responses.
-\emph{Genome Research}. doi: 10.1101/gr.240093.118
+\emph{Genome Res.} 29, 697-709.
 
-Code at: \code{https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT/RNAseq_datasets_for_Deconvolution/2017-01-18}
+Code at \url{https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT/RNAseq_datasets_for_Deconvolution/2017-01-18}
 }
 \author{
 Friederike Dündar
