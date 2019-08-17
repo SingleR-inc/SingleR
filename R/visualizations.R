@@ -75,8 +75,11 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
+#' @param show.pruned Logical indicated whether prune.calls should be added as a column annotation
+#' @param prune.calls Logical vector, the output of \code{\link{pruneScores}}.  This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the SingleR.results dataframe
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
+#' @param cube.normalized Logical, TRUE by default, specifying whether scores of each cell are cubed after being normalized between [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
@@ -123,7 +126,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters=NULL, max.labels=40, normalize=TRUE,
+    clusters = NULL, show.pruned = TRUE, prune.calls,
+    max.labels = 40, normalize = TRUE, cube.normalized = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     ...)
 {
@@ -150,7 +154,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         mmax <- rowMaxs(scores)
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
-        scores <- scores^3
+        if (cube.normalized) { scores <- scores^3 }
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
@@ -159,11 +163,11 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Determining how to order the cells. 
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
-        clusters <- data.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
+        # clusters <- data.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
     }
     cluster_cols <- FALSE
-    if (order.by.clusters && !is.null(clusters)) {
-        order <- order(clusters$Clusters)
+    if (order.by.clusters & !is.null(clusters)) {
+        order <- order(clusters)#$Clusters)
     } else if (!is.null(cells.order)){
         order <- cells.order
     } else {
@@ -173,10 +177,14 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
         clustering_method = 'ward.D2', cluster_cols = cluster_cols, ...)
-
-    if (!is.null(clusters)) {
-        args$annotation_col <- clusters[order,,drop=FALSE]
-    }
+    
+    #Set Annotations
+    if (!is.null(args$annotation_col)) {args$annotation_col <- args$annotation_col[colnames(scores),,drop=FALSE]}
+    if (is.null(args$annotation_col) & (!is.null(clusters) | show.pruned)) {args$annotation_col <- data.frame(row.names = colnames(scores))}
+    if(!is.null(clusters)) {args$annotation_col$Clusters <- clusters[order]}
+    if(show.pruned) {
+      names(prune.calls) <- colnames(scores) # REMOVE after prune.scores added to results.
+      args$annotation_col$pruned <- prune.calls[colnames(scores)[order]]} # CHANGE to results[colnames(scores)[order],]$pruned after added.
 
     do.call(pheatmap::pheatmap, args)
 }
