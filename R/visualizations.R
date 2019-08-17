@@ -145,6 +145,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (!is.null(labels.use)) {
         scores <- scores[,labels.use]
     }
+    if (show.pruned) {                         # REMOVE after prune.scores added to results.
+        names(prune.calls) <- rownames(scores) # REMOVE after prune.scores added to results.
+    }                                          # REMOVE after prune.scores added to results.
 
     # NOTE: calculation of 'm' before normalization is deliberate.
     m <- rowMaxs(scale(t(scores)))
@@ -183,8 +186,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (is.null(args$annotation_col) & (!is.null(clusters) | show.pruned)) {args$annotation_col <- data.frame(row.names = colnames(scores))}
     if(!is.null(clusters)) {args$annotation_col$Clusters <- clusters[order]}
     if(show.pruned) {
-      names(prune.calls) <- colnames(scores) # REMOVE after prune.scores added to results.
-      args$annotation_col$pruned <- prune.calls[colnames(scores)[order]]} # CHANGE to results[colnames(scores)[order],]$pruned after added.
+        args$annotation_col$pruned <- prune.calls[colnames(scores)[order]]} # CHANGE to results[colnames(scores)[order],]$pruned after added.
 
     do.call(pheatmap::pheatmap, args)
 }
