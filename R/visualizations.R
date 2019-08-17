@@ -165,11 +165,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Determining how to order the cells. 
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
-        # clusters <- data.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
     }
     cluster_cols <- FALSE
     if (order.by.clusters & !is.null(clusters)) {
-        order <- order(clusters)#$Clusters)
+        order <- order(clusters)
     } else if (!is.null(cells.order)){
         order <- cells.order
     } else {
