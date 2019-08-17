@@ -1,5 +1,5 @@
 # Tests for visualization functions
-# library(SingleR); library(testthat); source("setup.R"); source("test-visualizations.R")
+# library(SingleR); library(testthat); source("../GitHub/SingleR/tests/testthat/setup.R"); source("../GitHub/SingleR/tests/testthat/test-visualizations.R")
 
 colnames(test) <- sprintf("cell_%i", seq_len(ncol(test)))
 pred <- SingleR(test=test, ref=training, labels=training$label, genes="de")
@@ -45,6 +45,7 @@ test_that("we can produce expression comparison scatterplots with plotCellVsRefe
 test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, normalize = FALSE), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(results = pred, cube.normalize = FALSE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, cells.use = 1:50), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, cells.use = rownames(pred)[1:50]), "pheatmap")
