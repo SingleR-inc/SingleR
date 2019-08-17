@@ -2,8 +2,9 @@
 #'
 #' Remove low-quality assignments based on the cell-label score matrix returned by \code{\link{classifySingleR}}.
 #'
-#' @param scores A matrix of scores per cell (row) and label (column) generated during assignment by \code{\link{classifySingleR}}.
-#' @param min.diff Numeric scalar specifying the minimum difference of each cell's maximum score from the median score.
+#' @param scores SingleR output, or a Matrix of scores per cell (row) and label (column) generated during assignment by \code{\link{classifySingleR}}.
+#' @param min.diff.vs.median Numeric scalar specifying the minimum difference of each cell's maximum score from the median score.
+#' @param min.percent.diff.vs.next Numeric scalar specifying the minimum percent difference between the best score and the next best score.
 #' @param nmads Numeric scalar specifying the number of MADs to use to define cells with low outlier scores per label.
 #' 
 #' @return A logical vector specifying which assignments should be ignored.
@@ -62,10 +63,15 @@
 #' @importFrom DelayedMatrixStats rowMedians 
 #' @importFrom DelayedArray DelayedArray rowMaxs
 #' @importFrom stats median mad
-pruneScores <- function(scores, min.diff=0.05, nmads=3) {
+pruneScores <- function(scores, min.diff.vs.median = 0.05, nmads=3, min.percent.diff.vs.next = 0.05) {
+    if (is(scores, "DataFrame")){
+      scores <- scores$scores
+    }
+
     maxed <- rowMaxs(DelayedArray(scores))
     delta <- maxed - rowMedians(DelayedArray(scores))
-    keep <- delta >= min.diff
+    keep <- delta >= min.diff.vs.median
+    keep <- keep & (rowSums(scores/maxed > (1-min.percent.diff.vs.next)) < 2)
 
     best <- max.col(scores)
     by.label <- split(which(keep), best[keep])
