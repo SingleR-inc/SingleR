@@ -59,6 +59,32 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
 })
 
+test_that("cells.use can be combined with annotations & annotations can be combined with eachother", {
+    expect_s3_class(plotScoreHeatmap(results = pred, cells.use = 1:50, clusters = pred$labels), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, cells.use = 1:50, clusters = pred$labels,
+        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),nrow(pred)/25)), # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, cells.use = 1:50, clusters = pred$labels,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),nrow(pred)/25)), # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE), "pheatmap")
+})
+
+test_that("cells.use AND ordering can be combined with annotations", {
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, cells.use = 1:50, clusters = pred$labels,
+        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),4)), # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        cells.order = 1:50), "pheatmap")
+})
+
 test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHeatmap.", {
     expect_s3_class(plotScoreHeatmap(results = pred, cutree_col = 3), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, fontsize.row = 5), "pheatmap")
