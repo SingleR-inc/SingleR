@@ -184,7 +184,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (is.null(args$annotation_col) & (!is.null(clusters) | show.pruned)) {args$annotation_col <- data.frame(row.names = colnames(scores))}
     if(!is.null(clusters)) {args$annotation_col$Clusters <- clusters[order]}
     if(show.pruned) {
-        args$annotation_col$pruned <- prune.calls[colnames(scores)[order]]} # CHANGE to results[colnames(scores)[order],]$pruned after added.
+        args$annotation_col$pruned <- as.character(prune.calls[colnames(scores)[order]])} # CHANGE to as.character(results[colnames(scores)[order],]$pruned) after added.
 
     do.call(pheatmap::pheatmap, args)
 }

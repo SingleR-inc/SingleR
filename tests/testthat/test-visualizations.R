@@ -1,5 +1,5 @@
 # Tests for visualization functions
-# library(SingleR); library(testthat); source("setup.R"); source("test-visualizations.R")
+# library(SingleR); library(testthat); source("../GitHub/SingleR/tests/testthat/setup.R"); source("test-visualizations.R")
 
 colnames(test) <- sprintf("cell_%i", seq_len(ncol(test)))
 pred <- SingleR(test=test, ref=training, labels=training$label, genes="de")
@@ -63,21 +63,21 @@ test_that("cells.use can be combined with annotations & annotations can be combi
     expect_s3_class(plotScoreHeatmap(results = pred, cells.use = 1:50, clusters = pred$labels), "pheatmap")
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
-        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),nrow(pred)/25)), # REMOVE LINE after prune.scores added to results.
+        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
-        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),nrow(pred)/25)), # REMOVE LINE after prune.scores added to results.
+        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE), "pheatmap")
 })
 
 test_that("cells.use AND ordering can be combined with annotations", {
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
-        prune.calls = as.character(rep(c(rep(TRUE,24),FALSE),4)), # REMOVE LINE after prune.scores added to results.
+        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
