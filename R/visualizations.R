@@ -77,7 +77,6 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
-#' @param cube.normalized Logical, TRUE by default, specifying whether scores of each cell are cubed after being normalized between [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
@@ -124,7 +123,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters=NULL, max.labels=40, normalize=TRUE, cube.normalized = TRUE
+    clusters=NULL, max.labels=40, normalize=TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     ...)
 {
@@ -151,7 +150,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         mmax <- rowMaxs(scores)
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
-        if (cube.normalized) { scores <- scores^3 }
+        scores <- scores^3
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
