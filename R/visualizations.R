@@ -126,7 +126,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters = NULL, show.pruned = TRUE, prune.calls,
+    clusters = NULL, show.pruned = FALSE, prune.calls,
     max.labels = 40, normalize = TRUE, cube.normalized = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     ...)
