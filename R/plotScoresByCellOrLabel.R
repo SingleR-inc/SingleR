@@ -28,7 +28,7 @@
 #' plotScoresSingleCell(results = pred, prune.calls = prune, cell.id = 1)
 #' plotScoresSingleLabel(results = pred, prune.calls = prune, label = "B",
 #'     dots.on.top = TRUE)
-#' plotScoresMultiLabels(results = pred, prune.calls = prune,
+#' plotScoresMultiLabels(results = pred,
 #'     dots.on.top = TRUE, size = 0.5)
 #' 
 #' NULL
@@ -40,8 +40,7 @@ NULL
 plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
     labels.use = levels(as.factor(results$labels)), size = 2,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
-    if(length(colors)<4 & !(is.null(prune.calls))){stop("4 colors are needed when prune.calls are to be shown.")}
-    if(length(colors)<2){stop("2 colors are needed.")}
+    if(length(colors)<4){stop("4 colors are expected.")}
     if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -63,8 +62,7 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
 #' @export
 plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5, dots.on.top = FALSE, df = NULL,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
-    if(length(colors)<4 & !(is.null(prune.calls))){stop("4 colors are needed when prune.calls are to be shown.")}
-    if(length(colors)<2){stop("2 colors are needed.")}
+    if(length(colors)<4){stop("4 colors are expected.")}
     if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -86,8 +84,7 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
 plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...){
-    if(length(colors)<4 & !(is.null(prune.calls))){stop("4 colors are needed when prune.calls are to be shown.")}
-    if(length(colors)<2){stop("2 colors are needed.")}
+    if(length(colors)<4){stop("4 colors are expected.")}
     if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
