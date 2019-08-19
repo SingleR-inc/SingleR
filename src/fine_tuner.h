@@ -7,26 +7,45 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include <tuple>
 
 typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
+
+typedef std::tuple<int, double, double> tuned_stats;
 
 class fine_tuner {
 public:
     fine_tuner(size_t ngenes) : holder_left(ngenes), holder_right(ngenes), scaled_left(ngenes), scaled_right(ngenes), collected(ngenes) {}
 
     template<class PICKER> 
-    int assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
+    tuned_stats assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
         const matrix_list& references, double quantile, double tune_thresh, const PICKER& commonFUN) 
     {
         exprs->get_col(i, holder_left.begin());
         auto cur_scores=scores.column(i);
-        int topI=std::max_element(cur_scores.begin(), cur_scores.end()) - cur_scores.begin();
-        double threshold=cur_scores[topI] - tune_thresh;
+        if (cur_scores.size()==0) {
+            return tuned_stats(NA_INTEGER, R_NaReal, R_NaReal);
+        }
+
+        size_t topI=std::max_element(cur_scores.begin(), cur_scores.end()) - cur_scores.begin();
+        int best_label=topI;
+        double max_score=cur_scores[topI];
+        if (cur_scores.size()==1) {
+            return tuned_stats(best_label, max_score, R_NaReal);
+        }
+
+        constexpr double DUMMY=-1000;
+        double next_score=DUMMY;
 
         labels_in_use.clear();
+        double threshold=max_score - tune_thresh;
         for (size_t i=0; i<cur_scores.size(); ++i) {
-            if (cur_scores[i] >= threshold) {
+            const auto& val=cur_scores[i];
+            if (val >= threshold) {
                 labels_in_use.push_back(i);
+            }
+            if (i!=topI && next_score < val) {
+                next_score=val;
             }
         }
 
@@ -35,28 +54,30 @@ public:
         while (labels_in_use.size() > 1 && !unchanged) {
             commonFUN(labels_in_use, genes_in_use);
             get_scores(references, quantile);
-            topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
-            threshold=new_scores[topI] - tune_thresh;
+
+            size_t topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
+            best_label=labels_in_use[topI];
+            max_score=new_scores[topI];
+            threshold=max_score - tune_thresh;
+            next_score=DUMMY;
 
             unchanged=true;
             for (size_t i=0; i<new_scores.size(); ++i) {
-                if (new_scores[i] >= threshold) {
+                const auto& val=new_scores[i];
+                if (val >= threshold) {
                     next_labels.push_back(labels_in_use[i]);
                 } else {
                     unchanged=false;
+                }
+                if (i!=topI && next_score < val) {
+                    next_score=val;
                 }
             }
             labels_in_use.swap(next_labels);
             next_labels.clear();
         }
 
-        if (labels_in_use.size()==1L) {
-            return labels_in_use.front();
-        } else if (labels_in_use.size()==0L) {
-            return NA_INTEGER;
-        } else {
-            return labels_in_use[topI];
-        }
+        return tuned_stats(best_label, max_score, next_score);
     }
 
     void get_scores(const matrix_list& references, double quantile) {
