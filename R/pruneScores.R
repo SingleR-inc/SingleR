@@ -2,9 +2,9 @@
 #'
 #' Remove low-quality assignments based on the cell-label score matrix returned by \code{\link{classifySingleR}}.
 #'
-#' @param scores SingleR output, or a Matrix of scores per cell (row) and label (column) generated during assignment by \code{\link{classifySingleR}}.
+#' @param results SingleR output generated during assignment by \code{\link{classifySingleR}}.
 #' @param min.diff.med Numeric scalar specifying the minimum difference of each cell's maximum score from the median score.
-#' @param min.diff.next Numeric scalar specifying the minimum percent difference between the best score and the next best score.
+#' @param min.diff.next Numeric scalar specifying the minimum difference between the best score and the next best score in fine-tuning.
 #' @param nmads Numeric scalar specifying the number of MADs to use to define cells with low outlier scores per label.
 #' 
 #' @return A logical vector specifying which assignments should be ignored.
@@ -22,7 +22,6 @@
 #' This can also be justified in high-dimensional analyses where,
 #' in the absence of any strong similarity to a single label, all distances converge to the same value.
 #' 
-#'  
 #' For the per-label check, we identify cells that are small outliers in the distribution of scores for each label.
 #' (This only includes cells that pass the per-cell check.)
 #' Specifically, cells that are more than \code{nmads} below the median score for each label are ignored.
@@ -54,25 +53,31 @@
 #' # Running the SingleR() example.
 #' example(SingleR, echo=FALSE)
 #'
-#' summary(pruneScores(pred$scores))
+#' summary(pruneScores(pred))
 #'
 #' # Less stringent:
-#' summary(pruneScores(pred$scores, min.diff.med=0))
-#' summary(pruneScores(pred$scores, nmads=5))
+#' summary(pruneScores(pred, min.diff.med=0))
+#' summary(pruneScores(pred, nmads=5))
+#' 
+#' # More stringent:
+#' summary(pruneScores(pred, min.diff.med=0.1))
+#' summary(pruneScores(pred, nmads=2))
+#' summary(pruneScores(pred, min.diff.next=0.1))
 #' 
 #' @export
 #' @importFrom DelayedMatrixStats rowMedians 
 #' @importFrom DelayedArray DelayedArray rowMaxs
 #' @importFrom stats median mad
-pruneScores <- function(scores, min.diff.med = 0.05, nmads=3, min.diff.next = 0) {
-    if (is(scores, "DataFrame")){
-      scores <- scores$scores
-    }
+pruneScores <- function(results, min.diff.med = 0.05, nmads=3, min.diff.next = 0) {
+    if (is(results, "DataFrame")){
+      scores <- results$scores
+      tune.scores <- results$tuning.scores
+    } else { stop("full results output of SingleR/classifySingleR is required")}
 
     maxed <- rowMaxs(DelayedArray(scores))
     delta <- maxed - rowMedians(DelayedArray(scores))
     keep <- delta >= min.diff.med
-    keep <- keep & (rowSums(scores/maxed > (1-min.diff.next)) < 2)
+    keep <- keep & (tune.scores$first - tune.scores$second) >= min.diff.next
 
     best <- max.col(scores)
     by.label <- split(which(keep), best[keep])
