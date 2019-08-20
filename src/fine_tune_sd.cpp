@@ -37,7 +37,7 @@ private:
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 // [[Rcpp::export(rng=false)]]
-Rcpp::IntegerVector fine_tune_label_sd (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
+Rcpp::List fine_tune_label_sd (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
     double quantile, double tune_thresh, Rcpp::NumericMatrix median_mat, double sd_thresh) 
 {
     auto mat=beachmat::create_numeric_matrix(Exprs);
@@ -51,11 +51,16 @@ Rcpp::IntegerVector fine_tune_label_sd (SEXP Exprs, Rcpp::NumericMatrix scores, 
     sd_markers chooser(median_mat, sd_thresh);
 
     size_t ncells=mat->get_ncol();
-    Rcpp::IntegerVector output(ncells);
+    Rcpp::IntegerVector output_id(ncells);
+    Rcpp::NumericVector output_best(ncells);
+    Rcpp::IntegerVector output_next(ncells);
 
     for (size_t c=0; c<ncells; ++c) {
-        output[c]=tuner.assign(c, mat.get(), scores, references, quantile, tune_thresh, chooser);
+        auto tmp=tuner.assign(c, mat.get(), scores, references, quantile, tune_thresh, chooser);
+        output_id[c]=std::get<0>(tmp);
+        output_best[c]=std::get<1>(tmp);
+        output_next[c]=std::get<2>(tmp);
     }
 
-    return output;
+    return Rcpp::List::create(output_id, output_best, output_next);
 }

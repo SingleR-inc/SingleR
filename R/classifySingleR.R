@@ -125,22 +125,24 @@ classifySingleR <- function(test, trained, quantile=0.8,
     if (fine.tune) {
         search.mode <- trained$search$mode
         if (search.mode=="de") {
-            new.labels <- .fine_tune_de(exprs=test, scores=scores, references=trained$original.exprs, 
+            tuned <- .fine_tune_de(exprs=test, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, de.info=trained$search$extra,
                 BPPARAM=BPPARAM)
         } else if (search.mode=="sd") {
             if (is.null(sd.thresh)) {
                 sd.thresh <- trained$search$args$sd.thresh
             }
-            new.labels <- .fine_tune_sd(exprs=test, scores=scores, references=trained$original.exprs, 
+            tuned <- .fine_tune_sd(exprs=test, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, median.mat=trained$search$extra,
                 sd.thresh=sd.thresh, BPPARAM=BPPARAM)
         } else {
             stop(sprintf("unrecognised search mode '%s' when fine-tuning", search.mode))
         }
 
-        new.labels <- colnames(scores)[new.labels+1L]
-        output <- DataFrame(scores=I(scores), first.labels=labels, labels=new.labels)
+        new.labels <- colnames(scores)[tuned[[1]]+1L]
+        output <- DataFrame(scores=I(scores), first.labels=labels, 
+            tuning.scores=I(DataFrame(first=tuned[[2]], second=tuned[[3]])),
+            labels=new.labels)
     } else {
         output <- DataFrame(scores=I(scores), labels=labels)
     }
