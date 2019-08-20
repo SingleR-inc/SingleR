@@ -20,12 +20,12 @@ plotScoresMultiLabels(results, prune.calls = NULL, size = 0.2,
   ncol = 5, colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...)
 }
 \arguments{
-\item{results}{A linkS4class{DataFrame} containing the output from \code{link{SingleR}} or \code{link{classifySingleR}}.}
+\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
 
 \item{cell.id}{Integer specifying which cell to show for \code{plotScoresSingleCell}}
 
-\item{prune.calls}{Logical vector, the output of \code{link{pruneScores}}.
-This input will be unnecessary once \code{link{pruneScores}}'s output is added to the SingleR.results dataframe}
+\item{prune.calls}{Logical vector, the output of \code{\link{pruneScores}}.
+This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the SingleR.results dataframe}
 
 \item{labels.use}{String vector indicating what labels to show in \code{plotScoresSingleCell} and \code{plotScoresMultiLabel}
 If \code{labels.use} is left \code{NULL}, all labels available in \code{results} are presented.}
