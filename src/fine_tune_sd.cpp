@@ -53,7 +53,7 @@ Rcpp::List fine_tune_label_sd (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::Lis
     size_t ncells=mat->get_ncol();
     Rcpp::IntegerVector output_id(ncells);
     Rcpp::NumericVector output_best(ncells);
-    Rcpp::IntegerVector output_next(ncells);
+    Rcpp::NumericVector output_next(ncells);
 
     for (size_t c=0; c<ncells; ++c) {
         auto tmp=tuner.assign(c, mat.get(), scores, references, quantile, tune_thresh, chooser);
