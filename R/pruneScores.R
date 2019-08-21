@@ -14,41 +14,48 @@
 #' This occurs even if the cell's true label is not represented in the reference set of labels,
 #' resulting in assignment of an incorrect label to that cell.
 #' The \code{pruneScores} function aims to mitigate this effect by removing poor-quality assignments with \dQuote{low} scores.
+#' We define a low score using several orthogonal measures that operate on a per-cell or per-label basis, as described below.
 #'
-#' We define a low score using two orthogonal measures, per-cell and per-label.
-#' For the per-cell check, we see whether the maximum score is less than \code{min.diff.med} above the median score for each cell.
+#' The first per-cell check occurs for each cell using the scores in \code{results$scores} prior to fine-tuning.
+#' Here, we see whether the maximum score is less than \code{min.diff.med} above the median score for each cell.
 #' If so, this indicates that the cell matches all labels with the same confidence 
 #' such that the one reported label is not particularly meaningful.
 #' This can also be justified in high-dimensional analyses where,
 #' in the absence of any strong similarity to a single label, all distances converge to the same value.
 #' 
-#' In an additional per-cell check, which is off by default, we offer the ability to assess whether the fine-tuning score of the
-#' final label is at least \code{min.diff.next} greater than the next best fine-tuning score for each cell.
-#' Top fine-tuning scores for a given cell will be similar in value when the cell closely resembles 2 or more labels.
-#' Use of this cutoff can be justified when cells of nearby labels will be directly compared to each other.
-#' However, it is important to note that this cutoff can be more harmful than useful when the differences between 
-#' cell types in the reference dataset are small.
-#' Suggested use: \code{min.diff.next} between \code{[0, 0.1]}
+#' The second check per-cell is based on the fine-tuning scores in \code{results$tuned.scores}.
+#' Here, the best and the next-best score at the final round of fine-tuning are reported for each cell.
+#' These two scores will be similar in value when the cell closely resembles two or more labels.
+#' We ignore any cell for which the fine-tuning score is not more than \code{min.diff.next} greater than the next best label.
+#' The idea is to only report labels for which there is no ambiguity in assignment,
+#' especially when some labels are closely related and easily confused.
+#' Typical values of \code{min.diff.next} range between [0, 0.1], though please read the caveats below.
 #' 
 #' For the per-label check, we identify cells that are small outliers in the distribution of scores for each label.
-#' (This only includes cells that pass the per-cell check.)
+#' (This only includes cells that pass the per-cell check and uses only pre-fine-tuning scores.)
 #' Specifically, cells that are more than \code{nmads} below the median score for each label are ignored.
 #' This assumes that most cells are correctly assigned to their true label
 #' and that cells of the same label have a smooth distribution of scores.
 #' Thus, small outliers represent poor-quality assignments from a distinct subpopulation that should be removed.
 #'
+#' @section Comments on setting parameters:
 #' The defaults for these parameters are largely arbitrary and chosen based on experience.
 #' Smaller values for \code{min.diff.med} or \code{min.diff.next} and larger values for \code{nmads} will reduce the stringency of the pruning.
-#' In particular:
-#' \itemize{
-#' \item Default checks (\code{min.diff.next} and \code{nmads}) do not consider the effects of fine-tuning (as scores are not comparable across different fine-tuning steps).
+#' 
+#' Default checks (\code{min.diff.med} and \code{nmads}) do not consider the effects of fine-tuning,
+#' as scores are not comparable across different fine-tuning steps.
 #' In situations involving a majority of labels with only subtle distinctions,
 #' it is possible for the scores to be relatively similar but for the labels to be correctly assigned after fine-tuning.
 #' In such cases, the default setting of \code{min.diff.med} may be too stringent.
-#' \item It is possible for the per-label score distribution to be multimodal yet still correct,
+#'
+#' It is possible for the per-label score distribution to be multimodal yet still correct,
 #' e.g., due to cells belong to subtypes when the (correct) label corresponds to the main type.
 #' In such cases, the default \code{nmads} may be too stringent as it will remove minor subpopulations with low scores.
-#' }
+#'
+#' The \code{min.diffnext} cutoff can be harmful in some applications involving highly related labels.
+#' From a user perspective, any confusion between these labels may not be a problem as the assignment is broadly correct;
+#' however, the best and next best scores will be very close and cause the labels to be unnecessarily discarded.
+#' 
 #' Note that decreasing \code{min.diff.med} may actually \emph{increase} the stringency of the per-label check, 
 #' depending on whether the additional retained cells decrease the MAD.
 #'
