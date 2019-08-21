@@ -96,4 +96,9 @@ test_that("classifySingleR behaves with silly inputs", {
     expect_identical(nrow(out$scores), 0L)
     expect_identical(length(out$labels), 0L)
     expect_error(classifySingleR(test[0,], trained, fine.tune=FALSE), "does not contain")
+
+    trained <- trainSingleR(training[,0], training$label[0])
+    pred <- classifySingleR(test, trained, fine.tune=FALSE)
+    expect_identical(ncol(pred$scores), 0L)
+    expect_true(all(is.na(pred$labels)))
 })

@@ -117,11 +117,16 @@ classifySingleR <- function(test, trained, quantile=0.8,
 
     # Parallelizing across labels rather than cells, as we often have few cells but many labels.
     scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
-    scores <- do.call(cbind, scores)
+    if (length(scores)) { 
+        scores <- do.call(cbind, scores)
+        labels <- colnames(scores)[max.col(scores)]
+    } else {
+        scores <- matrix(0, ncol(test), 0) 
+        labels <- rep(NA_character_, ncol(test))
+    }
     rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
-    labels <- colnames(scores)[max.col(scores)]
     if (fine.tune) {
         search.mode <- trained$search$mode
         if (search.mode=="de") {
@@ -139,7 +144,11 @@ classifySingleR <- function(test, trained, quantile=0.8,
             stop(sprintf("unrecognised search mode '%s' when fine-tuning", search.mode))
         }
 
-        new.labels <- colnames(scores)[tuned[[1]]+1L]
+        if (ncol(scores)) {
+            new.labels <- colnames(scores)[tuned[[1]]+1L]
+        } else {
+            new.labels <- rep(NA_character_, nrow(scores))
+        }
         output <- DataFrame(scores=I(scores), first.labels=labels, 
             tuning.scores=I(DataFrame(first=tuned[[2]], second=tuned[[3]])),
             labels=new.labels)
