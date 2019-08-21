@@ -99,7 +99,7 @@ pruneScores <- function(results, min.diff.med = 0.05, nmads=3, min.diff.next = 0
         current <- maxed[l]
         med <- median(current)
         MAD <- mad(current, center=med)
-        keep[l] <- (current >= med - nmads * MAD)
+        keep[l] <- keep[l] & (current >= med - nmads * MAD)
     }
 
     !keep
