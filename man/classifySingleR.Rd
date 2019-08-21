@@ -34,15 +34,17 @@ This is only used if \code{genes="sd"} when constructing \code{trained} and defa
 A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
 If \code{fine.tune=FALSE}, fields are:
 \itemize{
-\item \code{scores}, a matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
-\item \code{labels}, the predicted label based on the maximum entry in \code{scores}.
+\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
+\item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
 }
 
 If \code{fine.tune=TRUE}, fields are:
 \itemize{
-\item \code{scores}, a matrix of correlations as above.
-\item \code{first.labels}, the predicted label based on the maximum entry in \code{scores}.
-\item \code{labels}, the predicted label after fine-tuning.
+\item \code{scores}, a numeric matrix of correlations as above.
+\item \code{first.labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+\item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
+These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
+\item \code{labels}, a character vector containing the predicted label after fine-tuning.
 }
 }
 \description{
@@ -60,6 +62,7 @@ If \code{fine.tune=TRUE}, an additional fine-tuning step is performed for each c
 We identify all labels with scores that are no more than \code{tune.thresh} below the maximum score.
 These labels are used to identify a fresh set of marker genes, and the calculation of the score is repeated using only these genes.
 The aim is to refine the choice of markers and reduce noise when distinguishing between closely related labels.
+The best and next-best scores are reported in the output for use in diagnostics, e.g., \code{\link{pruneScores}}.
 
 The default \code{assay.type} is set to \code{"logcounts"} simply for consistency with \code{\link{trainSingleR}}.
 In practice, the raw counts (for UMI data) or the transcript counts (for read count data) can also be used without normalization and log-transformation.
