@@ -57,6 +57,10 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(results = pred,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred))), "pheatmap")
 })
 
 test_that("cells.use can be combined with annotations & annotations can be combined with eachother", {
