@@ -74,7 +74,7 @@ test_that("cells.use can be combined with annotations & annotations can be combi
         show.pruned = TRUE), "pheatmap")
 })
 
-test_that("cells.use AND ordering can be combined with annotations", {
+test_that("cells.use can be combined with ordering (by cells or by cluster)", {
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
         prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
@@ -83,9 +83,78 @@ test_that("cells.use AND ordering can be combined with annotations", {
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
         cells.order = 1:50), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, cells.use = 1:50, clusters = pred$labels,
+        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        order.by.clusters = TRUE), "pheatmap")
 })
 
 test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHeatmap.", {
     expect_s3_class(plotScoreHeatmap(results = pred, cutree_col = 3), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, fontsize.row = 5), "pheatmap")
+})
+
+####################################
+#### Manual Visualization Check ####
+####################################
+test_that("Annotations stay linked, even with cells.use, cells.order, or order.by.clusters = TRUE", {
+    # Make prune.call TRUE for every 10th value.  (We need known order for testing annotation placement.)
+    # pred$prune.calls <- rep(c(rep(FALSE,9),TRUE),nrow(pred)/10) # UNCOMMENT after prune.calls added.
+    
+    #Reference plot: Every tenth cell, pruned = TRUE. Clusters from 100:1. annot from 1:100.
+    expect_s3_class(plotScoreHeatmap(
+        results = pred,
+        cells.order = seq_len(nrow(pred)),
+        # order.by.clusters = TRUE,
+        # cells.use = 1:50,
+        clusters = seq(nrow(pred),1),
+        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred))),
+        "pheatmap")
+    #Reversed order: First, 11th, 21st... cell, pruned = TRUE. Clusters from 1:100. annot from 100:1.
+    expect_s3_class(plotScoreHeatmap(
+        results = pred,
+        # cells.order = seq_len(nrow(pred)),
+        order.by.clusters = TRUE,
+        # cells.use = 1:50,
+        clusters = seq(nrow(pred),1),
+        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred))),
+        "pheatmap")
+    #Reference plot, but only half: Every tenth cell, pruned = TRUE. Clusters from 50:1. annot from 100:51.
+    expect_s3_class(plotScoreHeatmap(
+        results = pred,
+        cells.order = seq_len(nrow(pred))[1:50],
+        # order.by.clusters = TRUE,
+        cells.use = 1:50,
+        clusters = seq(nrow(pred),1),
+        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred))),
+        "pheatmap")
+    #Reference plot, but with annot flipped 100:1 because it's rownames were flipped.
+    expect_s3_class(plotScoreHeatmap(
+        results = pred,
+        cells.order = seq_len(nrow(pred)),
+        # order.by.clusters = TRUE,
+        # cells.use = 1:100,
+        clusters = seq(nrow(pred),1),
+        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
+        show.pruned = TRUE,
+        annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)[seq(nrow(pred),1)])),
+        "pheatmap")
 })
