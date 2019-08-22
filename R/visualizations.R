@@ -83,6 +83,9 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
 #' If set, turns off clustering of columns based on scoring.
+#' Note: When used alongside \code{cells.use}, both arguments should be the same length. 
+#' @param annotation_col Data.frame containing data for additional/alternative column annotations (clutering and prune-calls annotations are added automatically internally)
+#' Format = row.names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -128,23 +131,20 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.pruned = FALSE, prune.calls,
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
+    annotation_col = NULL,
     ...)
 {
     # As pheatmap simply must have rownames,
     # otherwise the annotation_col doesn't work.
-    if (is.null(rownames(results))) {
-        rownames(results) <- seq_len(nrow(results))
-    }
+    if (is.null(rownames(results))) { rownames(results) <- seq_len(nrow(results)) }
     scores <- results$scores
     rownames(scores) <- rownames(results)
+    if (is.null(annotation_col)) { annotation_col <- data.frame(row.names = rownames(results))}
 
-    if(!is.null(cells.use)){
-        scores <- scores[cells.use,]
-    }
-    if (!is.null(labels.use)) {
-        scores <- scores[,labels.use]
-    }
+    if (!is.null(cells.use)) { scores <- scores[cells.use,] }
+    if (!is.null(labels.use)) { scores <- scores[,labels.use]  }
     if (show.pruned) {                         # REMOVE after prune.scores added to results.
+        # prune.calls <- results$prune.calls   # UNCOMMENT after prune.calls added to results.
         names(prune.calls) <- rownames(scores) # REMOVE after prune.scores added to results.
     }                                          # REMOVE after prune.scores added to results.
 
@@ -167,25 +167,24 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         names(clusters) <- rownames(results)
     }
     cluster_cols <- FALSE
-    if (order.by.clusters & !is.null(clusters)) {
-        order <- order(clusters)
+    if (order.by.clusters && !is.null(clusters)) {
+        if(!is.null(cells.use)){order <- order(clusters[cells.use])}
+        else {order <- order(clusters)}
     } else if (!is.null(cells.order)){
         order <- cells.order
     } else {
         order <- seq_len(ncol(scores))
         cluster_cols <- TRUE
     }
+    
+    #Set Annotations, using names to ensure proper ordering
+    if(!is.null(clusters)) { annotation_col$Clusters <- clusters[rownames(annotation_col)] }
+    if(show.pruned) { annotation_col$Pruned <- as.character(prune.calls[rownames(annotation_col)]) } # CHANGE to as.character(results[colnames(scores)[order],]$pruned) after added
 
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
         clustering_method = 'ward.D2', cluster_cols = cluster_cols, ...)
+    if (ncol(annotation_col)>0) { args$annotation_col <- annotation_col}
     
-    #Set Annotations
-    if (!is.null(args$annotation_col)) {args$annotation_col <- args$annotation_col[colnames(scores),,drop=FALSE]}
-    if (is.null(args$annotation_col) & (!is.null(clusters) | show.pruned)) {args$annotation_col <- data.frame(row.names = colnames(scores))}
-    if(!is.null(clusters)) {args$annotation_col$Clusters <- clusters[order]}
-    if(show.pruned) {
-        args$annotation_col$pruned <- as.character(prune.calls[colnames(scores)[order]])} # CHANGE to as.character(results[colnames(scores)[order],]$pruned) after added.
-
     do.call(pheatmap::pheatmap, args)
 }
 
