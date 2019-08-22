@@ -14,6 +14,7 @@ License: GPL-3 + file LICENSE
 Depends: SummarizedExperiment
 Imports: 
     methods,
+    Matrix,
     S4Vectors,
     DelayedArray,
     DelayedMatrixStats,
@@ -37,7 +38,6 @@ Suggests:
     scater,
     scRNAseq,
     scran,
-    Matrix,
     BiocGenerics,
     ggplot2,
     pheatmap
