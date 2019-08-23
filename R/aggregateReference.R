@@ -67,7 +67,7 @@ aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", c
         current <- ref[,chosen,drop=FALSE]
 
         if (power==0) {
-            val <- matrix(rowMeans(current))
+            val <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
         } else if (power==1) {
             val <- current
         } else {
@@ -81,6 +81,11 @@ aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", c
         colnames(val) <- sprintf("%s.%s", u, seq_len(ncol(val)))
         output.vals[[u]] <- val
         output.labs[[u]] <- rep(u, ncol(val))
+    }
+
+    if (length(output.vals)==0L) {
+        output.vals[[1]] <- matrix(0, nrow(ref), 0, dimnames=list(rownames(ref), NULL))
+        output.labs[[1]] <- labels[0]
     }
 
     SummarizedExperiment(list(logcounts=do.call(cbind, output.vals)),
