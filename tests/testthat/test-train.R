@@ -86,9 +86,15 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
     ref <- trainSingleR(training, training$label, genes='de')
 
     set.seed(92)
-    out <- trainSingleR(training, training$label, genes=SingleR:::.get_genes_by_de(logcounts(training), training$label))
-
+    markers <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
+    out <- trainSingleR(training, training$label, genes=markers)
     expect_identical(ref, out)
+
+    # Same results if we get a List of List of genes, which is correctly coerced to ordinary lists.
+    set.seed(92)
+    markers2 <- List(lapply(markers, List))
+    out2 <- trainSingleR(training, training$label, genes=markers)
+    expect_identical(ref, out2)
 
     # Fails when a weird gene set input is provided.
     expect_error(trainSingleR(training, training$label, genes=list(A=list(), B=character(0))), "'genes' must be")
