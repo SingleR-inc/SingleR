@@ -90,6 +90,8 @@ This allows the function to handle pre-defined marker lists for specific cell po
 However, it obviously captures less information than marker sets for the pairwise comparisons.
 
 If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
+
+\linkS4class{List}s and their derivatives can also be used in place of ordinary lists.
 }
 \examples{
 ###########################################
