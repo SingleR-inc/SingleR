@@ -22,7 +22,8 @@
     bp.out <- bpmapply(Exprs=M, scores=S, FUN=fine_tune_label_de, 
         MoreArgs=list(References=references, quantile=quantile, tune_thresh=tune.thresh, marker_genes=de.info), 
         BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
-    unlist(bp.out)
+
+    do.call(mapply, c(bp.out, list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE)))
 }
 
 #' @importFrom BiocParallel bpmapply SerialParam
@@ -32,7 +33,8 @@
     bp.out <- bpmapply(Exprs=M, scores=S, FUN=fine_tune_label_sd, 
         MoreArgs=list(References=references, quantile=quantile, tune_thresh=tune.thresh, median_mat=t(median.mat), sd_thresh=sd.thresh),
         BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
-    unlist(bp.out)
+
+    do.call(mapply, c(bp.out, list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE)))
 }
 
 #' @importFrom BiocParallel bpnworkers

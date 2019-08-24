@@ -18,15 +18,17 @@
 #' @return A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
 #' If \code{fine.tune=FALSE}, fields are:
 #' \itemize{
-#' \item \code{scores}, a matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
-#' \item \code{labels}, the predicted label based on the maximum entry in \code{scores}.
+#' \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
+#' \item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
 #' }
 #'
 #' If \code{fine.tune=TRUE}, fields are:
 #' \itemize{
-#' \item \code{scores}, a matrix of correlations as above.
-#' \item \code{first.labels}, the predicted label based on the maximum entry in \code{scores}.
-#' \item \code{labels}, the predicted label after fine-tuning.
+#' \item \code{scores}, a numeric matrix of correlations as above.
+#' \item \code{first.labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+#' \item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
+#' These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
+#' \item \code{labels}, a character vector containing the predicted label after fine-tuning.
 #' }
 #' 
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
@@ -43,6 +45,7 @@
 #' We identify all labels with scores that are no more than \code{tune.thresh} below the maximum score.
 #' These labels are used to identify a fresh set of marker genes, and the calculation of the score is repeated using only these genes.
 #' The aim is to refine the choice of markers and reduce noise when distinguishing between closely related labels.
+#' The best and next-best scores are reported in the output for use in diagnostics, e.g., \code{\link{pruneScores}}.
 #'
 #' The default \code{assay.type} is set to \code{"logcounts"} simply for consistency with \code{\link{trainSingleR}}.
 #' In practice, the raw counts (for UMI data) or the transcript counts (for read count data) can also be used without normalization and log-transformation.
@@ -117,30 +120,41 @@ classifySingleR <- function(test, trained, quantile=0.8,
 
     # Parallelizing across labels rather than cells, as we often have few cells but many labels.
     scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
-    scores <- do.call(cbind, scores)
+    if (length(scores)) { 
+        scores <- do.call(cbind, scores)
+        labels <- colnames(scores)[max.col(scores)]
+    } else {
+        scores <- matrix(0, ncol(test), 0) 
+        labels <- rep(NA_character_, ncol(test))
+    }
     rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
-    labels <- colnames(scores)[max.col(scores)]
     if (fine.tune) {
         search.mode <- trained$search$mode
         if (search.mode=="de") {
-            new.labels <- .fine_tune_de(exprs=test, scores=scores, references=trained$original.exprs, 
+            tuned <- .fine_tune_de(exprs=test, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, de.info=trained$search$extra,
                 BPPARAM=BPPARAM)
         } else if (search.mode=="sd") {
             if (is.null(sd.thresh)) {
                 sd.thresh <- trained$search$args$sd.thresh
             }
-            new.labels <- .fine_tune_sd(exprs=test, scores=scores, references=trained$original.exprs, 
+            tuned <- .fine_tune_sd(exprs=test, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, median.mat=trained$search$extra,
                 sd.thresh=sd.thresh, BPPARAM=BPPARAM)
         } else {
             stop(sprintf("unrecognised search mode '%s' when fine-tuning", search.mode))
         }
 
-        new.labels <- colnames(scores)[new.labels+1L]
-        output <- DataFrame(scores=I(scores), first.labels=labels, labels=new.labels)
+        if (ncol(scores)) {
+            new.labels <- colnames(scores)[tuned[[1]]+1L]
+        } else {
+            new.labels <- rep(NA_character_, nrow(scores))
+        }
+        output <- DataFrame(scores=I(scores), first.labels=labels, 
+            tuning.scores=I(DataFrame(first=tuned[[2]], second=tuned[[3]])),
+            labels=new.labels)
     } else {
         output <- DataFrame(scores=I(scores), labels=labels)
     }

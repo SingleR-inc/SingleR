@@ -19,12 +19,13 @@
     }
 
     if (length(top.labels)==1L) {
-        top.labels
+        label <- top.labels
     } else if (length(top.labels)==0L) {
-        NA_character_
+        label <- NA_character_
     } else {
-        names(cur.scores)[which.max(cur.scores)]
+        label <- names(cur.scores)[which.max(cur.scores)]
     }
+    list(label=label, best=max(cur.scores), second=-sort.int(-cur.scores)[2])
 }
 
 .compute_label_scores_manual <- function(common, top.labels, cur.exprs, references, quantile) {
@@ -63,15 +64,15 @@
     }
     out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
         references=references, quantile=quantile, tune.thresh=tune.thresh, 
-        commonFUN=.fine_tune_de_genes, de.info=de.info)            
-    unlist(out)
+        commonFUN=.fine_tune_de_genes, de.info=de.info)
+    do.call(mapply, c(list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE), out))
 }
 
 .fine_tune_sd_ref <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh) {
     out <- lapply(seq_len(ncol(exprs)), FUN=.fine_tune_cell, exprs=exprs, scores=scores, 
         references=references, quantile=quantile, tune.thresh=tune.thresh, 
         commonFUN=.fine_tune_sd_genes, median.mat, sd.thresh=sd.thresh)
-    unlist(out)
+    do.call(mapply, c(list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE), out))
 }
 
 ############################
@@ -159,14 +160,17 @@ test_that("fine-tuning by DE runs without errors", {
     trained <- trainSingleR(training, training$label, genes='de')
     pred <- classifySingleR(test, trained, fine.tune=FALSE)
 
-    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { # Minor offsets to avoid problems with numerical precision.
+    # Testing minor offsets to avoid problems with numerical precision.
+    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { 
         for (thresh in c(0, 0.05, 0.1)) {
-            tuned <- SingleR:::.fine_tune_de(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
-            ref <- .fine_tune_de_ref(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            ref <- .fine_tune_de_ref(assay(test), pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
 
-            expect_equal(colnames(pred$scores)[tuned+1], ref)
+            expect_equal(colnames(pred$scores)[tuned[[1]]+1], ref[[1]])
+            expect_equal(tuned[[2]], ref[[2]])
+            expect_equal(tuned[[3]], unname(ref[[3]]))
         }
     }
 
@@ -176,8 +180,8 @@ test_that("fine-tuning by DE runs without errors", {
     tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
          quantile=Q, tune.thresh=thresh, de.info=trained$search$extra)
 
-    expect_identical(length(tuned), nrow(pred))
-    is.diff <- colnames(pred$scores)[tuned+1]!=pred$labels
+    expect_identical(lengths(tuned), rep(nrow(pred), length(tuned)))
+    is.diff <- colnames(pred$scores)[tuned[[1]]+1]!=pred$labels
     expect_true(any(is.diff))
 
     maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]
@@ -194,14 +198,17 @@ test_that("fine-tuning by SD runs without errors", {
     trained <- trainSingleR(training, training$label, genes='sd', sd.thresh=0.5) # turning down the threshold.
     pred <- classifySingleR(test, trained, fine.tune=FALSE)
 
-    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { # Minor offsets to avoid problems with numerical precision.
+    # Minor offsets to avoid problems with numerical precision.
+    for (Q in c(0, 0.21, 0.51, 0.81, 1)) { 
         for (thresh in c(0, 0.05, 0.1)) {
-            tuned <- SingleR:::.fine_tune_sd(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            tuned <- SingleR:::.fine_tune_sd(assay(test), pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=0.5)
-            ref <- .fine_tune_sd_ref(assay(test)[,1:10], pred$scores, trained$original.exprs, 
+            ref <- .fine_tune_sd_ref(assay(test), pred$scores, trained$original.exprs, 
                  quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=0.5)
 
-            expect_equal(colnames(pred$scores)[tuned+1], ref)
+            expect_equal(colnames(pred$scores)[tuned[[1]]+1], ref[[1]])
+            expect_equal(tuned[[2]], ref[[2]])
+            expect_equal(tuned[[3]], unname(ref[[3]]))
         }
     }
 
@@ -211,8 +218,8 @@ test_that("fine-tuning by SD runs without errors", {
     tuned <- SingleR:::.fine_tune_sd(assay(test), pred$scores, trained$original.exprs, 
          quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1)
 
-    expect_identical(length(tuned), nrow(pred))
-    is.diff <- colnames(pred$scores)[tuned+1]!=pred$labels
+    expect_identical(lengths(tuned), rep(nrow(pred), length(tuned)))
+    is.diff <- colnames(pred$scores)[tuned[[1]]+1]!=pred$labels
     expect_true(any(is.diff))
 
     maxed <- pred$scores[cbind(seq_len(nrow(pred)), max.col(pred$scores))]
@@ -223,6 +230,26 @@ test_that("fine-tuning by SD runs without errors", {
          quantile=Q, tune.thresh=thresh, median.mat=trained$search$extra, sd.thresh=1,
          BPPARAM=BiocParallel::SnowParam(3))
     expect_identical(multi, tuned)
+})
+
+test_that("fine-tuning handles the edge cases sensibly", {
+    # Only one label available:
+    trained <- trainSingleR(training[,1], training$label[1])
+    pred <- classifySingleR(test, trained, fine.tune=FALSE)
+
+    tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+         quantile=0.5, tune.thresh=0.1, de.info=trained$search$extra)
+    expect_true(all(is.na(tuned[[3]])))
+    expect_false(any(is.na(tuned[[2]])))
+
+    # No labels available:
+    trained <- trainSingleR(training[,0], training$label[0])
+    pred <- classifySingleR(test, trained, fine.tune=FALSE)
+
+    tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+         quantile=0.5, tune.thresh=0.1, de.info=trained$search$extra)
+    expect_true(all(is.na(tuned[[3]])))
+    expect_true(all(is.na(tuned[[2]])))
 })
 
 ###################################
@@ -236,4 +263,12 @@ test_that("fine-tuning works in the body of the function", {
     trained <- trainSingleR(training, training$label, genes='sd', sd.thresh=0.5)
     ref <- classifySingleR(test, trained)
     expect_true("first.labels" %in% colnames(ref))
+
+    # Stress-checking edge cases.
+    trained <- trainSingleR(training[,0], training$label[0])
+    pred <- classifySingleR(test, trained)
+    expect_identical(sum(is.na(pred$labels)), ncol(test))
+
+    trained <- trainSingleR(training[0,], training$label)
+    expect_error(pred <- classifySingleR(test, trained), NA)
 })

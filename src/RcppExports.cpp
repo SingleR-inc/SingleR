@@ -6,7 +6,7 @@
 using namespace Rcpp;
 
 // fine_tune_label_de
-Rcpp::IntegerVector fine_tune_label_de(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
+Rcpp::List fine_tune_label_de(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
 RcppExport SEXP _SingleR_fine_tune_label_de(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP marker_genesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -21,7 +21,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // fine_tune_label_sd
-Rcpp::IntegerVector fine_tune_label_sd(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::NumericMatrix median_mat, double sd_thresh);
+Rcpp::List fine_tune_label_sd(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::NumericMatrix median_mat, double sd_thresh);
 RcppExport SEXP _SingleR_fine_tune_label_sd(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP median_matSEXP, SEXP sd_threshSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
