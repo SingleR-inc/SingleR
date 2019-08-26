@@ -181,7 +181,7 @@ MouseRNAseqData <- function() {
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
-#' Obtain human bulk RNA-seq from the Database of Immune Cell Expression (DICE)
+#' Obtain human bulk RNA-seq data from the Database of Immune Cell Expression (DICE)
 #'
 #' Download and cache the normalized expression values of 1561 bulk RNA-seq samples
 #' of sorted cell populations from the DICE database.
@@ -194,12 +194,13 @@ MouseRNAseqData <- function() {
 #' Genes with no reads across samples were removed, and values were log2 normalized after a pseudocount of 1 was added.
 #' 
 #' The dataset entails 1561 human RNA-seq samples annotated to 5 main cell types: 
-#' B cells, Monocytes, NK cells, CD8+ T cells, and CD4+ T cells.
+#' "B cells", "Monocytes", "NK cells", "T cells, CD8+", and "T cells, CD4+".
 #'
-#' It includes 15 total cell types:
-#' 
-#' 
-#' 
+#' Samples were additionally annotated to 15 fine cell types:
+#' "B cells, naive", "Monocytes, CD14+", "Monocytes, CD16+", "NK cells", "T cells, memory TREG",
+#' "T cells, CD4+, naive", "T cells, CD4+, naive, stimulated", "T cells, CD4+, naive Treg",
+#' "T cells, CD4+, Th1", "T cells, CD4+, Th1_17", "T cells, CD4+, Th2", "T cells, CD8+, naïve",
+#' "T cells, CD8+, naïve, stimulated", "T cells, CD4+, TFH", "T cells, CD4+, Th17".
 #' 
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
@@ -223,19 +224,32 @@ DatabaseImmuneCellExpressionData <- function() {
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
-#' Obtain human bulk expression data of sorted cell populations from GSE24759 (microarray)
+#' Obtain human bulk microarray expression data of sorted cell populations from GSE24759 (DMAP)
 #'
 #' Download and cache the normalized expression values of 211 bulk human microarray samples
-#' of sorted cell populations that can be found in GEO.
+#' of sorted hematopoietic cell populations that can be found in 
+#' \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759}{GSE24759}.
 #'
-#' @details This dataset was contributed by the Benayoun Lab that identified, 
-#' downloaded and processed data sets on GEO that corresponded to sorted cell
-#' types (Benayoun et al., 2019).
-#' 
-#' The dataset entails 211 human microarray samples annotated to 18 main cell types: 
-#' Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial 
-#' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
-#' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
+#' @details 
+#' The dataset entails 211 human microarray samples annotated to 17 main cell types: 
+#' Basophils, B cells, CMPs, Dendritic cells, Eosinophils, Erythroid cells, GMPS,
+#' Granulocytes, HSCs, Megakaryocytes, MEPs, Monocytes, NK cells, NK T cells,,
+#' CD8+ T cells, CD4+ T cells.
+#'
+#' Samples were additionally annotated to 38 fine cell types:
+#' Basophils, Naive B cells, Mature B-cells class able to switch, Mature B-cells,
+#' Mature B-cells class switched, Common myeloid progenitors, Plasmacytoid Dendritic Cells,
+#' Myeloid Dendritic Cells, Eosinophils, Erythroid_CD34+ CD71+ GlyA-, Erythroid_CD34- CD71+ GlyA-,
+#' Erythroid_CD34- CD71+ GlyA+, Erythroid_CD34- CD71lo GlyA+, Erythroid_CD34- CD71- GlyA+, 
+#' Granulocyte/monocyte progenitors, Colony Forming Unit-Granulocytes, 
+#' Granulocyte (Neutrophilic Metamyelocytes), Granulocyte (Neutrophils), 
+#' Hematopoietic stem cells_CD133+ CD34dim, Hematopoietic stem cell_CD38- CD34+,
+#' Colony Forming Unit-Megakaryocytic, Megakaryocytes, Megakaryocyte/erythroid progenitors,
+#' Colony Forming Unit-Monocytes, Monocytes, Mature NK cells_CD56- CD16+ CD3-,
+#' Mature NK cells_CD56+ CD16+ CD3-, Mature NK cells_CD56- CD16- CD3-, NK T cells,
+#' Early B-cells, Pro B-cells, CD8+ Effector Memory RA, Naive CD8+ T-cells, 
+#' CD8+ Effector Memory, CD8+ Central Memory, Naive CD4+ T-cells, CD4+ Effector Memory,
+#' CD4+ Central Memory.
 #' 
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
@@ -259,20 +273,25 @@ NovershternHematopoieticData <- function() {
         has.rowdata = FALSE, has.coldata = TRUE)
 }
 
-#' Obtain human bulk expression data of sorted cell populations from GSE107011 (RNA-seq)
+#' Obtain human bulk RNA-seq data of sorted cell populations from GSE107011
 #'
 #' Download and cache the normalized expression values of 114 bulk RNA-seq samples
-#' of sorted cell populations that can be found in GEO.
+#' of sorted immune cell populations that can be found in 
+#' \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011}{GSE107011}.
 #'
-#' @details This dataset was contributed by the Benayoun Lab that identified, 
-#' downloaded and processed data sets on GEO that corresponded to sorted cell
-#' types (Benayoun et al., 2019).
-#' 
+#' @details 
 #' The dataset entails 114 human RNA-seq samples annotated to 11 main cell types: 
-#' Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial 
-#' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
-#' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
-#' 
+#' CD8+ T cells, T cells, CD4+ T cells, Progenitors, B cells, Plasmablasts, 
+#' Monocytes, NK cells, Dendritic cells, Neutrophils, Basophils.
+#'
+#' Samples were additionally annotated to 29 fine cell types:
+#' Tcell.CD8.naive, Tcell.CD8.CentralMemory, Tcell.CD8.EffectorMemory, Tcell.CD8.TerminalEffector,
+#' Tcell.MAIT, Tcell.VD2pos.gd, Tcell.VD2neg.gd, Tcell.FollicularHelper, Tcell.Treg, Tcell.Th1,
+#' Tcell.Th1.Th17, Tcell.Th17, Tcell.Th2, Tcell.CD4.naive, Tcell.CD4.TerminalEffector, Progenitor,
+#' Bcell.naive, Bcell.NonSwitchedMemory, Bcell.Exhausted, Bcell.SwitchedMemory, Plasmablast,
+#' Monocyte.Classical, Monocyte.Int, Monocyte.NonClassical, NK, Dendritic.Plasmacytoid,
+#' Dendritic.Myeloid, Neutrophil, Basophil.
+#'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
 #' \code{\link{colData}}.
