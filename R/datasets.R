@@ -290,7 +290,7 @@ NovershternHematopoieticData <- function() {
 #' @export
 MonacoImmuneData <- function() {
     version <- "1.0.0"
-    .create_se(file.path("GSE107011", version), 
+    .create_se(file.path("monaco_immune", version), 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 }
@@ -311,7 +311,16 @@ MonacoImmuneData <- function() {
     
     ## TEMPORARY CODE for pulling data directly from github until it is 
     ## available on ExHub =====================================================
-    full.url <- sprintf("https://github.com/dviraran/SingleR/blob/master/data/%s.rda?raw=true", dirname(dataset))
+    if (dirname(dataset) == "dice") {
+        full.url <- "https://www.dropbox.com/s/qzh0k3g0ulihpyd/dice.rda?dl=1"
+    } else if (dirname(dataset) == "dmap") {
+        full.url <- "https://www.dropbox.com/s/fz118owqdm6bty2/dmap.rda?dl=1"
+    } else if (dirname(dataset) == "monaco_immune") {
+        full.url <- "https://www.dropbox.com/s/3l82mnuvp3ts4gt/monaco_immune.rda?dl=1"
+    } else {
+        full.url <- sprintf("https://github.com/dviraran/SingleR/blob/master/data/%s.rda?raw=true", dirname(dataset))
+    }
+
     bfc <- BiocFileCache(ask=FALSE)
     ref <- bfcrpath(bfc, full.url)
 

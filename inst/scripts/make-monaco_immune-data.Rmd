@@ -1,5 +1,5 @@
 ---
-title: "Obtaining reference data from Differentiation Map (DMAP)"
+title: "Obtaining reference data from GSE107011"
 author: "Jared Andrews"
 date: "8/23/2019"
 output: 
@@ -18,9 +18,8 @@ I created several other reference datasets specifically for immune/hematopoietic
 These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
 Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
 
-This RNA microarray dataset was downloaded from [GEO24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759).
-Values were already RMA normalized. 
-The only additional processing done was to collapse probes to gene level values by keeping probes with the highest average across all samples.
+This RNA-seq dataset was downloaded from [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011).
+Values were already TPM normalized, so the only additional processing done was to remove genes with no reads across samples and log2 normalize values after adding a pseudocount of 1.
 'Main' and 'fine' labels were manually assigned to each sample based on cell type as specified in the GEO repository.
 
 # Data retrieval
@@ -28,8 +27,8 @@ The only additional processing done was to collapse probes to gene level values 
 For now, we're going to retrieve the processed data from Dropbox repository:
 
 ```{r retrieve_from_github}
-dataset <- "dmap" 
-full.url <- "https://www.dropbox.com/s/fz118owqdm6bty2/dmap.rda?dl=1"
+dataset <- "monaco_immune" 
+full.url <- "https://www.dropbox.com/s/3l82mnuvp3ts4gt/monaco_immune.rda?dl=1"
 
 library(BiocFileCache)
 bfc <- BiocFileCache(ask=FALSE)
