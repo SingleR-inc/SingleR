@@ -24,7 +24,7 @@ Values were already TPM normalized, so the only additional processing done was t
 
 # Data retrieval
 
-For now, we're going to retrieve the processed data from Dropbox repository:
+For now, we're going to retrieve the processed data from a Dropbox repository:
 
 ```{r retrieve_from_github}
 dataset <- "monaco_immune" 
