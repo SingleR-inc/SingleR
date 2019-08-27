@@ -31,9 +31,7 @@
 #' plotScoresMultiLabels(results = pred,
 #'     dots.on.top = TRUE, size = 0.5)
 #' 
-#' NULL
 NULL
-
 
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
