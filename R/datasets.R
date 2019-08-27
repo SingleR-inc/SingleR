@@ -212,30 +212,30 @@ MouseRNAseqData <- function() {
 #' 
 #' The dataset entails 1561 human RNA-seq samples annotated to 5 main cell types: 
 #' \itemize{
-#'     \item "B cells"
-#'     \item "Monocytes"
-#'     \item "NK cells"
-#'     \item "T cells, CD8+"
-#'     \item "T cells, CD4+"
+#'     \item B cells
+#'     \item Monocytes
+#'     \item NK cells
+#'     \item T cells, CD8+
+#'     \item T cells, CD4+
 #' }
 #'
 #' Samples were additionally annotated to 15 fine cell types:
 #' \itemize{
-#'     \item "B cells, naive"
-#'     \item "Monocytes, CD14+"
-#'     \item "Monocytes, CD16+"
-#'     \item "NK cells"
-#'     \item "T cells, memory TREG"
-#'     \item "T cells, CD4+, naive"
-#'     \item "T cells, CD4+, naive, stimulated"
-#'     \item "T cells, CD4+, naive Treg"
-#'     \item "T cells, CD4+, Th1"
-#'     \item "T cells, CD4+, Th1_17"
-#'     \item "T cells, CD4+, Th2"
-#'     \item "T cells, CD8+, naïve"
-#'     \item "T cells, CD8+, naïve, stimulated"
-#'     \item "T cells, CD4+, TFH"
-#'     \item "T cells, CD4+, Th17"
+#'     \item B cells, naive
+#'     \item Monocytes, CD14+
+#'     \item Monocytes, CD16+
+#'     \item NK cells
+#'     \item T cells, memory TREG
+#'     \item T cells, CD4+, naive
+#'     \item T cells, CD4+, naive, stimulated
+#'     \item T cells, CD4+, naive Treg
+#'     \item T cells, CD4+, Th1
+#'     \item T cells, CD4+, Th1_17
+#'     \item T cells, CD4+, Th2
+#'     \item T cells, CD8+, naïve
+#'     \item T cells, CD8+, naïve, stimulated
+#'     \item T cells, CD4+, TFH
+#'     \item T cells, CD4+, Th17
 #' }
 #'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
