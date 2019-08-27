@@ -153,10 +153,27 @@ ImmGenData <- function() {
 #' types (Benayoun et al., 2019).
 #' 
 #' The dataset entails 358 mouse RNA-seq samples annotated to 18 main cell types: 
-#' Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial 
-#' cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
-#' Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
-#' 
+#' \itemize{
+#'     \item Adipocytes
+#'     \item Astrocytes
+#'     \item B cells 
+#'     \item Cardiomyocytes
+#'     \item Dendritic cells
+#'     \item Endothelial cells
+#'     \item Epithelial cells
+#'     \item Erythrocytes
+#'     \item Fibroblasts
+#'     \item Granulocytes
+#'     \item Hepatocytes
+#'     \item Macrophages
+#'     \item Microglia
+#'     \item Monocytes
+#'     \item Neurons
+#'     \item NK cells
+#'     \item Oligodendrocytes
+#'     \item T cells
+#' } 
+#'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
 #' \code{\link{colData}}.
@@ -194,14 +211,33 @@ MouseRNAseqData <- function() {
 #' Genes with no reads across samples were removed, and values were log2 normalized after a pseudocount of 1 was added.
 #' 
 #' The dataset entails 1561 human RNA-seq samples annotated to 5 main cell types: 
-#' "B cells", "Monocytes", "NK cells", "T cells, CD8+", and "T cells, CD4+".
+#' \itemize{
+#'     \item "B cells"
+#'     \item "Monocytes"
+#'     \item "NK cells"
+#'     \item "T cells, CD8+"
+#'     \item "T cells, CD4+"
+#' }
 #'
 #' Samples were additionally annotated to 15 fine cell types:
-#' "B cells, naive", "Monocytes, CD14+", "Monocytes, CD16+", "NK cells", "T cells, memory TREG",
-#' "T cells, CD4+, naive", "T cells, CD4+, naive, stimulated", "T cells, CD4+, naive Treg",
-#' "T cells, CD4+, Th1", "T cells, CD4+, Th1_17", "T cells, CD4+, Th2", "T cells, CD8+, naïve",
-#' "T cells, CD8+, naïve, stimulated", "T cells, CD4+, TFH", "T cells, CD4+, Th17".
-#' 
+#' \itemize{
+#'     \item "B cells, naive"
+#'     \item "Monocytes, CD14+"
+#'     \item "Monocytes, CD16+"
+#'     \item "NK cells"
+#'     \item "T cells, memory TREG"
+#'     \item "T cells, CD4+, naive"
+#'     \item "T cells, CD4+, naive, stimulated"
+#'     \item "T cells, CD4+, naive Treg"
+#'     \item "T cells, CD4+, Th1"
+#'     \item "T cells, CD4+, Th1_17"
+#'     \item "T cells, CD4+, Th2"
+#'     \item "T cells, CD8+, naïve"
+#'     \item "T cells, CD8+, naïve, stimulated"
+#'     \item "T cells, CD4+, TFH"
+#'     \item "T cells, CD4+, Th17"
+#' }
+#'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
 #' \code{\link{colData}}.
@@ -231,25 +267,67 @@ DatabaseImmuneCellExpressionData <- function() {
 #' \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759}{GSE24759}.
 #'
 #' @details 
-#' The dataset entails 211 human microarray samples annotated to 17 main cell types: 
-#' Basophils, B cells, CMPs, Dendritic cells, Eosinophils, Erythroid cells, GMPS,
-#' Granulocytes, HSCs, Megakaryocytes, MEPs, Monocytes, NK cells, NK T cells,,
-#' CD8+ T cells, CD4+ T cells.
+#' The dataset entails 211 human microarray samples annotated to 16 main cell types: 
+#' \itemize{
+#'     \item Basophils
+#'     \item B cells
+#'     \item CMPs
+#'     \item Dendritic cells
+#'     \item Eosinophils
+#'     \item Erythroid cells
+#'     \item GMPS
+#'     \item Granulocytes
+#'     \item HSCs
+#'     \item Megakaryocytes
+#'     \item MEPs
+#'     \item Monocytes
+#'     \item NK cells
+#'     \item NK T cells
+#'     \item CD8+ T cells
+#'     \item CD4+ T cells
+#' }
 #'
 #' Samples were additionally annotated to 38 fine cell types:
-#' Basophils, Naive B cells, Mature B-cells class able to switch, Mature B-cells,
-#' Mature B-cells class switched, Common myeloid progenitors, Plasmacytoid Dendritic Cells,
-#' Myeloid Dendritic Cells, Eosinophils, Erythroid_CD34+ CD71+ GlyA-, Erythroid_CD34- CD71+ GlyA-,
-#' Erythroid_CD34- CD71+ GlyA+, Erythroid_CD34- CD71lo GlyA+, Erythroid_CD34- CD71- GlyA+, 
-#' Granulocyte/monocyte progenitors, Colony Forming Unit-Granulocytes, 
-#' Granulocyte (Neutrophilic Metamyelocytes), Granulocyte (Neutrophils), 
-#' Hematopoietic stem cells_CD133+ CD34dim, Hematopoietic stem cell_CD38- CD34+,
-#' Colony Forming Unit-Megakaryocytic, Megakaryocytes, Megakaryocyte/erythroid progenitors,
-#' Colony Forming Unit-Monocytes, Monocytes, Mature NK cells_CD56- CD16+ CD3-,
-#' Mature NK cells_CD56+ CD16+ CD3-, Mature NK cells_CD56- CD16- CD3-, NK T cells,
-#' Early B-cells, Pro B-cells, CD8+ Effector Memory RA, Naive CD8+ T-cells, 
-#' CD8+ Effector Memory, CD8+ Central Memory, Naive CD4+ T-cells, CD4+ Effector Memory,
-#' CD4+ Central Memory.
+#' \itemize{
+#'     \item Basophils
+#'     \item Naive B cells
+#'     \item Mature B-cells class able to switch
+#'     \item Mature B-cells
+#'     \item Mature B-cells class switched
+#'     \item Common myeloid progenitors
+#'     \item Plasmacytoid Dendritic Cells
+#'     \item Myeloid Dendritic Cells
+#'     \item Eosinophils
+#'     \item Erythroid_CD34+ CD71+ GlyA-
+#'     \item Erythroid_CD34- CD71+ GlyA-
+#'     \item Erythroid_CD34- CD71+ GlyA+
+#'     \item Erythroid_CD34- CD71lo GlyA+
+#'     \item Erythroid_CD34- CD71- GlyA+
+#'     \item Granulocyte/monocyte progenitors
+#'     \item Colony Forming Unit-Granulocytes
+#'     \item Granulocyte (Neutrophilic Metamyelocytes)
+#'     \item Granulocyte (Neutrophils)
+#'     \item Hematopoietic stem cells_CD133+ CD34dim
+#'     \item Hematopoietic stem cell_CD38- CD34+
+#'     \item Colony Forming Unit-Megakaryocytic
+#'     \item Megakaryocytes
+#'     \item Megakaryocyte/erythroid progenitors
+#'     \item Colony Forming Unit-Monocytes
+#'     \item Monocytes
+#'     \item Mature NK cells_CD56- CD16+ CD3-
+#'     \item Mature NK cells_CD56+ CD16+ CD3-
+#'     \item Mature NK cells_CD56- CD16- CD3-
+#'     \item NK T cells,
+#'     \item Early B-cells
+#'     \item Pro B-cells
+#'     \item CD8+ Effector Memory RA
+#'     \item Naive CD8+ T-cells
+#'     \item CD8+ Effector Memory
+#'     \item CD8+ Central Memory
+#'     \item Naive CD4+ T-cells
+#'     \item CD4+ Effector Memory
+#'     \item CD4+ Central Memory
+#' }
 #' 
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
@@ -281,16 +359,52 @@ NovershternHematopoieticData <- function() {
 #'
 #' @details 
 #' The dataset entails 114 human RNA-seq samples annotated to 11 main cell types: 
-#' CD8+ T cells, T cells, CD4+ T cells, Progenitors, B cells, Plasmablasts, 
-#' Monocytes, NK cells, Dendritic cells, Neutrophils, Basophils.
+#' \itemize{
+#'     \item CD8+ T cells
+#'     \item T cells
+#'     \item CD4+ T cells
+#'     \item Progenitors
+#'     \item B cells
+#'     \item Plasmablasts
+#'     \item Monocytes
+#'     \item NK cells
+#'     \item Dendritic cells
+#'     \item Neutrophils
+#'     \item Basophils
+#' }
 #'
 #' Samples were additionally annotated to 29 fine cell types:
-#' Tcell.CD8.naive, Tcell.CD8.CentralMemory, Tcell.CD8.EffectorMemory, Tcell.CD8.TerminalEffector,
-#' Tcell.MAIT, Tcell.VD2pos.gd, Tcell.VD2neg.gd, Tcell.FollicularHelper, Tcell.Treg, Tcell.Th1,
-#' Tcell.Th1.Th17, Tcell.Th17, Tcell.Th2, Tcell.CD4.naive, Tcell.CD4.TerminalEffector, Progenitor,
-#' Bcell.naive, Bcell.NonSwitchedMemory, Bcell.Exhausted, Bcell.SwitchedMemory, Plasmablast,
-#' Monocyte.Classical, Monocyte.Int, Monocyte.NonClassical, NK, Dendritic.Plasmacytoid,
-#' Dendritic.Myeloid, Neutrophil, Basophil.
+#' \itemize{
+#'     \item Tcell.CD8.naive
+#'     \item Tcell.CD8.CentralMemory
+#'     \item Tcell.CD8.EffectorMemory
+#'     \item Tcell.CD8.TerminalEffector
+#'     \item Tcell.MAIT
+#'     \item Tcell.VD2pos.gd
+#'     \item Tcell.VD2neg.gd
+#'     \item Tcell.FollicularHelper
+#'     \item Tcell.Treg
+#'     \item Tcell.Th1
+#'     \item Tcell.Th1.Th17
+#'     \item Tcell.Th17
+#'     \item Tcell.Th2
+#'     \item Tcell.CD4.naive
+#'     \item Tcell.CD4.TerminalEffector
+#'     \item Progenitor
+#'     \item Bcell.naive
+#'     \item Bcell.NonSwitchedMemory
+#'     \item Bcell.Exhausted
+#'     \item Bcell.SwitchedMemory
+#'     \item Plasmablast
+#'     \item Monocyte.Classical
+#'     \item Monocyte.Int
+#'     \item Monocyte.NonClassical
+#'     \item NK
+#'     \item Dendritic.Plasmacytoid
+#'     \item Dendritic.Myeloid
+#'     \item Neutrophil
+#'     \item Basophil
+#' }
 #'
 #' @return A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
 #' containing the log-normalized expression values, along with cell type labels in the 
