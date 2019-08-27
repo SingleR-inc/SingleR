@@ -45,24 +45,54 @@ NULL
 
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
+#' @importFrom stats median
 plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
     labels.use = levels(as.factor(results$labels)), size = 2,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
-    if(length(colors)<4){stop("4 colors are expected.")}
-    if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
+    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")) {
+
+    if (length(colors)<4) {
+        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
+            'other label', 'other label - pruned'")
+    }
+    # Name the colors
+    if (is.null(names(colors))) {
+        names(colors) <- 
+            c('this label', 'this label - pruned',
+            'other label', 'other label - pruned')
+    }
+
+    # Add rownames to the results which will be used for trimming scores data
+    #   to the target cell later on
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    df <- .data_gather(results, prune.calls, labels.use)
-    p <- ggplot(data = df[df$id == rownames(results)[cell.id],],
-                aes(x = label, y = score, fill = called.this)) + 
-        theme_classic() + geom_point(
-                color = "black",
-                shape = 21,
-                size = size,
-                alpha = 1) + scale_fill_manual(values = colors) +
-        theme(axis.text.x= element_text(angle=60, hjust = 1, vjust = 1, size=12)) +
-        xlab(NULL)
+    # Get the scores data for all cells
+    df <- .data_gather(results, prune.calls)
+    # Trim to just the data for the target cell
+    df <- df[df$id == rownames(results)[cell.id],]
+    # Calculate the cell's median score based on all labels
+    scores.median <- median(df$score)
+    # Trim to just the data for the target labels
+    df <- df[df$label %in% labels.use,]
+
+    # Make the plot
+    p <- ggplot(
+            data = df,
+            aes(x = label, y = score, fill = called.this)) +
+        theme_classic() +
+        # Set labels names to be rotated 60 degrees.
+        theme(axis.text.x= element_text(
+            angle=60, hjust = 1, vjust = 1, size=12)) +
+        # Remove "label" label from the x-axis
+        xlab(NULL) +
+        # Add median score line
+        geom_hline(yintercept = scores.median, color = "gray",
+            linetype = "dashed") +
+        # Add scores data points
+        geom_point(color = "black", shape = 21, size = size, alpha = 1) +
+        # Set the colors
+        scale_fill_manual(values = colors)
+
     p
 }
 
