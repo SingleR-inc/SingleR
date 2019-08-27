@@ -66,7 +66,7 @@ plotScoresSingleCell <- function(results, cell.id,
     }
 
     # Gather the scores data for all cells and labels
-    df <- .data_gather(results)
+    df <- .scores_data_gather(results)
     # Trim to just the data for the target cell
     df <- df[df$id == rownames(results)[cell.id],]
     # Calculate the cell's median score based on all labels
@@ -77,7 +77,7 @@ plotScoresSingleCell <- function(results, cell.id,
     # Make the plot
     p <- ggplot(
             data = df,
-            aes(x = label, y = score, fill = called.this)) +
+            aes(x = label, y = score, fill = cell.calls)) +
         theme_classic() +
         # Set labels names to be rotated 60 degrees.
         theme(axis.text.x= element_text(
@@ -90,7 +90,7 @@ plotScoresSingleCell <- function(results, cell.id,
         # Add scores data points
         geom_point(color = "black", shape = 21, size = size, alpha = 1) +
         # Set the colors
-        scale_fill_manual(values = colors)
+        scale_fill_manual(name = "Cell Calls", values = colors)
 
     p
 }
@@ -117,17 +117,17 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
     }
 
     # Get the scores data
-    df <- .data_gather(results, label)
+    df <- .scores_data_gather(results, label)
     # Trim to the target label
     df <- df[df$label == label,]
     
     # Make the plot
     p <- ggplot(
             data = df,
-            aes(x = called.this, y = score, fill = called.this)) + 
+            aes(x = cell.calls, y = score, fill = cell.calls)) + 
         theme_classic() +
         # Set the colors
-        scale_fill_manual(values = colors) + 
+        scale_fill_manual(name = "Cell Calls", values = colors) + 
         # Remove x-axis labels for the groupings (already in the legend),
         #   but do show the name of the target `label` as the axis title.
         scale_x_discrete(name = label, labels = NULL)
@@ -162,14 +162,14 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     }
 
     # Gathere the scores data in a dataframe
-    df <- .data_gather(results, labels.use)
+    df <- .scores_data_gather(results, labels.use)
     
     # Make the plot
     p <- ggplot(
             data = df,
-            aes(x = called.this, y = score, fill = called.this)) + 
-        theme_bw() +
-        scale_fill_manual(values = colors) + 
+            aes(x = cell.calls, y = score, fill = cell.calls)) + 
+        theme_classic() +
+        scale_fill_manual(name = "Cell Calls", values = colors) + 
         scale_x_discrete(name = "Labels", labels = NULL) +
         # Separate data by labels, with `ncol` # of columns.
         facet_wrap(facets = ~label, ncol = ncol)
@@ -185,28 +185,49 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     p
 }
 
-.data_gather <- function(results, labels.use = levels(as.factor(results$labels)))
+.scores_data_gather <- function(results, labels.use = levels(as.factor(results$labels)))
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
+    #Ensure labels.use are subsets of the labels in results.
     labels.use <- labels.use[labels.use %in% colnames(results$scores)]
+    
     scores <- results$scores[,colnames(results$scores) %in% labels.use]
-
+    
+    # Create a dataframe with rows for each score in scores.
     df <- data.frame(
+        #cell id of the cell
         id = c(sapply(rownames(results), function(X) rep(X, length(labels.use)))),
+        #final call of the cell
         called = c(sapply(results$labels, function(X) rep(X, length(labels.use)))),
-        label = rep(colnames(results$scores)[colnames(results$scores) %in% labels.use], nrow(results)),
+        #label of the current score
+        label = rep(
+            colnames(results$scores)[colnames(results$scores) %in% labels.use],
+            nrow(results)),
         score = as.numeric(t(scores)),
         stringsAsFactors = FALSE)
-    df$called.this <- "other label"
-    df$called.this[df$label == df$called] <- "this label"
+    
+    # Add whether this label is the final label given to each cell.
+    df$cell.calls <- "other label"
+    df$cell.calls[df$label == df$called] <- "this label"
+    
+    # Add " - pruned" to the cell.calls
     if (!is.null(results$pruned.labels)){
+        # Retrieve if cells' calls were scored as to be prunes versus not,
+        #  then add this to df$cell.calls
         prune.calls <- is.na(results$pruned.labels)
         prune.string <- as.character(factor(prune.calls, labels = c(""," - pruned")))
-        df$called.this <- paste0(df$called.this,
-                                 c(sapply(prune.string, function(X) rep(X, length(labels.use)))))
-        df$called.this <- factor(df$called.this, levels = c('this label', 'this label - pruned', 'other label', 'other label - pruned'))
+        df$cell.calls <- paste0(
+            df$cell.calls,
+            c(sapply(prune.string, function(X) rep(X, length(labels.use)))))
+        # Reorder levels of cell.calls (for proper coloring in plot functions).
+        df$cell.calls <- factor(
+            df$cell.calls,
+            levels = c(
+                'this label', 'this label - pruned',
+                'other label', 'other label - pruned'))
     }
+    
     df
 }
