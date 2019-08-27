@@ -201,15 +201,15 @@ Each of these datasets were also obtained from pre-sorted cell populations:
 * Novershtern Hematopoietic Cell Data - [GSE24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759) - formerly known as Differentiation Map [@dmapRef], and
 * Monaco Immune Cell Data - [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011)  [@monaco_immuneRef].
 
-| Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels |
-|------------------|----------|----------|-------------|----------------------|------------|
-|`HumanPrimaryCellAtlasData()`| human | 713 | microarrays of sorted cell populations  | 37 |  157 |
-|`BlueprintEncodeData()` |  human | 259 | RNA-seq | 24 | 43 |
-|`DatabaseImmuneCellExpressionData()` | human | 1561 | RNA-seq | 5 | 15 |
-|`NovershternHematopoieticData()` | human | 211 | microarrays of sorted cell populations | 17 | 38 |
-|`MonacoImmuneData()` | human | 114 | RNA-seq | 11 | 29 |
-|`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 |
-|`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 |
+| Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
+|------------------|----------|----------|-------------|----------------------|------------|----------|
+|`HumanPrimaryCellAtlasData()`| human | 713 | microarrays of sorted cell populations  | 37 |  157 | Non-specific |
+|`BlueprintEncodeData()` |  human | 259 | RNA-seq | 24 | 43 | Non-specific |
+|`DatabaseImmuneCellExpressionData()` | human | 1561 | RNA-seq | 5 | 15 | Immune |
+|`NovershternHematopoieticData()` | human | 211 | microarrays of sorted cell populations | 17 | 38 | Hematopoietic & Immune |
+|`MonacoImmuneData()` | human | 114 | RNA-seq | 11 | 29 | Immune |
+|`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 | Hematopoietic & Immune |
+|`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 | Non-specific |
 
 ## Demonstration on ESC data using the Human Primary Cell Atlas reference dataset
 
@@ -256,20 +256,71 @@ The analysis was performed using a custom CDF file obtained from Brainarray  [@a
 
 There are **20 main cell types** and **253 "fine" cell subtypes**.
 
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
 | Label type | Labels |
 |------------|--------|
 | main | B cells, B cells, pro, Basophils, DC, Endothelial cells, Eosinophils, Epithelial cells, Fibroblasts, ILC, Macrophages, Mast cells, Microglia, Monocytes, Neutrophils, NK cells, NKT, Stem cells, Stromal cells, T cells, Tgd |
 | fine | e.g. DC (DC.11B-), DC (DC.103-11B+24+), Macrophages (MF.103-11B+.SALM3, Macrophages (MF.11CLOSER.SALM3), Tgd (Tgd.vg2+.act)|
+</details>
 
 ### Mouse RNA-seq samples of pure cell populations
 
 The dataset entails **358 mouse RNA-seq** samples annotated to **18 main cell types** and
 **28 "fine" cell subtypes**.
 
-| Label type | Labels |
-|------------|--------|
-| main | Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes, Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells |
-| fine | Adipocytes, aNSCs, Astrocytes, Astrocytes activated, B cells, Cardiomyocytes, Dendritic cells, Endothelial cells, Ependymal, Erythrocytes, Fibroblasts, Fibroblasts activated, Fibroblasts senescent, Granulocytes, Hepatocytes, Macrophages, Macrophages activated, Microglia, Microglia activated, Monocytes, Neurons, Neurons activated, NK cells, NPCs, Oligodendrocytes, OPCs, qNSCs, T cells |
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+
+* Adipocytes
+  - Adipocytes
+* Astrocytes
+  - aNSCs 
+  - Astrocytes 
+  - Astrocytes activated
+* B cells
+  - B cells
+* Cardiomyocytes
+  - Cardiomyocytes
+* Dendritic cells
+  - Dendritic cells
+* Endothelial cells
+  - Endothelial cells
+* Epithelial cells
+  - Ependymal
+* Erythrocytes
+  - Erythrocytes
+* Fibroblasts
+  - Fibroblasts
+  - Fibroblasts activated
+  - Fibroblasts senescent
+* Granulocytes
+  - Granulocytes
+* Hepatocytes
+  - Hepatocytes
+* Macrophages
+  - Macrophages
+  - Macrophages activated
+* Microglia
+  - Microglia
+  - Microglia activated
+* Monocytes
+  - Monocytes
+* Neurons
+  - Neurons
+  - Neurons activated
+  - NPCs
+  - qNSCs
+* NK cells 
+  - NK cells
+* Oligodendrocytes
+  - Oligodendrocytes
+  - OPCs
+* T cells
+  - T cells
+
+</details>
 
 The RNA-seq data were downloaded from GEO and processed by the Benayoun Lab as follows [@Benayoun2019]:
 
@@ -287,50 +338,241 @@ ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@
 
 Altogether, **259 samples** with **24 main cell types** and  **43 "fine" cell subtypes**.
 
-| Label type | Labels |
-|------------|--------|
-| main | Adipocytes, B-cells, CD4+ T-cells, CD8+ T-cells, Chondrocytes, DC, Endothelial cells, Eosinophils, Epithelial cells, Erythrocytes, Fibroblasts, HSC, Keratinocytes, Macrophages, Melanocytes, Mesangial cells, Monocytes, Myocytes, Neurons, Neutrophils, NK cells, Pericytes, Skeletal muscle, Smooth muscle |
-| fine | Adipocytes, Astrocytes, CD4+ T-cells, CD4+ Tcm, CD4+ Tem, CD8+ T-cells, CD8+ Tcm, CD8+ Tem, Chondrocytes, Class-switched memory B-cells, CLP, CMP, DC, Endothelial cells, Eosinophils, Epithelial cells, Erythrocytes, Fibroblasts, GMP, HSC, Keratinocytes, Macrophages, Macrophages M1, Macrophages M2, Megakaryocytes, Melanocytes, Memory B-cells, MEP, Mesangial cells, Monocytes, MPP, mv Endothelial cells, Myocytes, naive B-cells, Neurons, Neutrophils, NK cells, Pericytes, Plasma cells, Preadipocytes, Skeletal muscle, Smooth muscle, Tregs |
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+
+* Adipocytes
+  - Adipocytes
+  - Astrocytes
+  - Preadipocytes
+* B-cells
+  - Class-switched memory B-cells
+  - Memory B-cells
+  - naive B-cells
+  - Plasma cells
+* CD4+ T-cells
+  - CD4+ T-cells 
+  - CD4+ Tcm 
+  - CD4+ Tem
+  - Tregs
+* CD8+ T-cells
+  - CD8+ T-cells 
+  - CD8+ Tcm 
+  - CD8+ Tem
+* Chondrocytes
+  - Chondrocytes
+* DC 
+  - DC
+* Endothelial cells
+  - Endothelial cells
+  - mv Endothelial cells
+* Eosinophils
+  - Eosinophils
+* Epithelial cells 
+  - Epithelial cells
+* Erythrocytes
+  - Erythrocytes
+* Fibroblasts
+  - Fibroblasts
+* HSC
+  - CLP 
+  - CMP
+  - GMP 
+  - HSC
+  - Megakaryocytes
+  - MEP
+  - MPP
+* Keratinocytes
+  - Keratinocytes
+* Macrophages
+  - Macrophages 
+  - Macrophages M1 
+  - Macrophages M2
+* Melanocytes
+  - Melanocytes
+* Mesangial cells
+  - Mesangial cells
+* Monocytes
+  - Monocytes
+* Myocytes
+  - Myocytes
+* Neurons
+  - Neurons
+* Neutrophils
+  - Neutrophils
+* NK cells
+  - NK cells
+* Pericytes
+  - Pericytes
+* Skeletal muscle
+  - Skeletal muscle
+* Smooth muscle 
+  - Smooth muscle
+
+</details>
 
 ### Human Primary Cell Atlas
 
 Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
 contains **713 microarray samples** classified to **37 main cell types** and further annotated to **157  "fine" cell subtypes** [@hpcaRef].
 
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
 | Label type | Labels |
 |------------|--------|
 | main | Astrocyte, B_cell, BM, BM & Prog., Chondrocytes, CMP, DC, Embryonic_stem_cells, Endothelial_cells, Epithelial_cells, Erythroblast, Fibroblasts, Gametocytes, GMP, Hepatocytes, HSC_-G-CSF, HSC_CD34+, iPS_cells, Keratinocytes, Macrophage, MEP, Monocyte, MSC, Myelocyte, Neuroepithelial_cell, Neurons, Neutrophil, Neutrophils, NK_cell, Osteoblasts, Platelets, Pre-B_cell_CD34-, Pro-B_cell_CD34+, Pro-Myelocyte, Smooth_muscle_cells, T_cells, Tissue_stem_cells |
 | fine | e.g. DC:monocyte-derived:AM580, DC:monocyte-derived:Poly(IC), T_cell:CD8+_naive, Keratinocytes:IL22, Keratinocytes:KGF |
+</details>
 
 ### Database of Immune Cell Expression
 
 [DICE](https://dice-database.org): **1561 bulk RNA-seq samples** of 15 immune cell types [@diceRef].
 Samples were annotated to **5 main cell types** and **15 "fine" cell subtypes**.
 
-| Label type | Labels |
-|------------|--------|
-| main | B cells, Monocytes, NK cells, 'T cells, CD8+', 'T cells, CD4+' |
-| fine | 'B cells, naive', 'Monocytes, CD14+', 'Monocytes, CD16+', 'NK cells', 'T cells, memory TREG', 'T cells, CD4+, naive', 'T cells, CD4+, naive, stimulated', 'T cells, CD4+, naive Treg', 'T cells, CD4+, Th1', 'T cells, CD4+, Th1_Th17', 'T cells, CD4+, Th2', 'T cells, CD8+, naive', 'T cells, CD8+, naive, stimulated', 'T cells, CD4+, TFH', 'T cells, CD4+, Th17' |
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+* B cells
+  - B cells, naive
+* Monocytes
+  - Monocytes, CD14+
+  - Monocytes, CD16+
+* NK cells
+  - NK cells
+* T cells, CD8+
+  - T cells, CD8+, naive 
+  - T cells, CD8+, naive, stimulated
+* T cells, CD4+
+  - T cells, memory TREG 
+  - T cells, CD4+, naive 
+  - T cells, CD4+, naive, stimulated 
+  - T cells, CD4+, naive Treg 
+  - T cells, CD4+, Th1 
+  - T cells, CD4+, Th1_Th17 
+  - T cells, CD4+, Th2  
+  - T cells, CD4+, TFH 
+  - T cells, CD4+, Th17
+  
+</details> 
 
 ### Novershtern Hematopoietic Data (Differentiation Map)
 
 This dataset is composed of **211 microarray samples** from hematopoietic cell subsets as described in [@dmapRef].
 Samples were annotated to **16 main cell types** and **38 "fine" cell subtypes**. 
 
-| Label type | Labels |
-|------------|--------|
-| main | Basophils, B cells, CMPs, Dendritic cells, Eosinophils, Erythroid cells, GMPs, Granulocytes, HSCs, Megakaryocytes, MEPs, Monocytes, NK cells, NK T cells, CD8+ T cells, CD4+ T cells |
-| fine | Basophils, Naive B cells, Mature B-cells class able to switch, Mature B-cells, Mature B-cells class switched, Plasmacytoid Dendritic Cells, Myeloid Dendritic Cells, Eosinophils, Erythroid_CD34+ CD71+ GlyA-, Erythroid_CD34- CD71+ GlyA-, Erythroid_CD34- CD71+ GlyA+, Erythroid_CD34- CD71lo GlyA+, Erythroid_CD34- CD71- GlyA+, Granulocyte/monocyte progenitors, Colony Forming Unit-Granulocytes, Granulocyte (Neutrophilic Metamyelocytes), Granulocyte (Neutrophils), Hematopoietic stem cells_CD133+ CD34dim, Hematopoietic stem cell_CD38- CD34+, Colony Forming Unit-Megakaryocytic, Megakaryocytes, Megakaryocyte/erythroid progenitors, Colony Forming Unit-Monocytes, Monocytes, Mature NK cells_CD56- CD16+ CD3-, Mature NK cells_CD56+ CD16+ CD3-, Mature NK cells_CD56- CD16- CD3-, NK T cells, Early B-cells, Pro B-cells, CD8+ Effector Memory RA, Naive CD8+ T-cells, CD8+ Effector Memory, CD8+ Central Memory, Naive CD4+ T-cells, CD4+ Effector Memory, CD4+ Central Memory |
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+* Basophils
+  - Basophils
+* B cells
+  - Naive B cells
+  - Mature B-cells class able to switch
+  - Mature B-cells
+  - Mature B-cells class switched
+  - Early B-cells
+  - Pro B-cells
+* CMPs
+  - Common myeloid progenitors
+* Dendritic cells
+  - Plasmacytoid Dendritic Cells
+  - Myeloid Dendritic Cells
+* Eosinophils
+  - Eosinophils
+* Erythroid cells
+  - Erythroid_CD34+ CD71+ GlyA-
+  - Erythroid_CD34- CD71+ GlyA-
+  - Erythroid_CD34- CD71+ GlyA+
+  - Erythroid_CD34- CD71lo GlyA+
+  - Erythroid_CD34- CD71- GlyA+
+* GMPs
+  - Granulocyte/monocyte progenitors
+* Granulocytes
+  - Colony Forming Unit-Granulocytes
+  - Granulocyte (Neutrophilic Metamyelocytes)
+  - Granulocyte (Neutrophils)
+* HSCs
+  - Hematopoietic stem cells_CD133+ CD34dim
+  - Hematopoietic stem cell_CD38- CD34+
+* Megakaryocytes
+  - Colony Forming Unit-Megakaryocytic
+  - Megakaryocytes
+* MEPs
+  - Megakaryocyte/erythroid progenitors
+* Monocytes
+  - Colony Forming Unit-Monocytes, Monocytes
+  - Monocytes
+* NK cells
+  - Mature NK cells_CD56- CD16+ CD3-
+  - Mature NK cells_CD56+ CD16+ CD3-
+  - Mature NK cells_CD56- CD16- CD3-
+* NK T cells
+  - NK T cells
+* CD8+ T cells
+  - CD8+ Effector Memory RA
+  - Naive CD8+ T-cells
+  - CD8+ Effector Memory
+  - CD8+ Central Memory
+* CD4+ T cells
+  - Naive CD4+ T-cells
+  - CD4+ Effector Memory
+  - CD4+ Central Memory
+
+</details>
 
 ### Monaco Immune Data
 
 This dataset is composed of **114 bulk RNA-seq samples** immune cell subsets as described in [@monaco_immuneRef].
 Samples were annotated to **11 main cell types** and **29 "fine" cell subtypes**. 
 
-| Label type | Labels |
-|------------|--------|
-| main | CD8+ T cells, T cells, CD4+ T cells, Progenitors, B cells, Plasmablasts, Monocytes, NK cells, Dendritic cells, Neutrophils, Basophils |
-| fine | Tcell.CD8.naive, Tcell.CD8.CentralMemory, Tcell.CD8.EffectorMemory, Tcell.CD8.TerminalEffector, Tcell.MAIT, Tcell.VD2pos.gd, Tcell.VD2neg.gd, Tcell.FollicularHelper, Tcell.Treg, Tcell.Th1, Tcell.Th1.Th17, Tcell.Th17, Tcell.Th2, Tcell.CD4.naive, Tcell.CD4.TerminalEffector, Progenitor, Bcell.naive, Bcell.NonSwitchedMemory, Bcell.Exhausted, Bcell.SwitchedMemory, Plasmablast, Monocyte.Classical, Monocyte.Int, Monocyte.NonClassical, NK, Dendritic.Plasmacytoid, Dendritic.Myeloid, Neutrophil, Basophil |
+<details>
+  <summary>Click for Dataset Details</summary>
+  
+* CD8+ T cells
+  - Tcell.CD8.naive 
+  - Tcell.CD8.CentralMemory 
+  - Tcell.CD8.EffectorMemory 
+  - Tcell.CD8.TerminalEffector 
+* T cells
+  - Tcell.MAIT 
+  - Tcell.VD2pos.gd 
+  - Tcell.VD2neg.gd 
+* CD4+ T cells
+  - Tcell.FollicularHelper 
+  - Tcell.Treg 
+  - Tcell.Th1 
+  - Tcell.Th1.Th17 
+  - Tcell.Th17 
+  - Tcell.Th2 
+  - Tcell.CD4.naive 
+  - Tcell.CD4.TerminalEffector
+* Progenitors
+  - Progenitor
+* B cells
+  - Bcell.naive 
+  - Bcell.NonSwitchedMemory 
+  - Bcell.Exhausted 
+  - Bcell.SwitchedMemory
+* Plasmablasts
+  - Plasmablast
+* Monocytes
+  - Monocyte.Classical 
+  - Monocyte.Int 
+  - Monocyte.NonClassical
+* NK cells
+  - NK
+* Dendritic cells
+  - Dendritic.Plasmacytoid 
+  - Dendritic.Myeloid
+* Neutrophils
+  - Neutrophil
+* Basophils 
+  - Basophil
+
+</details>
 
 # Separating training from classification
 
