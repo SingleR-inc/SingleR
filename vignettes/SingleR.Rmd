@@ -120,27 +120,11 @@ Each character vector contains the top 10 marker genes from a comparison between
 ```{r}
 library(scran)
 out <- pairwiseTTests(logcounts(sceM), sceM$label, direction="up")
-
-# To be moved into scran::topPairwiseMarkers().
-markers <- list()
-for (first in unique(sceM$label)) {
-    cur.markers <- list()
-    for (second in unique(sceM$label)) {
-        chosen <- which(out$pairs$first==first & out$pairs$second==second)
-        if (!length(chosen)) {
-            cur.markers[[second]] <- character(0)
-        } else {
-            cur.stats <- out$statistics[[chosen]]
-            cur.stats <- cur.stats[order(cur.stats$p.value),]
-            cur.markers[[second]] <- head(rownames(cur.stats), 10)
-        }
-    }
-    markers[[first]] <- cur.markers
-}
+markers <- getTopMarkers(out$statistics, out$pairs, n=10)
 ```
 
 We then supply these genes to `SingleR()` directly via the `genes=` argument.
-This changes the results quite a bit, reflecting the importance of feature selection for this annotation method^[And many others.].
+This changes the results slightly, reflecting the impact of feature selection for this annotation method^[And many others.].
 A more focused gene set also allows annotation to be performed more quickly compared to the default approach.
 
 ```{r}

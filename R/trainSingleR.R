@@ -73,6 +73,8 @@
 #'
 #' If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 #'
+#' \linkS4class{List}s and their derivatives can also be used in place of ordinary lists.
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
@@ -121,6 +123,7 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
+#' @importClassesFrom S4Vectors List
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL, 
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
@@ -128,14 +131,17 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
 
     # Choosing the gene sets of interest. 
     args <- list()
-    if (is.list(genes)) {
+    if (is.list(genes) || is(genes, "List")) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
             genes <- .convert_per_label_set(genes)
         } else if (any(is.char)) {
             stop("'genes' must be a list of character vectors or a list of list of vectors")
         }
+
+        genes <- lapply(genes, as.list) # to convert from List of Lists.
         .validate_de_gene_set(genes, labels)
+
         extra <- genes
         common <- unique(unlist(extra))
         genes <- "de"
