@@ -45,7 +45,7 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    df <- plotScores.dataGather(results, prune.calls, labels.use)
+    df <- .data_gather(results, prune.calls, labels.use)
     p <- ggplot(data = df[df$id == rownames(results)[cell.id],],
                 aes(x = label, y = score, fill = called.this)) + 
         theme_classic() + geom_point(
@@ -67,7 +67,7 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    if (is.null(df)) {df <- plotScores.dataGather(results, prune.calls, label)}
+    if (is.null(df)) {df <- .data_gather(results, prune.calls, label)}
     p <- ggplot(data = df[df$label == label,],
                 aes(x = called.this, y = score, fill = called.this)) + 
         theme_classic() +
@@ -89,7 +89,7 @@ plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    df <- plotScores.dataGather(results, prune.calls, labels.use)
+    df <- .data_gather(results, prune.calls, labels.use)
     max <- max(df$score)
     plots <- lapply(labels.use, function(X) {
         plotScoresSingleLabel(results, prune.calls, label = X, size, dots.on.top, df = df, colors) +
@@ -102,7 +102,7 @@ plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.
     gridExtra::grid.arrange(grobs=plots, ncol = ncol, ...)
 }
 
-plotScores.dataGather <- function(results, prune.calls = NULL, labels.use = levels(as.factor(results$labels)))
+.data_gather <- function(results, prune.calls = NULL, labels.use = levels(as.factor(results$labels)))
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
