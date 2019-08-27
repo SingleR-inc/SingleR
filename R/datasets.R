@@ -317,7 +317,7 @@ DatabaseImmuneCellExpressionData <- function() {
 #'     \item Mature NK cells_CD56- CD16+ CD3-
 #'     \item Mature NK cells_CD56+ CD16+ CD3-
 #'     \item Mature NK cells_CD56- CD16- CD3-
-#'     \item NK T cells,
+#'     \item NK T cells
 #'     \item Early B-cells
 #'     \item Pro B-cells
 #'     \item CD8+ Effector Memory RA

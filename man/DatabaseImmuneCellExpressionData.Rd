@@ -23,13 +23,32 @@ TPM normalized values for each cell type were downloaded from \url{https://dice-
 Genes with no reads across samples were removed, and values were log2 normalized after a pseudocount of 1 was added.
 
 The dataset entails 1561 human RNA-seq samples annotated to 5 main cell types: 
-"B cells", "Monocytes", "NK cells", "T cells, CD8+", and "T cells, CD4+".
+\itemize{
+    \item B cells
+    \item Monocytes
+    \item NK cells
+    \item T cells, CD8+
+    \item T cells, CD4+
+}
 
 Samples were additionally annotated to 15 fine cell types:
-"B cells, naive", "Monocytes, CD14+", "Monocytes, CD16+", "NK cells", "T cells, memory TREG",
-"T cells, CD4+, naive", "T cells, CD4+, naive, stimulated", "T cells, CD4+, naive Treg",
-"T cells, CD4+, Th1", "T cells, CD4+, Th1_17", "T cells, CD4+, Th2", "T cells, CD8+, naïve",
-"T cells, CD8+, naïve, stimulated", "T cells, CD4+, TFH", "T cells, CD4+, Th17".
+\itemize{
+    \item B cells, naive
+    \item Monocytes, CD14+
+    \item Monocytes, CD16+
+    \item NK cells
+    \item T cells, memory TREG
+    \item T cells, CD4+, naive
+    \item T cells, CD4+, naive, stimulated
+    \item T cells, CD4+, naive Treg
+    \item T cells, CD4+, Th1
+    \item T cells, CD4+, Th1_17
+    \item T cells, CD4+, Th2
+    \item T cells, CD8+, naïve
+    \item T cells, CD8+, naïve, stimulated
+    \item T cells, CD4+, TFH
+    \item T cells, CD4+, Th17
+}
 }
 \examples{
 ref.se <- DatabaseImmuneCellExpressionData()

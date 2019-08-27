@@ -17,25 +17,67 @@ of sorted hematopoietic cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759}{GSE24759}.
 }
 \details{
-The dataset entails 211 human microarray samples annotated to 17 main cell types: 
-Basophils, B cells, CMPs, Dendritic cells, Eosinophils, Erythroid cells, GMPS,
-Granulocytes, HSCs, Megakaryocytes, MEPs, Monocytes, NK cells, NK T cells,,
-CD8+ T cells, CD4+ T cells.
+The dataset entails 211 human microarray samples annotated to 16 main cell types: 
+\itemize{
+    \item Basophils
+    \item B cells
+    \item CMPs
+    \item Dendritic cells
+    \item Eosinophils
+    \item Erythroid cells
+    \item GMPS
+    \item Granulocytes
+    \item HSCs
+    \item Megakaryocytes
+    \item MEPs
+    \item Monocytes
+    \item NK cells
+    \item NK T cells
+    \item CD8+ T cells
+    \item CD4+ T cells
+}
 
 Samples were additionally annotated to 38 fine cell types:
-Basophils, Naive B cells, Mature B-cells class able to switch, Mature B-cells,
-Mature B-cells class switched, Common myeloid progenitors, Plasmacytoid Dendritic Cells,
-Myeloid Dendritic Cells, Eosinophils, Erythroid_CD34+ CD71+ GlyA-, Erythroid_CD34- CD71+ GlyA-,
-Erythroid_CD34- CD71+ GlyA+, Erythroid_CD34- CD71lo GlyA+, Erythroid_CD34- CD71- GlyA+, 
-Granulocyte/monocyte progenitors, Colony Forming Unit-Granulocytes, 
-Granulocyte (Neutrophilic Metamyelocytes), Granulocyte (Neutrophils), 
-Hematopoietic stem cells_CD133+ CD34dim, Hematopoietic stem cell_CD38- CD34+,
-Colony Forming Unit-Megakaryocytic, Megakaryocytes, Megakaryocyte/erythroid progenitors,
-Colony Forming Unit-Monocytes, Monocytes, Mature NK cells_CD56- CD16+ CD3-,
-Mature NK cells_CD56+ CD16+ CD3-, Mature NK cells_CD56- CD16- CD3-, NK T cells,
-Early B-cells, Pro B-cells, CD8+ Effector Memory RA, Naive CD8+ T-cells, 
-CD8+ Effector Memory, CD8+ Central Memory, Naive CD4+ T-cells, CD4+ Effector Memory,
-CD4+ Central Memory.
+\itemize{
+    \item Basophils
+    \item Naive B cells
+    \item Mature B-cells class able to switch
+    \item Mature B-cells
+    \item Mature B-cells class switched
+    \item Common myeloid progenitors
+    \item Plasmacytoid Dendritic Cells
+    \item Myeloid Dendritic Cells
+    \item Eosinophils
+    \item Erythroid_CD34+ CD71+ GlyA-
+    \item Erythroid_CD34- CD71+ GlyA-
+    \item Erythroid_CD34- CD71+ GlyA+
+    \item Erythroid_CD34- CD71lo GlyA+
+    \item Erythroid_CD34- CD71- GlyA+
+    \item Granulocyte/monocyte progenitors
+    \item Colony Forming Unit-Granulocytes
+    \item Granulocyte (Neutrophilic Metamyelocytes)
+    \item Granulocyte (Neutrophils)
+    \item Hematopoietic stem cells_CD133+ CD34dim
+    \item Hematopoietic stem cell_CD38- CD34+
+    \item Colony Forming Unit-Megakaryocytic
+    \item Megakaryocytes
+    \item Megakaryocyte/erythroid progenitors
+    \item Colony Forming Unit-Monocytes
+    \item Monocytes
+    \item Mature NK cells_CD56- CD16+ CD3-
+    \item Mature NK cells_CD56+ CD16+ CD3-
+    \item Mature NK cells_CD56- CD16- CD3-
+    \item NK T cells
+    \item Early B-cells
+    \item Pro B-cells
+    \item CD8+ Effector Memory RA
+    \item Naive CD8+ T-cells
+    \item CD8+ Effector Memory
+    \item CD8+ Central Memory
+    \item Naive CD4+ T-cells
+    \item CD4+ Effector Memory
+    \item CD4+ Central Memory
+}
 }
 \examples{
 ref.se <- NovershternHematopoieticData()

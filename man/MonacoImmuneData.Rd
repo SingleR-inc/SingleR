@@ -18,16 +18,52 @@ of sorted immune cell populations that can be found in
 }
 \details{
 The dataset entails 114 human RNA-seq samples annotated to 11 main cell types: 
-CD8+ T cells, T cells, CD4+ T cells, Progenitors, B cells, Plasmablasts, 
-Monocytes, NK cells, Dendritic cells, Neutrophils, Basophils.
+\itemize{
+    \item CD8+ T cells
+    \item T cells
+    \item CD4+ T cells
+    \item Progenitors
+    \item B cells
+    \item Plasmablasts
+    \item Monocytes
+    \item NK cells
+    \item Dendritic cells
+    \item Neutrophils
+    \item Basophils
+}
 
 Samples were additionally annotated to 29 fine cell types:
-Tcell.CD8.naive, Tcell.CD8.CentralMemory, Tcell.CD8.EffectorMemory, Tcell.CD8.TerminalEffector,
-Tcell.MAIT, Tcell.VD2pos.gd, Tcell.VD2neg.gd, Tcell.FollicularHelper, Tcell.Treg, Tcell.Th1,
-Tcell.Th1.Th17, Tcell.Th17, Tcell.Th2, Tcell.CD4.naive, Tcell.CD4.TerminalEffector, Progenitor,
-Bcell.naive, Bcell.NonSwitchedMemory, Bcell.Exhausted, Bcell.SwitchedMemory, Plasmablast,
-Monocyte.Classical, Monocyte.Int, Monocyte.NonClassical, NK, Dendritic.Plasmacytoid,
-Dendritic.Myeloid, Neutrophil, Basophil.
+\itemize{
+    \item Tcell.CD8.naive
+    \item Tcell.CD8.CentralMemory
+    \item Tcell.CD8.EffectorMemory
+    \item Tcell.CD8.TerminalEffector
+    \item Tcell.MAIT
+    \item Tcell.VD2pos.gd
+    \item Tcell.VD2neg.gd
+    \item Tcell.FollicularHelper
+    \item Tcell.Treg
+    \item Tcell.Th1
+    \item Tcell.Th1.Th17
+    \item Tcell.Th17
+    \item Tcell.Th2
+    \item Tcell.CD4.naive
+    \item Tcell.CD4.TerminalEffector
+    \item Progenitor
+    \item Bcell.naive
+    \item Bcell.NonSwitchedMemory
+    \item Bcell.Exhausted
+    \item Bcell.SwitchedMemory
+    \item Plasmablast
+    \item Monocyte.Classical
+    \item Monocyte.Int
+    \item Monocyte.NonClassical
+    \item NK
+    \item Dendritic.Plasmacytoid
+    \item Dendritic.Myeloid
+    \item Neutrophil
+    \item Basophil
+}
 }
 \examples{
 ref.se <- MonacoImmuneData()
