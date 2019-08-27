@@ -185,7 +185,8 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     p
 }
 
-.scores_data_gather <- function(results, labels.use = levels(as.factor(results$labels)))
+.scores_data_gather <- function(
+    results, labels.use = levels(as.factor(results$labels)))
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -198,9 +199,13 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     # Create a dataframe with rows for each score in scores.
     df <- data.frame(
         #cell id of the cell
-        id = c(sapply(rownames(results), function(X) rep(X, length(labels.use)))),
+        id = c(sapply(
+            rownames(results),
+            function(X) rep(X, length(labels.use)))),
         #final call of the cell
-        called = c(sapply(results$labels, function(X) rep(X, length(labels.use)))),
+        called = c(sapply(
+            results$labels,
+            function(X) rep(X, length(labels.use)))),
         #label of the current score
         label = rep(
             colnames(results$scores)[colnames(results$scores) %in% labels.use],
@@ -217,7 +222,9 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
         # Retrieve if cells' calls were scored as to be prunes versus not,
         #  then add this to df$cell.calls
         prune.calls <- is.na(results$pruned.labels)
-        prune.string <- as.character(factor(prune.calls, labels = c(""," - pruned")))
+        prune.string <- as.character(factor(
+            prune.calls,
+            labels = c(""," - pruned")))
         df$cell.calls <- paste0(
             df$cell.calls,
             c(sapply(prune.string, function(X) rep(X, length(labels.use)))))
