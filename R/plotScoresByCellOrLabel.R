@@ -5,20 +5,30 @@
 #' If \code{labels.use} is left \code{NULL}, all labels available in \code{results} are presented.
 #' @param label String indicating which individual label to plot in \code{plotScoresSingleLabel}
 #' @param prune.calls Logical vector, the output of \code{\link{pruneScores}}.
-#' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the SingleR.results dataframe
+#' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
 #' @param colors String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.
 #' @param size the size of the dots
 #' @name plotScoresByCellOrLabel
-#' @return Dot and violin plot of SingleR scores separated by whether this was the final call or not.
-#' If prune.calls are provided, will also separate and color based on whether cells' final calls were pruned versus not. 
-#'
+#' @return Each function returns a \link{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
+#' 
 #' @details
-#' The \code{plotScoresSingleCell} function creates a jitter plot showing the scores of a single cell accross many labels.
+#' NOTE: these functions show initial scores only.
+#' Aside from use of post-fine-tuning labels, they are completely independent of the fine-tuning step.
 #' 
-#' The \code{plotScoresSingleLabel} function creates a jitter and violin plot showing the scores of all cells accross a single label.
+#' The \code{plotScoresSingleCell} function creates a dot plot showing the scores of a single cell accross many labels,
+#' with a dotted line added to indicate the median score accross all labels.
+#' It can be used to assess how an individual cell scored versus all/many labels of the reference dataset,
+#' and may be useful for visualizing and tuning the \code{min.diff.med} per-cell cutoff of the \code{\link{pruneScores}} function.
 #' 
-#' The \code{plotScoresMultiLabel} function creates \code{plotScoresSingleLabel} plots for multiple individual labels. 
+#' The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions creates jitter and violin plots showing
+#' the scores of all cells accross either a single label or multiple labels, respectively.
+#' These functions can be used to assess the distribution of scores of all cells for individual labels,
+#' and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
+#' 
+#' Scores are grouped and colored by whether they were the final calls for a cell or not.
+#' If pruneScores has been run and prune.calls are provided, scores are also separated and colored based on whether cells
+#' were pruned versus not.
 #' 
 #' @author Daniel Bunis
 #' @examples
