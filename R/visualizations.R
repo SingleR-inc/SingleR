@@ -134,58 +134,70 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     annotation_col = NULL,
     ...)
 {
-    # As pheatmap simply must have rownames,
-    # otherwise the annotation_col doesn't work.
-    if (is.null(rownames(results))) { rownames(results) <- seq_len(nrow(results)) }
+    # Add rownames (cell names) to the results DataFrame if not already there.
+    if (is.null(rownames(results))) {
+        rownames(results) <- seq_len(nrow(results))
+    }
+    # Initiate an annotation dataframe, unless provided by the user.
+    if (is.null(annotation_col)) {
+        annotation_col <- data.frame(row.names = rownames(results))
+    }
+    # Retrieve prune.calls, add names, and add to annotation dataframe.
+    if (show.pruned) {
+        # prune.calls <- results$prune.calls    # UNCOMMENT after prune.calls added to results.
+        names(prune.calls) <- rownames(results)
+        annotation_col$Pruned <- as.character(prune.calls[rownames(annotation_col)])
+    }
+    # Add names to clusters and add to annotation dataframe.
+    if (!is.null(clusters)) {
+        names(clusters) <- rownames(results)
+        annotation_col$Clusters <- clusters[rownames(annotation_col)]
+    }
+
+    # Retrieve scores and add names
     scores <- results$scores
     rownames(scores) <- rownames(results)
-    if (is.null(annotation_col)) { annotation_col <- data.frame(row.names = rownames(results))}
-
+    
+    # Trim the scores by requested cells or labels
     if (!is.null(cells.use)) { scores <- scores[cells.use,] }
     if (!is.null(labels.use)) { scores <- scores[,labels.use]  }
-    if (show.pruned) {                         # REMOVE after prune.scores added to results.
-        # prune.calls <- results$prune.calls   # UNCOMMENT after prune.calls added to results.
-        names(prune.calls) <- rownames(scores) # REMOVE after prune.scores added to results.
-    }                                          # REMOVE after prune.scores added to results.
-
-    # NOTE: calculation of 'm' before normalization is deliberate.
+    
+    # Determine labels to show based on max.labels (not removed until later)
     m <- rowMaxs(scale(t(scores)))
     to.keep <- head(order(m,decreasing=TRUE), max.labels)
-
+    # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
         mmax <- rowMaxs(scores)
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
         scores <- scores^3
     }
-
+    # Remove extra labels, then transpose the scores matrix.
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
     scores <- t(scores)
 
-    # Determining how to order the cells. 
-    if (!is.null(clusters)) {
-        names(clusters) <- rownames(results)
-    }
+    # Determining how to order the cells and create `order` vector of indices.
     cluster_cols <- FALSE
     if (order.by.clusters && !is.null(clusters)) {
+        # Make `order` based on cluster identities (in requested cells)
         if(!is.null(cells.use)){order <- order(clusters[cells.use])}
         else {order <- order(clusters)}
     } else if (!is.null(cells.order)){
+        # Make `order` based on requested order
         order <- cells.order
     } else {
+        # If here, no ordering was requested.
+        #   Make `order` contain all indices, then set clustering to happen.
         order <- seq_len(ncol(scores))
         cluster_cols <- TRUE
     }
     
-    #Set Annotations, using names to ensure proper ordering
-    if(!is.null(clusters)) { annotation_col$Clusters <- clusters[rownames(annotation_col)] }
-    if(show.pruned) { annotation_col$Pruned <- as.character(prune.calls[rownames(annotation_col)]) } # CHANGE to as.character(results[colnames(scores)[order],]$pruned) after added
-
-    args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
-        clustering_method = 'ward.D2', cluster_cols = cluster_cols, ...)
+    # Create args list for making the heatmap
+    args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
+        show_colnames = FALSE, clustering_method = 'ward.D2',
+        cluster_cols = cluster_cols, ...)
+    # Add annotations dataframe to args list if it contains annotations
     if (ncol(annotation_col)>0) { args$annotation_col <- annotation_col}
-    
+    # Make the heatmap
     do.call(pheatmap::pheatmap, args)
 }
-
-
