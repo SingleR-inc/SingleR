@@ -33,7 +33,7 @@
 #' @author Daniel Bunis
 #' @examples
 #' example(SingleR, echo=FALSE)
-#' prune <- pruneScores(pred$scores)
+#' prune <- pruneScores(pred)
 #' 
 #' plotScoresSingleCell(results = pred, prune.calls = prune, cell.id = 1)
 #' plotScoresSingleLabel(results = pred, prune.calls = prune, label = "B",
