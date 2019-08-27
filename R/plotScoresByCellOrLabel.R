@@ -4,7 +4,6 @@
 #' @param labels.use String vector indicating what labels to show in \code{plotScoresSingleCell} and \code{plotScoresMultiLabel}
 #' If \code{labels.use} is left \code{NULL}, all labels available in \code{results} are presented.
 #' @param label String indicating which individual label to plot in \code{plotScoresSingleLabel}
-#' @param prune.calls Logical vector, the output of \code{\link{pruneScores}}.
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
 #' @param colors String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.
@@ -27,7 +26,7 @@
 #' and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
 #' 
 #' Scores are grouped and colored by whether they were the final calls for a cell or not.
-#' If pruneScores has been run and prune.calls are provided, scores are also separated and colored based on whether cells
+#' If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
 #' were pruned versus not.
 #' 
 #' @author Daniel Bunis
@@ -35,8 +34,8 @@
 #' example(SingleR, echo=FALSE)
 #' prune <- pruneScores(pred)
 #' 
-#' plotScoresSingleCell(results = pred, prune.calls = prune, cell.id = 1)
-#' plotScoresSingleLabel(results = pred, prune.calls = prune, label = "B",
+#' plotScoresSingleCell(results = pred, cell.id = 1)
+#' plotScoresSingleLabel(results = pred, label = "B",
 #'     dots.on.top = TRUE)
 #' plotScoresMultiLabels(results = pred,
 #'     dots.on.top = TRUE, size = 0.5)
@@ -46,7 +45,7 @@ NULL
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
 #' @importFrom stats median
-plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
+plotScoresSingleCell <- function(results, cell.id,
     labels.use = levels(as.factor(results$labels)), size = 2,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")) {
 
@@ -66,8 +65,8 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
         rownames(results) <- seq_len(nrow(results))
     }
 
-    # Get the scores data for all cells
-    df <- .data_gather(results, prune.calls)
+    # Gather the scores data for all cells and labels
+    df <- .data_gather(results)
     # Trim to just the data for the target cell
     df <- df[df$id == rownames(results)[cell.id],]
     # Calculate the cell's median score based on all labels
@@ -98,7 +97,7 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
 
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
-plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5, dots.on.top = FALSE, df = NULL,
+plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE, df = NULL,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
 
     if (length(colors)<4) {
@@ -118,7 +117,7 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
     }
 
     # Get the scores data
-    df <- .data_gather(results, prune.calls, label)
+    df <- .data_gather(results, label)
     # Trim to the target label
     df <- df[df$label == label,]
     
@@ -148,7 +147,7 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
 
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
-plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.on.top = FALSE,
+plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...){
 
@@ -163,7 +162,7 @@ plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.
     }
 
     # Gathere the scores data in a dataframe
-    df <- .data_gather(results, prune.calls, labels.use)
+    df <- .data_gather(results, labels.use)
     
     # Make the plot
     p <- ggplot(
@@ -186,7 +185,7 @@ plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.
     p
 }
 
-.data_gather <- function(results, prune.calls = NULL, labels.use = levels(as.factor(results$labels)))
+.data_gather <- function(results, labels.use = levels(as.factor(results$labels)))
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -202,7 +201,8 @@ plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.
         stringsAsFactors = FALSE)
     df$called.this <- "other label"
     df$called.this[df$label == df$called] <- "this label"
-    if (!is.null(prune.calls)){
+    if (!is.null(results$pruned.labels)){
+        prune.calls <- is.na(results$pruned.labels)
         prune.string <- as.character(factor(prune.calls, labels = c(""," - pruned")))
         df$called.this <- paste0(df$called.this,
                                  c(sapply(prune.string, function(X) rep(X, length(labels.use)))))
