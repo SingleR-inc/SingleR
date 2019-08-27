@@ -50,8 +50,7 @@ plotScoresSingleCell <- function(results, cell.id,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")) {
 
     if (length(colors)<4) {
-        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
-            'other label', 'other label - pruned'")
+        stop("4 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
@@ -75,22 +74,22 @@ plotScoresSingleCell <- function(results, cell.id,
     df <- df[df$label %in% labels.use,]
 
     # Make the plot
-    p <- ggplot(
+    p <- ggplot2::ggplot(
             data = df,
-            aes(x = label, y = score, fill = cell.calls)) +
-        theme_classic() +
+            ggplot2::aes(x = label, y = score, fill = cell.calls)) +
+        ggplot2::theme_classic() +
         # Set labels names to be rotated 60 degrees.
-        theme(axis.text.x= element_text(
+        ggplot2::theme(axis.text.x= ggplot2::element_text(
             angle=60, hjust = 1, vjust = 1, size=12)) +
         # Remove "label" label from the x-axis
-        xlab(NULL) +
+        ggplot2::xlab(NULL) +
         # Add median score line
-        geom_hline(yintercept = scores.median, color = "gray",
+        ggplot2::geom_hline(yintercept = scores.median, color = "gray",
             linetype = "dashed") +
         # Add scores data points
-        geom_point(color = "black", shape = 21, size = size, alpha = 1) +
+        ggplot2::geom_point(color = "black", shape = 21, size = size, alpha = 1) +
         # Set the colors
-        scale_fill_manual(name = "Cell Calls", values = colors)
+        ggplot2::scale_fill_manual(name = "Cell Calls", values = colors)
 
     p
 }
@@ -101,8 +100,7 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
 
     if (length(colors)<4) {
-        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
-            'other label', 'other label - pruned'")
+        stop("4 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
@@ -122,24 +120,24 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
     df <- df[df$label == label,]
     
     # Make the plot
-    p <- ggplot(
+    p <- ggplot2::ggplot(
             data = df,
-            aes(x = cell.calls, y = score, fill = cell.calls)) + 
-        theme_classic() +
+            ggplot2::aes(x = cell.calls, y = score, fill = cell.calls)) + 
+        ggplot2::theme_classic() +
         # Set the colors
-        scale_fill_manual(name = "Cell Calls", values = colors) + 
+        ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) + 
         # Remove x-axis labels for the groupings (already in the legend),
         #   but do show the name of the target `label` as the axis title.
-        scale_x_discrete(name = label, labels = NULL)
+        ggplot2::scale_x_discrete(name = label, labels = NULL)
     # Add the data as jitter and violin.
     #   Violin plot added first iff `dots.on.top = TRUE`
     if (dots.on.top) {
-        p <- p+ geom_violin()
+        p <- p+ ggplot2::geom_violin()
     }
-    p <- p + geom_jitter(
+    p <- p + ggplot2::geom_jitter(
         height = 0, width = 0.3, color = "black", shape = 16,size = size)
     if (!dots.on.top) {
-        p <- p + geom_violin()
+        p <- p + ggplot2::geom_violin()
     }
     
     p
@@ -152,8 +150,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...){
 
     if (length(colors)<4) {
-        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
-            'other label', 'other label - pruned'")
+        stop("4 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
@@ -165,21 +162,21 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     df <- .scores_data_gather(results, labels.use)
     
     # Make the plot
-    p <- ggplot(
+    p <- ggplot2::ggplot(
             data = df,
-            aes(x = cell.calls, y = score, fill = cell.calls)) + 
-        theme_classic() +
-        scale_fill_manual(name = "Cell Calls", values = colors) + 
-        scale_x_discrete(name = "Labels", labels = NULL) +
+            ggplot2::aes(x = cell.calls, y = score, fill = cell.calls)) + 
+        ggplot2::theme_classic() +
+        ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) + 
+        ggplot2::scale_x_discrete(name = "Labels", labels = NULL) +
         # Separate data by labels, with `ncol` # of columns.
-        facet_wrap(facets = ~label, ncol = ncol)
+        ggplot2::facet_wrap(facets = ~label, ncol = ncol)
     if (dots.on.top) {
-        p <- p+ geom_violin()
+        p <- p+ ggplot2::geom_violin()
     }
-    p <- p + geom_jitter(
+    p <- p + ggplot2::geom_jitter(
         height = 0, width = 0.3, color = "black", shape = 16,size = size)
     if (!dots.on.top) {
-        p <- p + geom_violin()
+        p <- p + ggplot2::geom_violin()
     }
     
     p
