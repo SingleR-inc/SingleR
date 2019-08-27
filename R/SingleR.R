@@ -15,7 +15,7 @@
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
 #' Only used if \code{method="cluster"}.
 #' @param genes,sd.thresh Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.
-#' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
+#' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \linkS4class{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
@@ -96,7 +96,8 @@
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, ref, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, assay.type.test = "logcounts", assay.type.ref="logcounts", 
+    tune.thresh = 0.05, sd.thresh = 1, prune=TRUE, 
+    assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
@@ -126,5 +127,5 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, check.missing=FALSE, BPPARAM=BPPARAM)
+        tune.thresh=tune.thresh, prune=prune, check.missing=FALSE, BPPARAM=BPPARAM)
 }

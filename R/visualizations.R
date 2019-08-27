@@ -128,7 +128,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters = NULL, show.pruned = FALSE, prune.calls,
+    clusters = NULL, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     annotation_col = NULL, ...)
@@ -140,9 +140,11 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         annotation_col <- data.frame(row.names = rownames(results))
     }
     if (show.pruned) {
-        # prune.calls <- results$prune.calls    # UNCOMMENT after prune.calls added to results.
-        names(prune.calls) <- rownames(results)
-        annotation_col$Pruned <- as.character(prune.calls[rownames(annotation_col)])
+        prune.calls <- results$pruned.labels
+        if (!is.null(prune.calls)) {
+            names(prune.calls) <- rownames(results)
+            annotation_col$Pruned <- as.character(is.na(prune.calls[rownames(annotation_col)]))
+        }
     }
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
