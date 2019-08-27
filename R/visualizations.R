@@ -132,8 +132,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     annotation_col = NULL,
-    ...)
-{
+    ...) {
     # Add rownames (cell names) to the results DataFrame if not already there.
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -159,8 +158,31 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     rownames(scores) <- rownames(results)
     
     # Trim the scores by requested cells or labels
-    if (!is.null(cells.use)) { scores <- scores[cells.use,] }
-    if (!is.null(labels.use)) { scores <- scores[,labels.use]  }
+    if (!is.null(cells.use)) {
+        scores <- scores[cells.use,]
+    }
+    if (!is.null(labels.use)) {
+        scores <- scores[,labels.use]
+    }
+    
+    # Determining how to order the cells and create `order` vector of indices.
+    cluster_cols <- FALSE
+    if (order.by.clusters) {
+        # Make `order` based on cluster identities (in requested cells)
+        if (!is.null(cells.use)) {
+            order <- order(clusters[cells.use])
+        } else {
+            order <- order(clusters)
+        }
+    } else if (!is.null(cells.order)) {
+        # Make `order` based on requested order
+        order <- cells.order
+    } else {
+        # If here, then no ordering was requested.
+        #   Make `order` contain all indices, then set clustering to happen.
+        order <- seq_len(ncol(scores))
+        cluster_cols <- TRUE
+    }
     
     # Determine labels to show based on max.labels (not removed until later)
     m <- rowMaxs(scale(t(scores)))
@@ -175,29 +197,15 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Remove extra labels, then transpose the scores matrix.
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
     scores <- t(scores)
-
-    # Determining how to order the cells and create `order` vector of indices.
-    cluster_cols <- FALSE
-    if (order.by.clusters && !is.null(clusters)) {
-        # Make `order` based on cluster identities (in requested cells)
-        if(!is.null(cells.use)){order <- order(clusters[cells.use])}
-        else {order <- order(clusters)}
-    } else if (!is.null(cells.order)){
-        # Make `order` based on requested order
-        order <- cells.order
-    } else {
-        # If here, no ordering was requested.
-        #   Make `order` contain all indices, then set clustering to happen.
-        order <- seq_len(ncol(scores))
-        cluster_cols <- TRUE
-    }
     
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = FALSE, clustering_method = 'ward.D2',
         cluster_cols = cluster_cols, ...)
     # Add annotations dataframe to args list if it contains annotations
-    if (ncol(annotation_col)>0) { args$annotation_col <- annotation_col}
+    if (ncol(annotation_col)>0) {
+        args$annotation_col <- annotation_col
+    }
     # Make the heatmap
     do.call(pheatmap::pheatmap, args)
 }
