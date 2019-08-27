@@ -74,9 +74,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' If \code{NULL}, all cells are presented.
 #' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param clusters String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
-#' @param show.pruned Logical indicated whether prune.calls should be added as a column annotation
-#' @param prune.calls Logical vector, the output of \code{\link{pruneScores}}.  This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the SingleR.results dataframe
+#' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
+#' @param show.pruned Logical indicated whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
@@ -84,8 +83,9 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
 #' If set, turns off clustering of columns based on scoring.
 #' Note: When used alongside \code{cells.use}, both arguments should be the same length. 
-#' @param annotation_col Data.frame containing data for additional/alternative column annotations (clutering and prune-calls annotations are added automatically internally)
-#' Format = row.names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
+#' @param annotation_col A data.frame containing data for additional/alternative column annotations 
+#' (clustering and pruning annotations are automatically added).
+#' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
