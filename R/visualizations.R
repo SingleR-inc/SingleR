@@ -131,62 +131,54 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.pruned = FALSE, prune.calls,
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
-    annotation_col = NULL,
-    ...) {
-    # Add rownames (cell names) to the results DataFrame if not already there.
+    annotation_col = NULL, ...)
+{
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    # Initiate an annotation dataframe, unless provided by the user.
     if (is.null(annotation_col)) {
         annotation_col <- data.frame(row.names = rownames(results))
     }
-    # Retrieve prune.calls, add names, and add to annotation dataframe.
     if (show.pruned) {
         # prune.calls <- results$prune.calls    # UNCOMMENT after prune.calls added to results.
         names(prune.calls) <- rownames(results)
         annotation_col$Pruned <- as.character(prune.calls[rownames(annotation_col)])
     }
-    # Add names to clusters and add to annotation dataframe.
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
         annotation_col$Clusters <- clusters[rownames(annotation_col)]
     }
 
-    # Retrieve scores and add names
     scores <- results$scores
     rownames(scores) <- rownames(results)
     
     # Trim the scores by requested cells or labels
     if (!is.null(cells.use)) {
-        scores <- scores[cells.use,]
+        scores <- scores[cells.use,,drop=FALSE]
+        clusters <- clusters[cells.use]
     }
     if (!is.null(labels.use)) {
-        scores <- scores[,labels.use]
+        scores <- scores[,labels.use,drop=FALSE]
     }
     
-    # Determining how to order the cells and create `order` vector of indices.
+    # Determining how to order the cells. 
     cluster_cols <- FALSE
     if (order.by.clusters) {
-        # Make `order` based on cluster identities (in requested cells)
-        if (!is.null(cells.use)) {
-            order <- order(clusters[cells.use])
-        } else {
-            order <- order(clusters)
-        }
+        order <- order(clusters)
     } else if (!is.null(cells.order)) {
-        # Make `order` based on requested order
         order <- cells.order
     } else {
-        # If here, then no ordering was requested.
-        #   Make `order` contain all indices, then set clustering to happen.
+        # no ordering requested
         order <- seq_len(ncol(scores))
         cluster_cols <- TRUE
     }
     
-    # Determine labels to show based on max.labels (not removed until later)
+    # Determine labels to show based on 'max.labels' with the highest
+    # pre-normalized scores (not removed until later, as we still need these
+    # values when normalizing the scores).
     m <- rowMaxs(scale(t(scores)))
     to.keep <- head(order(m,decreasing=TRUE), max.labels)
+
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
         mmax <- rowMaxs(scores)
@@ -194,7 +186,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         scores <- (scores-mmin)/(mmax-mmin)
         scores <- scores^3
     }
-    # Remove extra labels, then transpose the scores matrix.
+
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
     scores <- t(scores)
     
@@ -202,10 +194,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = FALSE, clustering_method = 'ward.D2',
         cluster_cols = cluster_cols, ...)
-    # Add annotations dataframe to args list if it contains annotations
+
     if (ncol(annotation_col)>0) {
         args$annotation_col <- annotation_col
     }
-    # Make the heatmap
+
     do.call(pheatmap::pheatmap, args)
 }
