@@ -54,7 +54,6 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
         stop("4 colors are expected. Order = 'this label', 'this label - pruned',
             'other label', 'other label - pruned'")
     }
-    # Name the colors
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
@@ -106,7 +105,6 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
         stop("4 colors are expected. Order = 'this label', 'this label - pruned',
             'other label', 'other label - pruned'")
     }
-    # Name the colors
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
@@ -153,22 +151,39 @@ plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5
 plotScoresMultiLabels <- function(results, prune.calls = NULL, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...){
-    if(length(colors)<4){stop("4 colors are expected.")}
-    if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
-    if (is.null(rownames(results))) {
-        rownames(results) <- seq_len(nrow(results))
+
+    if (length(colors)<4) {
+        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
+            'other label', 'other label - pruned'")
     }
+    if (is.null(names(colors))) {
+        names(colors) <- 
+            c('this label', 'this label - pruned',
+            'other label', 'other label - pruned')
+    }
+
+    # Gathere the scores data in a dataframe
     df <- .data_gather(results, prune.calls, labels.use)
-    max <- max(df$score)
-    plots <- lapply(labels.use, function(X) {
-        plotScoresSingleLabel(results, prune.calls, label = X, size, dots.on.top, df = df, colors) +
-            theme(legend.position = "none", axis.ticks.x=element_blank()) +
-            coord_cartesian(ylim = c(0,max)) + ylab(NULL)
-    })
-    plots <- c(plots,
-               list(cowplot::ggdraw(cowplot::get_legend(
-        plotScoresSingleLabel(results, prune.calls = prune.calls, label = labels.use[1])))))
-    gridExtra::grid.arrange(grobs=plots, ncol = ncol, ...)
+    
+    # Make the plot
+    p <- ggplot(
+            data = df,
+            aes(x = called.this, y = score, fill = called.this)) + 
+        theme_bw() +
+        scale_fill_manual(values = colors) + 
+        scale_x_discrete(name = "Labels", labels = NULL) +
+        # Separate data by labels, with `ncol` # of columns.
+        facet_wrap(facets = ~label, ncol = ncol)
+    if (dots.on.top) {
+        p <- p+ geom_violin()
+    }
+    p <- p + geom_jitter(
+        height = 0, width = 0.3, color = "black", shape = 16,size = size)
+    if (!dots.on.top) {
+        p <- p + geom_violin()
+    }
+    
+    p
 }
 
 .data_gather <- function(results, prune.calls = NULL, labels.use = levels(as.factor(results$labels)))
