@@ -61,11 +61,12 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
             'other label', 'other label - pruned')
     }
 
-    # Add rownames to the results which will be used for trimming scores data
+    # Add rownames to the results, which will be used for trimming scores data
     #   to the target cell later on
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
+
     # Get the scores data for all cells
     df <- .data_gather(results, prune.calls)
     # Trim to just the data for the target cell
@@ -100,20 +101,50 @@ plotScoresSingleCell <- function(results, cell.id, prune.calls = NULL,
 #' @export
 plotScoresSingleLabel <- function(results, prune.calls = NULL, label, size = 0.5, dots.on.top = FALSE, df = NULL,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
-    if(length(colors)<4){stop("4 colors are expected.")}
-    if (is.null(names(colors))){names(colors) <- c('this label', 'this label - pruned', 'other label', 'other label - pruned')}
+
+    if (length(colors)<4) {
+        stop("4 colors are expected. Order = 'this label', 'this label - pruned',
+            'other label', 'other label - pruned'")
+    }
+    # Name the colors
+    if (is.null(names(colors))) {
+        names(colors) <- 
+            c('this label', 'this label - pruned',
+            'other label', 'other label - pruned')
+    }
+
+    # Add rownames to the results, which will be used for trimming scores data
+    #   to the target cell later on
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
-    if (is.null(df)) {df <- .data_gather(results, prune.calls, label)}
-    p <- ggplot(data = df[df$label == label,],
-                aes(x = called.this, y = score, fill = called.this)) + 
+
+    # Get the scores data
+    df <- .data_gather(results, prune.calls, label)
+    # Trim to the target label
+    df <- df[df$label == label,]
+    
+    # Make the plot
+    p <- ggplot(
+            data = df,
+            aes(x = called.this, y = score, fill = called.this)) + 
         theme_classic() +
+        # Set the colors
         scale_fill_manual(values = colors) + 
+        # Remove x-axis labels for the groupings (already in the legend),
+        #   but do show the name of the target `label` as the axis title.
         scale_x_discrete(name = label, labels = NULL)
-    if(dots.on.top){ p <- p+ geom_violin()}
-    p <- p + geom_jitter(height = 0, width = 0.3, color = "black", shape = 16, size = size)
-    if(!dots.on.top){ p <- p + geom_violin()}
+    # Add the data as jitter and violin.
+    #   Violin plot added first iff `dots.on.top = TRUE`
+    if (dots.on.top) {
+        p <- p+ geom_violin()
+    }
+    p <- p + geom_jitter(
+        height = 0, width = 0.3, color = "black", shape = 16,size = size)
+    if (!dots.on.top) {
+        p <- p + geom_violin()
+    }
+    
     p
 }
 
