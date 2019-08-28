@@ -5,8 +5,9 @@
 \title{Plot a score heatmap}
 \usage{
 plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
-  clusters = NULL, max.labels = 40, normalize = TRUE,
-  cells.order = NULL, order.by.clusters = FALSE, ...)
+  clusters = NULL, show.pruned = FALSE, max.labels = 40,
+  normalize = TRUE, cells.order = NULL, order.by.clusters = FALSE,
+  annotation_col = NULL, ...)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -17,17 +18,24 @@ If \code{NULL}, all cells are presented.}
 \item{labels.use}{String vector indicating what labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{clusters}{String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.}
+\item{clusters}{String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.}
+
+\item{show.pruned}{Logical indicated whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.}
 
 \item{max.labels}{Integer scalar specifying the maximum number of labels to show.}
 
 \item{normalize}{Logical specifying whether correlations should be normalized to lie in [0, 1].}
 
 \item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap. 
-If set, turns off clustering of columns based on scoring.}
+If set, turns off clustering of columns based on scoring.
+Note: When used alongside \code{cells.use}, both arguments should be the same length.}
 
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
+
+\item{annotation_col}{A data.frame containing data for additional/alternative column annotations 
+(clustering and pruning annotations are automatically added).
+Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.}
 
 \item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
