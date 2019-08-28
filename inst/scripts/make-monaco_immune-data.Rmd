@@ -1,7 +1,7 @@
 ---
 title: "Obtaining reference data from GSE107011"
 author: "Jared Andrews"
-date: "8/23/2019"
+date: "8/28/2019"
 output: 
   BiocStyle::html_document
 ---
@@ -13,66 +13,154 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 
 # Overview
 
-Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with **normalized expression values from reference data sets** such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen). 
-I created several other reference datasets specifically for immune/hematopoietic cells.
-These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
-Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
-
 This RNA-seq dataset was downloaded from [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011).
-Values were already TPM normalized, so the only additional processing done was to remove genes with no reads across samples and log2 normalize values after adding a pseudocount of 1.
-'Main' and 'fine' labels were manually assigned to each sample based on cell type as specified in the GEO repository.
+Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
+Values were already TPM normalized, so the only additional processing done was to remove 'PBMC' samples, remove genes with no reads across samples, collapse duplicate genes, and log2 normalize values.
+'main' and 'fine' labels were manually assigned to each sample based on cell type as specified in the GEO repository.
 
 # Data retrieval
 
-For now, we're going to retrieve the processed data from a Dropbox repository:
+First, we'll download the TPM normalized values from GEO.
 
-```{r retrieve_from_github}
-dataset <- "monaco_immune" 
-full.url <- "https://www.dropbox.com/s/3l82mnuvp3ts4gt/monaco_immune.rda?dl=1"
-
+```{r retrieve_from_geo}
 library(BiocFileCache)
+url <- "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE107nnn/GSE107011/suppl/GSE107011_Processed_data_TPM.txt.gz"
 bfc <- BiocFileCache(ask=FALSE)
-ref <- bfcrpath(bfc, full.url)
-
-env <- new.env()
-load(ref, envir = env)
-ref.set <- get(dataset, envir = env)
-names(ref.set)
+ref <- bfcrpath(bfc, url)
+GSE107011 <- read.table(ref, sep = "\t", header = TRUE)
 ```
 
-These objects contain numerous nested lists, similar to Dvir's original reference datasets.
-We only need the matrix of normalized expression values and the labels assigned to each sample/cell.
+# Data processing
+We don't want the `PBMC` samples, as they aren't purified cell types and don't make for good reference data.
 
-# Data extraction 
-
-Extract the normalized expression matrix:
-
-```{r get_logcounts}
-logcounts <- ref.set$data
-dim(logcounts)
+```{r drop_pbmc}
+GSE107011 <- GSE107011[, -grep("PBMC", colnames(GSE107011))]
 ```
 
-Extract cell labels, which represent the metadata:
+This data has Ensembl gene IDs, but we need gene symbols, which can be acquired via `r Biocpkg("biomaRt")`.
 
-```{r get_coldata}
+```{r get_symbols}
+library("biomaRt")
+genes <- GSE107011$X
+ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
+res <- getBM(attributes = c("ensembl_gene_id_version", "hgnc_symbol"), 
+             filters = "ensembl_gene_id_version", values = genes, mart = ensembl)
+```
+
+Many Ensembl IDs don't have official gene symbols, so we will remove those as well. 
+Then we can assign the gene symbols in place of the Ensembl IDs.
+
+```{r drop_no_symbol_rows}
+res <- res[!(res$hgnc_symbol == ""),]
+GSE107011 <- GSE107011[GSE107011$X %in% res$ensembl_gene_id_version, ]
+
+# Assign symbols.
+GSE107011$X <- n.res$hgnc_symbol[match(GSE107011$X, n.res$ensembl_gene_id_version)]
+```
+
+Genes with no reads in any samples don't provide any value for our purpose, so we will remove those as well.
+
+```{r drop_no_read_rows}
+GSE107011 <- GSE107011[rowSums(GSE107011[, 2:115]) != 0, ]
+```
+
+A small number of genes are duplicated, so those will be collapsed by keeping the instances with the highest median of reads across samples.
+
+```{r collapse_dup_genes}
+GSE107011$med <- rowMedians(as.matrix(GSE107011[, 2:115]))
+GSE107011 <- GSE107011[order(GSE107011[, 'X'], -GSE107011[, 'med']),]
+GSE107011 <- GSE107011[!duplicated(GSE107011$X), ]
+row.names(GSE107011) <- GSE107011$X
+
+GSE107011$X <- NULL
+GSE107011$med <- NULL
+```
+
+Then we will log2 normalize after adding a pseudocount of 1.
+
+```{r log_normalize}
+GSE107011 <- GSE107011 + 1
+GSE107011 <- log2(GSE107011)
+```
+
+# Label the samples
+We can now apply human-readable labels to each sample.
+
+```{r create_metadata}
+main <- c('CD8+ T cells', 'CD8+ T cells', 'CD8+ T cells', 'CD8+ T cells', 
+          'T cells', 'T cells', 'T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'Progenitors', 'B cells', 'B cells', 'B cells', 
+          'B cells', 'Plasmablasts', 'Monocytes', 'Monocytes', 'Monocytes', 
+          'NK cells', 'Dendritic cells', 'Dendritic cells', 'Neutrophils', 
+          'Basophils', 'CD8+ T cells', 'CD8+ T cells', 'CD8+ T cells', 
+          'CD8+ T cells', 'T cells', 'T cells', 'T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 'Progenitors', 
+          'B cells', 'B cells', 'B cells', 'B cells', 'Plasmablasts', 
+          'Monocytes', 'Monocytes', 'Monocytes', 'NK cells', 'Dendritic cells', 
+          'Dendritic cells', 'Neutrophils', 'Basophils', 'CD8+ T cells', 
+          'CD8+ T cells', 'CD8+ T cells', 'CD8+ T cells', 'T cells', 'T cells', 
+          'T cells', 'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'Progenitors', 'B cells', 'B cells', 'B cells', 
+          'B cells', 'Plasmablasts', 'Monocytes', 'Monocytes', 'Monocytes', 
+          'NK cells', 'Dendritic cells', 'Dendritic cells', 'Neutrophils', 
+          'Basophils', 'CD8+ T cells', 'CD8+ T cells', 'CD8+ T cells', 
+          'CD8+ T cells', 'T cells', 'T cells', 'T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 'CD4+ T cells', 
+          'CD4+ T cells', 'CD4+ T cells', 'Progenitors', 'B cells', 'B cells', 
+          'B cells', 'B cells', 'Plasmablasts', 'Monocytes', 'Monocytes', 
+          'Monocytes', 'NK cells', 'Dendritic cells', 'Dendritic cells', 
+          'Neutrophils', 'Basophils')
+
+fine <- c('Tcell.CD8.naive', 'Tcell.CD8.CentralMemory', 'Tcell.CD8.EffectorMemory', 
+          'Tcell.CD8.TerminalEffector', 'Tcell.MAIT', 'Tcell.VD2pos.gd', 'Tcell.VD2neg.gd', 
+          'Tcell.FollicularHelper', 'Tcell.Treg', 'Tcell.Th1', 'Tcell.Th1.Th17', 'Tcell.Th17', 
+          'Tcell.Th2', 'Tcell.CD4.naive', 'Progenitor', 'Bcell.naive', 'Bcell.NonSwitchedMemory', 
+          'Bcell.Exhausted', 'Bcell.SwitchedMemory', 'Plasmablast', 'Monocyte.Classical', 
+          'Monocyte.Int', 'Monocyte.NonClassical', 'NK', 'Dendritic.Plasmacytoid', 'Dendritic.Myeloid', 
+          'Neutrophil', 'Basophil', 'Tcell.CD8.naive', 'Tcell.CD8.CentralMemory', 
+          'Tcell.CD8.EffectorMemory', 'Tcell.CD8.TerminalEffector', 'Tcell.MAIT', 
+          'Tcell.VD2pos.gd', 'Tcell.VD2neg.gd', 'Tcell.FollicularHelper', 'Tcell.Treg', 
+          'Tcell.Th1', 'Tcell.Th1.Th17', 'Tcell.Th17', 'Tcell.Th2', 'Tcell.CD4.naive', 
+          'Tcell.CD4.TerminalEffector', 'Progenitor', 'Bcell.naive', 'Bcell.NonSwitchedMemory', 
+          'Bcell.Exhausted', 'Bcell.SwitchedMemory', 'Plasmablast', 'Monocyte.Classical', 
+          'Monocyte.Int', 'Monocyte.NonClassical', 'NK', 'Dendritic.Plasmacytoid', 
+          'Dendritic.Myeloid', 'Neutrophil', 'Basophil', 'Tcell.CD8.naive', 
+          'Tcell.CD8.CentralMemory', 'Tcell.CD8.EffectorMemory', 'Tcell.CD8.TerminalEffector', 
+          'Tcell.MAIT', 'Tcell.VD2pos.gd', 'Tcell.VD2neg.gd', 'Tcell.FollicularHelper', 
+          'Tcell.Treg', 'Tcell.Th1', 'Tcell.Th1.Th17', 'Tcell.Th17', 'Tcell.Th2', 
+          'Tcell.CD4.naive', 'Tcell.CD4.TerminalEffector', 'Progenitor', 'Bcell.naive', 
+          'Bcell.NonSwitchedMemory', 'Bcell.Exhausted', 'Bcell.SwitchedMemory', 
+          'Plasmablast', 'Monocyte.Classical', 'Monocyte.Int', 'Monocyte.NonClassical', 
+          'NK', 'Dendritic.Plasmacytoid', 'Dendritic.Myeloid', 'Neutrophil', 'Basophil', 
+          'Tcell.CD8.naive', 'Tcell.CD8.CentralMemory', 'Tcell.CD8.EffectorMemory', 
+          'Tcell.CD8.TerminalEffector', 'Tcell.MAIT', 'Tcell.VD2pos.gd', 'Tcell.VD2neg.gd', 
+          'Tcell.FollicularHelper', 'Tcell.Treg', 'Tcell.Th1', 'Tcell.Th1.Th17', 'Tcell.Th17', 
+          'Tcell.Th2', 'Tcell.CD4.naive', 'Progenitor', 'Bcell.naive', 'Bcell.NonSwitchedMemory', 
+          'Bcell.Exhausted', 'Bcell.SwitchedMemory', 'Plasmablast', 'Monocyte.Classical', 
+          'Monocyte.Int', 'Monocyte.NonClassical', 'NK', 'Dendritic.Plasmacytoid', 
+          'Dendritic.Myeloid', 'Neutrophil', 'Basophil')
+
+logcounts <- GSE107011
+
 library(S4Vectors)
 coldata <- DataFrame(row.names = colnames(logcounts),
-    label.main = ref.set$main_types,
-    label.fine = ref.set$types)
+                     label.main = main,
+                     label.fine = fine)
 ```
+
 
 # Saving to file
 
-Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
+Now the counts and metadata can be saved for upload to `r Biocpkg("ExperimentHub")`.
 
 ```{r save_for_ExpHub}
-path <- file.path("SingleR", dataset, "1.0.0")
+path <- file.path("SingleR", "monaco_immune", "1.0.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-## saving counts
 saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
-
-## saving metadata
 saveRDS(coldata, file = file.path(path, "coldata.rds"))
 ```
 
