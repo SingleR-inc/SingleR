@@ -29,6 +29,11 @@
 #' If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
 #' were pruned versus not.
 #' 
+#' #' @seealso
+#' \code{\link{SingleR}}, to generate \code{scores}.
+#'
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#' 
 #' @author Daniel Bunis
 #' @examples
 #' example(SingleR, echo=FALSE)
