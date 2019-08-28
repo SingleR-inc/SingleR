@@ -27,8 +27,8 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 \item{normalize}{Logical specifying whether correlations should be normalized to lie in [0, 1].}
 
 \item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap. 
-If set, turns off clustering of columns based on scoring.
-Note: When used alongside \code{cells.use}, both arguments should be the same length.}
+Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
+If set, turns off clustering of columns based on scoring.}
 
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
@@ -77,6 +77,11 @@ plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
 plotScoreHeatmap(pred, clusters=test$label, fontsize.row = 9)
 plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
 
+}
+\seealso{
+\code{\link{SingleR}}, to generate \code{scores}.
+
+\code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 }
 \author{
 Daniel Bunis, based on code by Dvir Aran.
