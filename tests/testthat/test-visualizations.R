@@ -95,7 +95,7 @@ test_that("cells.use can be combined with ordering (by cells or by cluster)", {
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
-        cells.order = 1:50), "pheatmap")
+        cells.order = 1:100), "pheatmap")
 
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
@@ -148,7 +148,7 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
     #Reference plot, but only half: Every tenth cell, pruned = TRUE. Clusters from 50:1. annot from 100:51.
     expect_s3_class(plotScoreHeatmap(
         results = pred,
-        cells.order = seq_len(nrow(pred))[1:50],
+        cells.order = seq_len(nrow(pred)),
         # order.by.clusters = TRUE,
         cells.use = 1:50,
         clusters = seq(nrow(pred),1),
@@ -163,7 +163,7 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         results = pred,
         cells.order = seq_len(nrow(pred)),
         # order.by.clusters = TRUE,
-        # cells.use = 1:100,
+        # cells.use = 1:50,
         clusters = seq(nrow(pred),1),
         show.pruned = TRUE,
         annotation_col = data.frame(

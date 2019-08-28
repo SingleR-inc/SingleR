@@ -81,8 +81,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
+#' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
-#' Note: When used alongside \code{cells.use}, both arguments should be the same length. 
 #' @param annotation_col A data.frame containing data for additional/alternative column annotations 
 #' (clustering and pruning annotations are automatically added).
 #' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
@@ -163,6 +163,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
         clusters <- clusters[cells.use]
+        cells.order <- cells.order[cells.use]
     }
     if (!is.null(labels.use)) {
         scores <- scores[,labels.use,drop=FALSE]
@@ -173,7 +174,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (order.by.clusters) {
         order <- order(clusters)
     } else if (!is.null(cells.order)) {
-        order <- cells.order
+        order <- order(cells.order)
     } else {
         # no ordering requested
         order <- seq_len(nrow(scores))
