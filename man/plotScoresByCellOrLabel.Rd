@@ -5,7 +5,7 @@
 \alias{plotScoresSingleCell}
 \alias{plotScoresSingleLabel}
 \alias{plotScoresMultiLabels}
-\title{Plot SingleR scoring on a per label or per cell basis.}
+\title{Plot SingleR scores on a per-label or per-cell basis.}
 \usage{
 plotScoresSingleCell(results, cell.id,
   labels.use = levels(as.factor(results$labels)), size = 2,
@@ -41,35 +41,30 @@ This input will be unnecessary once \code{\link{pruneScores}}'s output is added 
 Each function returns a \link{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
 }
 \description{
-Plot SingleR scoring on a per label or per cell basis.
+Plot SingleR scores on a per-label or per-cell basis.
 }
 \details{
-NOTE: these functions show initial scores only.
-Aside from use of post-fine-tuning labels, they are completely independent of the fine-tuning step.
+The \code{plotScoresSingleCell} function creates a dot plot showing the scores of a single cell across many labels.
+The score for the final label of an individual cell is marked in yellow, with a dotted line indicating the median score across all labels.
+This function may be useful for visualizing and tuning the \code{min.diff.med} per-cell cutoff of the \code{\link{pruneScores}} function.
 
-The \code{plotScoresSingleCell} function creates a dot plot showing the scores of a single cell accross many labels,
-with a dotted line added to indicate the median score accross all labels.
-It can be used to assess how an individual cell scored versus all/many labels of the reference dataset,
-and may be useful for visualizing and tuning the \code{min.diff.med} per-cell cutoff of the \code{\link{pruneScores}} function.
-
-The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions creates jitter and violin plots showing
-the scores of all cells accross either a single label or multiple labels, respectively.
+The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions create jitter and violin plots showing
+the scores of all cells across a single label or multiple labels, respectively.
+For a given label X, cells are split into several categories:
+\itemize{
+\item Was assigned to label X, and the label was not pruned away.
+\item Was assigned to label X, and the label was pruned away.
+\item Was not assigned to label X, and the label was not pruned away.
+\item Was not assigned to label X, and the label was pruned away.
+}
+Each category is grouped and colored separately.
 These functions can be used to assess the distribution of scores of all cells for individual labels,
 and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
 
-Scores are grouped and colored by whether they were the final calls for a cell or not.
-If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
-were pruned versus not.
+Note that these functions show initial scores only, i.e., prior to fine tuning.
+However, the labels may be defined after fine-tuning in \code{\link{SingleR}} or \code{\link{classifySingleR}}.
+Thus, the best score for an individual cell may not be its final label.
 }
-\section{Functions}{
-\itemize{
-\item \code{plotScoresSingleCell}: Plot scores accross labels of an individual cells
-
-\item \code{plotScoresSingleLabel}: Plot scores accross labels of an individual cells
-
-\item \code{plotScoresMultiLabels}: Plot scores accross labels of an individual cells
-}}
-
 \examples{
 example(SingleR, echo=FALSE)
 
