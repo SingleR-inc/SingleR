@@ -171,7 +171,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         order <- cells.order
     } else {
         # no ordering requested
-        order <- seq_len(ncol(scores))
+        order <- seq_len(nrow(scores))
         cluster_cols <- TRUE
     }
     
