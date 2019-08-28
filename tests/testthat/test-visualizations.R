@@ -63,6 +63,8 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
   
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
+    
+    expect_s3_class(plotScoreHeatmap(results = pred, show.pruned = TRUE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred,
@@ -76,7 +78,6 @@ test_that("cells.use can be combined with annotations & annotations can be combi
 
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
-        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE), "pheatmap")
 
     expect_s3_class(plotScoreHeatmap(
@@ -84,14 +85,12 @@ test_that("cells.use can be combined with annotations & annotations can be combi
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
-        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE), "pheatmap")
 })
 
 test_that("cells.use can be combined with ordering (by cells or by cluster)", {
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
-        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
@@ -100,7 +99,6 @@ test_that("cells.use can be combined with ordering (by cells or by cluster)", {
 
     expect_s3_class(plotScoreHeatmap(
         results = pred, cells.use = 1:50, clusters = pred$labels,
-        prune.calls = rep(c(rep(TRUE,24),FALSE),nrow(pred)/25), # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
@@ -119,7 +117,7 @@ test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHea
 
 test_that("Annotations stay linked, even with cells.use, cells.order, or order.by.clusters = TRUE", {
     # Make prune.call TRUE for every 10th value.  (We need known order for testing annotation placement.)
-    # pred$prune.calls <- rep(c(rep(FALSE,9),TRUE),nrow(pred)/10) # UNCOMMENT after prune.calls added.
+    pred$pruned.labels <- rep(c(rep(FALSE,9),NA),nrow(pred)/10)
     
     #Reference plot: Every tenth cell, pruned = TRUE. Clusters from 100:1. annot from 1:100.
     expect_s3_class(plotScoreHeatmap(
@@ -128,7 +126,6 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         # order.by.clusters = TRUE,
         # cells.use = 1:50,
         clusters = seq(nrow(pred),1),
-        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
@@ -142,7 +139,6 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         order.by.clusters = TRUE,
         # cells.use = 1:50,
         clusters = seq(nrow(pred),1),
-        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
@@ -156,7 +152,6 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         # order.by.clusters = TRUE,
         cells.use = 1:50,
         clusters = seq(nrow(pred),1),
-        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
@@ -170,7 +165,6 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         # order.by.clusters = TRUE,
         # cells.use = 1:100,
         clusters = seq(nrow(pred),1),
-        prune.calls = rep(c(rep(FALSE,9),TRUE),nrow(pred)/10),   # REMOVE LINE after prune.scores added to results.
         show.pruned = TRUE,
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
