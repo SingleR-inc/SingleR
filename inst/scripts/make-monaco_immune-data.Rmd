@@ -1,0 +1,83 @@
+---
+title: "Obtaining reference data from GSE107011"
+author: "Jared Andrews"
+date: "8/23/2019"
+output: 
+  BiocStyle::html_document
+---
+
+```{r setup, echo=FALSE, include=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+```
+
+# Overview
+
+Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with **normalized expression values from reference data sets** such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen). 
+I created several other reference datasets specifically for immune/hematopoietic cells.
+These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
+Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
+
+This RNA-seq dataset was downloaded from [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011).
+Values were already TPM normalized, so the only additional processing done was to remove genes with no reads across samples and log2 normalize values after adding a pseudocount of 1.
+'Main' and 'fine' labels were manually assigned to each sample based on cell type as specified in the GEO repository.
+
+# Data retrieval
+
+For now, we're going to retrieve the processed data from a Dropbox repository:
+
+```{r retrieve_from_github}
+dataset <- "monaco_immune" 
+full.url <- "https://www.dropbox.com/s/3l82mnuvp3ts4gt/monaco_immune.rda?dl=1"
+
+library(BiocFileCache)
+bfc <- BiocFileCache(ask=FALSE)
+ref <- bfcrpath(bfc, full.url)
+
+env <- new.env()
+load(ref, envir = env)
+ref.set <- get(dataset, envir = env)
+names(ref.set)
+```
+
+These objects contain numerous nested lists, similar to Dvir's original reference datasets.
+We only need the matrix of normalized expression values and the labels assigned to each sample/cell.
+
+# Data extraction 
+
+Extract the normalized expression matrix:
+
+```{r get_logcounts}
+logcounts <- ref.set$data
+dim(logcounts)
+```
+
+Extract cell labels, which represent the metadata:
+
+```{r get_coldata}
+library(S4Vectors)
+coldata <- DataFrame(row.names = colnames(logcounts),
+    label.main = ref.set$main_types,
+    label.fine = ref.set$types)
+```
+
+# Saving to file
+
+Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
+
+```{r save_for_ExpHub}
+path <- file.path("SingleR", dataset, "1.0.0")
+dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+## saving counts
+saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
+
+## saving metadata
+saveRDS(coldata, file = file.path(path, "coldata.rds"))
+```
+
+# Session info
+
+```{r}
+sessionInfo()
+```

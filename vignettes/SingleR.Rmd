@@ -4,7 +4,11 @@ author:
 - name: Aaron Lun 
 - name: Jared M. Andrews
   affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
-date: "Revised: August 13, 2019"
+- name: Friederike Dündar
+  affiliation: Applied Bioinformatics Core, Weill Cornell Medicine
+- name: Daniel Bunis
+  affiliation: Bakar Computational Health Sciences Institute, University of California San Francisco, San Francisco, CA
+date: "Revised: August 27, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
@@ -178,50 +182,397 @@ plotScoreHeatmap(pred, clusters=sceG$donor)
 
 `plotScoreHeatmap()` uses `r CRANpkg("pheatmap")` for plotting, so additional arguments can be passed to adjust the heatmap as needed.
 
-# Available reference datasets
+# Using a reference data set as training data with `SingleR`
 
-`r Biocpkg("SingleR")` also directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
+The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on
+bulk RNA-seq, microarray and single-cell RNA-seq data from:
 
-There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project). 
-For more details see the vignette dedicated to the `r Biocpkg("SingleR", vignette = "datasets.html", label="reference datasets")`.
+* Blueprint and Encode (`blueprint_encode`),
+* the Human Primary Cell Atlas (`hpca`),
+* the murine [ImmGen](http://www.immgen.org/) (`immgen`), and
+* a collection of mouse data sets downloaded from GEO (`mouse.rna.seq`).
 
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `ImmGenData()`, `MouseRNAseqData()`.
-Here, we show an example with data from HPCA:
+The bulk RNA-seq and microarray data sets of the first three reference data sets were obtained from pre-sorted cell populations, i.e. the cell labels of these samples were mostly derived based on the respective sorting/purification strategy, not via *in silico* prediction methods.
+
+Three additional reference datasets from bulk RNA-seq and microarray data for immune cells have also been prepared. 
+Each of these datasets were also obtained from pre-sorted cell populations:
+
+* The [Database for Immune Cell Expression(/eQTLs/Epigenomics)](https://dice-database.org) [@diceRef],
+* Novershtern Hematopoietic Cell Data - [GSE24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759) - formerly known as Differentiation Map [@dmapRef], and
+* Monaco Immune Cell Data - [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011)  [@monaco_immuneRef].
+
+| Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
+|------------------|----------|----------|-------------|----------------------|------------|----------|
+|`HumanPrimaryCellAtlasData()`| human | 713 | microarrays of sorted cell populations  | 37 |  157 | Non-specific |
+|`BlueprintEncodeData()` |  human | 259 | RNA-seq | 24 | 43 | Non-specific |
+|`DatabaseImmuneCellExpressionData()` | human | 1561 | RNA-seq | 5 | 15 | Immune |
+|`NovershternHematopoieticData()` | human | 211 | microarrays of sorted cell populations | 17 | 38 | Hematopoietic & Immune |
+|`MonacoImmuneData()` | human | 114 | RNA-seq | 11 | 29 | Immune |
+|`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 | Hematopoietic & Immune |
+|`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 | Non-specific |
+
+## Demonstration on ESC data using the Human Primary Cell Atlas reference dataset
+
+If you want to use any of these reference data sets as your training data 
+set with the main `SingleR` function, you can locally cache the normalized expression
+values and cell type labels with the respective functions shown here.
+Each data set has a dedicated function: `HumanPrimaryCellAtlasData`, `BlueprintEncodeData`, `DatabaseImmuneCellExpressionData`, `NovershternHematopoieticData`, `MonacoImmuneData`, `ImmGenData`, `MouseRNAseqData`.
+
+The data retrieval functions will return a single R object of the `SummarizedExperiment` 
+class with the normalized expression values stored in a gene-by-sample matrix in 
+the `assay` slot (`"logcounts"`) and the sample labels as part of `colData(SE)`.
+The general usage is shown here for data from HPCA:
 
 ```{r}
+library(SingleR)
 hpca.se <- HumanPrimaryCellAtlasData()
-hpca.se
-```
 
-The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
-To illustrate this, we will use a hESC dataset from `r Biocpkg("scRNAseq")` [@lamanno2016molecular].
-Again, we will subset this test dataset to 100 cells for the sake of speed.
-
-```{r}
+## example scRNA-seq data
+library(scRNAseq)
 hESCs <- LaMannoBrainData('human-es')
 hESCs <- hESCs[,1:100] # for demo-purposes only!
-```
 
-We subset to genes that are present in both the scRNA-seq data to be annotated and the reference data set.
-We then compute log-normalized expression values for the hESC data set.
-
-```{r}
+## focus on genes that are common between your scRNA-seq and the reference data
+library(scater)
 common <- intersect(rownames(hESCs), rownames(hpca.se))
 hpca.se <- hpca.se[common,]
 hESCs <- hESCs[common,]
 hESCs <- logNormCounts(hESCs)
-```
 
-The reference data sets all come with two sets of cell labels: `label.main` and `label.fine`. 
-The "main" labels tend to be less fine-grained than the "fine" labels, e.g. instead of specifying different subsets of T cells, the main labels will lump them all together under the broader label "T cells".
-For more details about the individual cell type labels available for the different reference data sets, see the vignette `r Biocpkg("SingleR", vignette = "datasets.html", label="reference datasets")`.
-
-For our example, we will use the more specific fine-grained cell type labels.
-
-```{r}
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.fine)
+## determine labels for the scRNA-seq data at hand using the reference data 
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.main)
 table(pred.hpca$labels)
 ```
+
+## Mouse reference datasets
+
+### The Immunological Genome Project (ImmGen)
+
+> The Immunological Genome Project is a collaborative group of immunologists and computational biologists who are generating a complete microarray dissection of gene expression and its regulation in the immune system of the mouse. The project encompasses the innate and adaptive immune systems, surveying all cell types of the myeloid and lymphoid lineages with a focus on primary cells directly *ex vivo*. [Source](http://www.immgen.org/)
+
+**830 microarray samples** of ImmGen raw expression data (phases 1 and 2) were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized 
+using the robust multi-array average (RMA) procedure on probe-level data using Matlab functions.
+The analysis was performed using a custom CDF file obtained from Brainarray  [@aran2019reference].
+
+There are **20 main cell types** and **253 "fine" cell subtypes**.
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+| Label type | Labels |
+|------------|--------|
+| main | B cells, B cells, pro, Basophils, DC, Endothelial cells, Eosinophils, Epithelial cells, Fibroblasts, ILC, Macrophages, Mast cells, Microglia, Monocytes, Neutrophils, NK cells, NKT, Stem cells, Stromal cells, T cells, Tgd |
+| fine | e.g. DC (DC.11B-), DC (DC.103-11B+24+), Macrophages (MF.103-11B+.SALM3, Macrophages (MF.11CLOSER.SALM3), Tgd (Tgd.vg2+.act)|
+</details>
+
+### Mouse RNA-seq samples of pure cell populations
+
+The dataset entails **358 mouse RNA-seq** samples annotated to **18 main cell types** and
+**28 "fine" cell subtypes**.
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+
+* Adipocytes
+  - Adipocytes
+* Astrocytes
+  - aNSCs 
+  - Astrocytes 
+  - Astrocytes activated
+* B cells
+  - B cells
+* Cardiomyocytes
+  - Cardiomyocytes
+* Dendritic cells
+  - Dendritic cells
+* Endothelial cells
+  - Endothelial cells
+* Epithelial cells
+  - Ependymal
+* Erythrocytes
+  - Erythrocytes
+* Fibroblasts
+  - Fibroblasts
+  - Fibroblasts activated
+  - Fibroblasts senescent
+* Granulocytes
+  - Granulocytes
+* Hepatocytes
+  - Hepatocytes
+* Macrophages
+  - Macrophages
+  - Macrophages activated
+* Microglia
+  - Microglia
+  - Microglia activated
+* Monocytes
+  - Monocytes
+* Neurons
+  - Neurons
+  - Neurons activated
+  - NPCs
+  - qNSCs
+* NK cells 
+  - NK cells
+* Oligodendrocytes
+  - Oligodendrocytes
+  - OPCs
+* T cells
+  - T cells
+
+</details>
+
+The RNA-seq data were downloaded from GEO and processed by the Benayoun Lab as follows [@Benayoun2019]:
+
+>Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3). 
+
+More details can be found in the [Benayoun Lab github repo](https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT).
+
+## Human reference datasets
+
+### Blueprint and ENCODE
+
+Blueprint: 144 bulk RNA-seq of pure immune samples annotated to 28 cell types [@blueprintRef]
+
+ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
+
+Altogether, **259 samples** with **24 main cell types** and  **43 "fine" cell subtypes**.
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+
+* Adipocytes
+  - Adipocytes
+  - Astrocytes
+  - Preadipocytes
+* B-cells
+  - Class-switched memory B-cells
+  - Memory B-cells
+  - naive B-cells
+  - Plasma cells
+* CD4+ T-cells
+  - CD4+ T-cells 
+  - CD4+ Tcm 
+  - CD4+ Tem
+  - Tregs
+* CD8+ T-cells
+  - CD8+ T-cells 
+  - CD8+ Tcm 
+  - CD8+ Tem
+* Chondrocytes
+  - Chondrocytes
+* DC 
+  - DC
+* Endothelial cells
+  - Endothelial cells
+  - mv Endothelial cells
+* Eosinophils
+  - Eosinophils
+* Epithelial cells 
+  - Epithelial cells
+* Erythrocytes
+  - Erythrocytes
+* Fibroblasts
+  - Fibroblasts
+* HSC
+  - CLP 
+  - CMP
+  - GMP 
+  - HSC
+  - Megakaryocytes
+  - MEP
+  - MPP
+* Keratinocytes
+  - Keratinocytes
+* Macrophages
+  - Macrophages 
+  - Macrophages M1 
+  - Macrophages M2
+* Melanocytes
+  - Melanocytes
+* Mesangial cells
+  - Mesangial cells
+* Monocytes
+  - Monocytes
+* Myocytes
+  - Myocytes
+* Neurons
+  - Neurons
+* Neutrophils
+  - Neutrophils
+* NK cells
+  - NK cells
+* Pericytes
+  - Pericytes
+* Skeletal muscle
+  - Skeletal muscle
+* Smooth muscle 
+  - Smooth muscle
+
+</details>
+
+### Human Primary Cell Atlas
+
+Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
+contains **713 microarray samples** classified to **37 main cell types** and further annotated to **157  "fine" cell subtypes** [@hpcaRef].
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+| Label type | Labels |
+|------------|--------|
+| main | Astrocyte, B_cell, BM, BM & Prog., Chondrocytes, CMP, DC, Embryonic_stem_cells, Endothelial_cells, Epithelial_cells, Erythroblast, Fibroblasts, Gametocytes, GMP, Hepatocytes, HSC_-G-CSF, HSC_CD34+, iPS_cells, Keratinocytes, Macrophage, MEP, Monocyte, MSC, Myelocyte, Neuroepithelial_cell, Neurons, Neutrophil, Neutrophils, NK_cell, Osteoblasts, Platelets, Pre-B_cell_CD34-, Pro-B_cell_CD34+, Pro-Myelocyte, Smooth_muscle_cells, T_cells, Tissue_stem_cells |
+| fine | e.g. DC:monocyte-derived:AM580, DC:monocyte-derived:Poly(IC), T_cell:CD8+_naive, Keratinocytes:IL22, Keratinocytes:KGF |
+</details>
+
+### Database of Immune Cell Expression
+
+[DICE](https://dice-database.org): **1561 bulk RNA-seq samples** of 15 immune cell types [@diceRef].
+Samples were annotated to **5 main cell types** and **15 "fine" cell subtypes**.
+
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+* B cells
+  - B cells, naive
+* Monocytes
+  - Monocytes, CD14+
+  - Monocytes, CD16+
+* NK cells
+  - NK cells
+* T cells, CD8+
+  - T cells, CD8+, naive 
+  - T cells, CD8+, naive, stimulated
+* T cells, CD4+
+  - T cells, memory TREG 
+  - T cells, CD4+, naive 
+  - T cells, CD4+, naive, stimulated 
+  - T cells, CD4+, naive Treg 
+  - T cells, CD4+, Th1 
+  - T cells, CD4+, Th1_Th17 
+  - T cells, CD4+, Th2  
+  - T cells, CD4+, TFH 
+  - T cells, CD4+, Th17
+  
+</details> 
+
+### Novershtern Hematopoietic Data (Differentiation Map)
+
+This dataset is composed of **211 microarray samples** from hematopoietic cell subsets as described in [@dmapRef].
+Samples were annotated to **16 main cell types** and **38 "fine" cell subtypes**. 
+
+<details>
+  <summary>Click for Dataset Cell Types</summary>
+  
+* Basophils
+  - Basophils
+* B cells
+  - Naive B cells
+  - Mature B-cells class able to switch
+  - Mature B-cells
+  - Mature B-cells class switched
+  - Early B-cells
+  - Pro B-cells
+* CMPs
+  - Common myeloid progenitors
+* Dendritic cells
+  - Plasmacytoid Dendritic Cells
+  - Myeloid Dendritic Cells
+* Eosinophils
+  - Eosinophils
+* Erythroid cells
+  - Erythroid_CD34+ CD71+ GlyA-
+  - Erythroid_CD34- CD71+ GlyA-
+  - Erythroid_CD34- CD71+ GlyA+
+  - Erythroid_CD34- CD71lo GlyA+
+  - Erythroid_CD34- CD71- GlyA+
+* GMPs
+  - Granulocyte/monocyte progenitors
+* Granulocytes
+  - Colony Forming Unit-Granulocytes
+  - Granulocyte (Neutrophilic Metamyelocytes)
+  - Granulocyte (Neutrophils)
+* HSCs
+  - Hematopoietic stem cells_CD133+ CD34dim
+  - Hematopoietic stem cell_CD38- CD34+
+* Megakaryocytes
+  - Colony Forming Unit-Megakaryocytic
+  - Megakaryocytes
+* MEPs
+  - Megakaryocyte/erythroid progenitors
+* Monocytes
+  - Colony Forming Unit-Monocytes, Monocytes
+  - Monocytes
+* NK cells
+  - Mature NK cells_CD56- CD16+ CD3-
+  - Mature NK cells_CD56+ CD16+ CD3-
+  - Mature NK cells_CD56- CD16- CD3-
+* NK T cells
+  - NK T cells
+* CD8+ T cells
+  - CD8+ Effector Memory RA
+  - Naive CD8+ T-cells
+  - CD8+ Effector Memory
+  - CD8+ Central Memory
+* CD4+ T cells
+  - Naive CD4+ T-cells
+  - CD4+ Effector Memory
+  - CD4+ Central Memory
+
+</details>
+
+### Monaco Immune Data
+
+This dataset is composed of **114 bulk RNA-seq samples** immune cell subsets as described in [@monaco_immuneRef].
+Samples were annotated to **11 main cell types** and **29 "fine" cell subtypes**. 
+
+<details>
+  <summary>Click for Dataset Details</summary>
+  
+* CD8+ T cells
+  - Tcell.CD8.naive 
+  - Tcell.CD8.CentralMemory 
+  - Tcell.CD8.EffectorMemory 
+  - Tcell.CD8.TerminalEffector 
+* T cells
+  - Tcell.MAIT 
+  - Tcell.VD2pos.gd 
+  - Tcell.VD2neg.gd 
+* CD4+ T cells
+  - Tcell.FollicularHelper 
+  - Tcell.Treg 
+  - Tcell.Th1 
+  - Tcell.Th1.Th17 
+  - Tcell.Th17 
+  - Tcell.Th2 
+  - Tcell.CD4.naive 
+  - Tcell.CD4.TerminalEffector
+* Progenitors
+  - Progenitor
+* B cells
+  - Bcell.naive 
+  - Bcell.NonSwitchedMemory 
+  - Bcell.Exhausted 
+  - Bcell.SwitchedMemory
+* Plasmablasts
+  - Plasmablast
+* Monocytes
+  - Monocyte.Classical 
+  - Monocyte.Int 
+  - Monocyte.NonClassical
+* NK cells
+  - NK
+* Dendritic cells
+  - Dendritic.Plasmacytoid 
+  - Dendritic.Myeloid
+* Neutrophils
+  - Neutrophil
+* Basophils 
+  - Basophil
+
+</details>
 
 # Separating training from classification
 
