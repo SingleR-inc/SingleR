@@ -100,6 +100,11 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
 #' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+#' 
+#' @seealso
+#' \code{\link{classifySingleR}}, to generate \code{scores}.
+#'
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #'
