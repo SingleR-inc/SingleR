@@ -13,6 +13,7 @@
 #' This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
+#' @param prune A logical scalar indicating whether label pruning should be performed.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.
 #' 
 #' @return A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
@@ -20,15 +21,19 @@
 #' \itemize{
 #' \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
 #' \item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+#' \item \code{prune.scores}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
+#' Only added if \code{prune=TRUE}.
 #' }
 #'
 #' If \code{fine.tune=TRUE}, fields are:
 #' \itemize{
 #' \item \code{scores}, a numeric matrix of correlations as above.
-#' \item \code{first.labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+#' \item \code{first.labels}, a character vector containing the predicted label \emph{before} fine-tuning.
 #' \item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
 #' These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
 #' \item \code{labels}, a character vector containing the predicted label after fine-tuning.
+#' \item \code{prune.scores}, a character vector of pruned labels as above.
+#' Only added if \code{prune=TRUE}.
 #' }
 #' 
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
@@ -50,6 +55,10 @@
 #' The default \code{assay.type} is set to \code{"logcounts"} simply for consistency with \code{\link{trainSingleR}}.
 #' In practice, the raw counts (for UMI data) or the transcript counts (for read count data) can also be used without normalization and log-transformation.
 #' Any monotonic transformation will have no effect the calculation of the correlation values other than for some minor differences due to numerical precision.
+#'
+#' If \code{prune=TRUE}, label pruning is performed as described in \code{\link{pruneScores}} with default arguments.
+#' This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
+#' However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 #'
 #' @examples
 #' ###########################################
@@ -91,13 +100,18 @@
 #' pred <- classifySingleR(test, trained)
 #' table(predicted=pred$labels, truth=g)
 #' 
+#' @seealso
+#' \code{\link{trainSingleR}}, to prepare the training set for classification.
+#'
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#'
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance 
 #' @importFrom S4Vectors List DataFrame
 #' @importFrom SummarizedExperiment colData<- colData 
 #' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply
-classifySingleR <- function(test, trained, quantile=0.8, 
-    fine.tune=TRUE, tune.thresh=0.05, sd.thresh=NULL,
+classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE, 
+    tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, 
     assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing, msg="test")
@@ -159,6 +173,10 @@ classifySingleR <- function(test, trained, quantile=0.8,
         output <- DataFrame(scores=I(scores), labels=labels)
     }
 
+    if (prune) {
+        output$pruned.labels <- output$labels
+        output$pruned.labels[pruneScores(output)] <- NA_character_
+    }
     rownames(output) <- colnames(test)
     output
 }

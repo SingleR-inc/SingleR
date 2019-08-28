@@ -74,13 +74,18 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' If \code{NULL}, all cells are presented.
 #' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param clusters String vector or factor containing cell cluster assignments, to be shown as annotation in the heatmap.
+#' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
+#' @param show.pruned Logical indicated whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 #' If set, this takes precedence over \code{cells.order} input.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
+#' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
+#' @param annotation_col A data.frame containing data for additional/alternative column annotations 
+#' (clustering and pruning annotations are automatically added).
+#' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -95,6 +100,11 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
 #' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+#' 
+#' @seealso
+#' \code{\link{SingleR}}, to generate \code{scores}.
+#'
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #'
@@ -123,29 +133,61 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters=NULL, max.labels=40, normalize=TRUE,
+    clusters = NULL, show.pruned = FALSE, 
+    max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
-    ...)
+    annotation_col = NULL, ...)
 {
-    # As pheatmap simply must have rownames,
-    # otherwise the annotation_col doesn't work.
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
+    if (is.null(annotation_col)) {
+        annotation_col <- data.frame(row.names = rownames(results))
+    }
+    if (show.pruned) {
+        prune.calls <- results$pruned.labels
+        if (!is.null(prune.calls)) {
+            names(prune.calls) <- rownames(results)
+            annotation_col$Pruned <- as.character(is.na(prune.calls[rownames(annotation_col)]))
+        }
+    }
+    if (!is.null(clusters)) {
+        names(clusters) <- rownames(results)
+        annotation_col$Clusters <- clusters[rownames(annotation_col)]
+    }
+
     scores <- results$scores
     rownames(scores) <- rownames(results)
-
-    if(!is.null(cells.use)){
-        scores <- scores[cells.use,]
+    
+    # Trim the scores by requested cells or labels
+    if (!is.null(cells.use)) {
+        scores <- scores[cells.use,,drop=FALSE]
+        clusters <- clusters[cells.use]
+        cells.order <- cells.order[cells.use]
     }
     if (!is.null(labels.use)) {
-        scores <- scores[,labels.use]
+        scores <- scores[,labels.use,drop=FALSE]
     }
-
-    # NOTE: calculation of 'm' before normalization is deliberate.
+    
+    # Determining how to order the cells. 
+    cluster_cols <- FALSE
+    if (order.by.clusters) {
+        order <- order(clusters)
+    } else if (!is.null(cells.order)) {
+        order <- order(cells.order)
+    } else {
+        # no ordering requested
+        order <- seq_len(nrow(scores))
+        cluster_cols <- TRUE
+    }
+    
+    # Determine labels to show based on 'max.labels' with the highest
+    # pre-normalized scores (not removed until later, as we still need these
+    # values when normalizing the scores).
     m <- rowMaxs(scale(t(scores)))
     to.keep <- head(order(m,decreasing=TRUE), max.labels)
 
+    # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
         mmax <- rowMaxs(scores)
         mmin <- rowMins(scores)
@@ -155,30 +197,15 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
     scores <- t(scores)
+    
+    # Create args list for making the heatmap
+    args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
+        show_colnames = FALSE, clustering_method = 'ward.D2',
+        cluster_cols = cluster_cols, ...)
 
-    # Determining how to order the cells. 
-    if (!is.null(clusters)) {
-        names(clusters) <- rownames(results)
-        clusters <- data.frame(Clusters = clusters[colnames(scores)], row.names = colnames(scores))
-    }
-    cluster_cols <- FALSE
-    if (order.by.clusters && !is.null(clusters)) {
-        order <- order(clusters$Clusters)
-    } else if (!is.null(cells.order)){
-        order <- cells.order
-    } else {
-        order <- seq_len(ncol(scores))
-        cluster_cols <- TRUE
-    }
-
-    args <- list(mat = scores[,order,drop=FALSE], border_color = NA, show_colnames = FALSE,
-        clustering_method = 'ward.D2', cluster_cols = cluster_cols, ...)
-
-    if (!is.null(clusters)) {
-        args$annotation_col <- clusters[order,,drop=FALSE]
+    if (ncol(annotation_col)>0) {
+        args$annotation_col <- annotation_col
     }
 
     do.call(pheatmap::pheatmap, args)
 }
-
-
