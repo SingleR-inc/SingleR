@@ -102,7 +102,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 #' 
 #' @seealso
-#' \code{\link{classifySingleR}}, to generate \code{scores}.
+#' \code{\link{SingleR}}, to generate \code{scores}.
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
