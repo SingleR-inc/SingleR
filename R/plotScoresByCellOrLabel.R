@@ -72,22 +72,16 @@ plotScoresSingleCell <- function(results, cell.id,
     # Trim to just the data for the target labels
     df <- df[df$label %in% labels.use,]
 
-    # Make the plot
     p <- ggplot2::ggplot(
             data = df,
             ggplot2::aes(x = label, y = score, fill = cell.calls)) +
         ggplot2::theme_classic() +
-        # Set labels names to be rotated 60 degrees.
         ggplot2::theme(axis.text.x= ggplot2::element_text(
             angle=60, hjust = 1, vjust = 1, size=12)) +
-        # Remove "label" label from the x-axis
         ggplot2::xlab(NULL) +
-        # Add median score line
         ggplot2::geom_hline(yintercept = scores.median, color = "gray",
             linetype = "dashed") +
-        # Add scores data points
         ggplot2::geom_point(color = "black", shape = 21, size = size, alpha = 1) +
-        # Set the colors
         ggplot2::scale_fill_manual(name = "Cell Calls", values = colors)
 
     p
@@ -95,7 +89,7 @@ plotScoresSingleCell <- function(results, cell.id,
 
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
-plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE, df = NULL,
+plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE,
     colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
 
     if (length(colors)<4) {
@@ -107,29 +101,17 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
             'other label', 'other label - pruned')
     }
 
-    # Add rownames to the results, which will be used for trimming scores data
-    #   to the target cell later on
-    if (is.null(rownames(results))) {
-        rownames(results) <- seq_len(nrow(results))
-    }
-
-    # Get the scores data
+    # Get the scores data for all cells for the target label
     df <- .scores_data_gather(results, label)
-    # Trim to the target label
-    df <- df[df$label == label,]
-    
-    # Make the plot
+
     p <- ggplot2::ggplot(
             data = df,
             ggplot2::aes(x = cell.calls, y = score, fill = cell.calls)) + 
         ggplot2::theme_classic() +
-        # Set the colors
         ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) + 
         # Remove x-axis labels for the groupings (already in the legend),
         #   but do show the name of the target `label` as the axis title.
         ggplot2::scale_x_discrete(name = label, labels = NULL)
-    # Add the data as jitter and violin.
-    #   Violin plot added first iff `dots.on.top = TRUE`
     if (dots.on.top) {
         p <- p+ ggplot2::geom_violin()
     }
@@ -192,7 +174,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     
     scores <- results$scores[,colnames(results$scores) %in% labels.use]
     
-    # Create a dataframe with rows for each score in scores.
+    # Create a dataframe with separate rows for each score in scores.
     df <- data.frame(
         #cell id of the cell
         id = c(sapply(
@@ -213,7 +195,6 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     df$cell.calls <- "other label"
     df$cell.calls[df$label == df$called] <- "this label"
     
-    # Add " - pruned" to the cell.calls
     if (!is.null(results$pruned.labels)){
         # Retrieve if cells' calls were scored as to be prunes versus not,
         #  then add this to df$cell.calls
