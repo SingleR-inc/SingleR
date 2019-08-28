@@ -79,7 +79,7 @@ plotScoresSingleCell <- function(results, cell.id,
 
     p <- ggplot2::ggplot(
             data = df,
-            ggplot2::aes(x = label, y = score, fill = cell.calls)) +
+            ggplot2::aes_string(x = "label", y = "score", fill = "cell.calls")) +
         ggplot2::theme_classic() +
         ggplot2::theme(axis.text.x= ggplot2::element_text(
             angle=60, hjust = 1, vjust = 1, size=12)) +
@@ -111,7 +111,7 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
 
     p <- ggplot2::ggplot(
             data = df,
-            ggplot2::aes(x = cell.calls, y = score, fill = cell.calls)) + 
+            ggplot2::aes_string(x = "cell.calls", y = "score", fill = "cell.calls")) + 
         ggplot2::theme_classic() +
         ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) + 
         # Remove x-axis labels for the groupings (already in the legend),
@@ -150,7 +150,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     # Make the plot
     p <- ggplot2::ggplot(
             data = df,
-            ggplot2::aes(x = cell.calls, y = score, fill = cell.calls)) + 
+            ggplot2::aes_string(x = "cell.calls", y = "score", fill = "cell.calls")) + 
         ggplot2::theme_classic() +
         ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) + 
         ggplot2::scale_x_discrete(name = "Labels", labels = NULL) +
