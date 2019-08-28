@@ -182,13 +182,15 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     # Create a dataframe with separate rows for each score in scores.
     df <- data.frame(
         #cell id of the cell
-        id = c(sapply(
+        id = c(vapply(
             rownames(results),
-            function(X) rep(X, length(labels.use)))),
+            function(X) rep(X, length(labels.use)),
+            FUN.VALUE = character(length(labels.use)))),
         #final call of the cell
-        called = c(sapply(
+        called = c(vapply(
             results$labels,
-            function(X) rep(X, length(labels.use)))),
+            function(X) rep(X, length(labels.use)),
+            FUN.VALUE = character(length(labels.use)))),
         #label of the current score
         label = rep(
             colnames(results$scores)[colnames(results$scores) %in% labels.use],
@@ -209,7 +211,10 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
             labels = c(""," - pruned")))
         df$cell.calls <- paste0(
             df$cell.calls,
-            c(sapply(prune.string, function(X) rep(X, length(labels.use)))))
+            c(vapply(
+                prune.string,
+                function(X) rep(X, length(labels.use)),
+                FUN.VALUE = character(length(labels.use)))))
         # Reorder levels of cell.calls (for proper coloring in plot functions).
         df$cell.calls <- factor(
             df$cell.calls,
