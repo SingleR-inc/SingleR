@@ -7,7 +7,8 @@
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
 #' @param colors String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.
-#' @param size the size of the dots
+#' @param size Scalar, the size of the dots
+#' @param ncol Integer number of labels to display per row
 #' @name plotScoresByCellOrLabel
 #' @return Each function returns a \link{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
 #' 
@@ -29,8 +30,8 @@
 #' If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
 #' were pruned versus not.
 #' 
-#' #' @seealso
-#' \code{\link{SingleR}}, to generate \code{scores}.
+#' @seealso
+#' \code{\link{SingleR}}, to generate scores.
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #' 

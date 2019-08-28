@@ -16,7 +16,7 @@ plotScoresSingleLabel(results, label, size = 0.5, dots.on.top = FALSE,
 
 plotScoresMultiLabels(results, size = 0.2, dots.on.top = FALSE,
   labels.use = levels(as.factor(results$labels)), ncol = 5,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...)
+  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -26,7 +26,7 @@ plotScoresMultiLabels(results, size = 0.2, dots.on.top = FALSE,
 \item{labels.use}{String vector indicating what labels to show in \code{plotScoresSingleCell} and \code{plotScoresMultiLabel}
 If \code{labels.use} is left \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{size}{the size of the dots}
+\item{size}{Scalar, the size of the dots}
 
 \item{colors}{String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.}
 
@@ -34,6 +34,8 @@ If \code{labels.use} is left \code{NULL}, all labels available in \code{results}
 This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame}
 
 \item{dots.on.top}{Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}}
+
+\item{ncol}{Integer number of labels to display per row}
 }
 \value{
 Each function returns a \link{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
@@ -58,11 +60,6 @@ and may be useful for visualizing and tuning the \code{nmads} per-label cutoff o
 Scores are grouped and colored by whether they were the final calls for a cell or not.
 If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
 were pruned versus not.
-
-#' @seealso
-\code{\link{SingleR}}, to generate \code{scores}.
-
-\code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 }
 \section{Functions}{
 \itemize{
@@ -82,6 +79,11 @@ plotScoresSingleLabel(results = pred, label = "B",
 plotScoresMultiLabels(results = pred,
     dots.on.top = TRUE, size = 0.5)
 
+}
+\seealso{
+\code{\link{SingleR}}, to generate scores.
+
+\code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 }
 \author{
 Daniel Bunis
