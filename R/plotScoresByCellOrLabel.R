@@ -133,7 +133,7 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
 #' @export
 plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40"), ...){
+    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
 
     if (length(colors)<4) {
         stop("4 colors are expected.")
