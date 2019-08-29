@@ -23,12 +23,11 @@
 #' 
 #' The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions create jitter and violin plots showing
 #' the scores of all cells across a single label or multiple labels, respectively.
-#' For a given label X, cells are split into several categories:
+#' For a given label X, cells in several categories are shown:
 #' \itemize{
 #' \item Was assigned to label X, and the label was not pruned away.
 #' \item Was assigned to label X, and the label was pruned away.
-#' \item Was not assigned to label X, and the label was not pruned away.
-#' \item Was not assigned to label X, and the label was pruned away.
+#' \item Was assigned as any label (including label X).
 #' }
 #' Each category is grouped and colored separately.
 #' These functions can be used to assess the distribution of scores of all cells for individual labels,
