@@ -24,7 +24,7 @@ test_that("we can produce single cell scorePlots without pruneScores run", {
     expect_s3_class(
         plotScoresSingleCell(
             results = pred, cell.id = 1,
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresSingleCell(
@@ -52,7 +52,7 @@ test_that("we can produce single cell scorePlots with pruned scores", {
     expect_s3_class(
         plotScoresSingleCell(
             results = pred2, cell.id = 1,
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresSingleCell(
@@ -76,7 +76,7 @@ test_that("we can produce single label scorePlots without pruneScores run", {
     expect_s3_class(
         plotScoresSingleLabel(
             results = pred, label = "A",
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresSingleLabel(
@@ -100,7 +100,7 @@ test_that("we can produce single label scorePlots with pruned scores", {
     expect_s3_class(
         plotScoresSingleLabel(
             results = pred2, label = "A",
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresSingleLabel(
@@ -128,7 +128,7 @@ test_that("we can produce multi label scorePlots without pruneScores run", {
     expect_s3_class(
         plotScoresMultiLabels(
             results = pred,
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresMultiLabels(
@@ -156,7 +156,7 @@ test_that("we can produce multi label scorePlots with pruned scores", {
     expect_s3_class(
         plotScoresMultiLabels(
             results = pred2,
-            colors = c("blue", "yellow", "orange", "black")),
+            colors = c("blue", "yellow", "orange")),
         "ggplot")
     expect_error(
         plotScoresMultiLabels(

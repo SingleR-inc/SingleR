@@ -52,15 +52,15 @@ NULL
 #' @importFrom stats median
 plotScoresSingleCell <- function(results, cell.id,
     labels.use = levels(as.factor(results$labels)), size = 2,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")) {
+    colors = c("#F0E442", "#56B4E9", "gray70")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'other label')
     }
 
     # Add rownames to the results, which will be used for trimming scores data
@@ -96,15 +96,15 @@ plotScoresSingleCell <- function(results, cell.id,
 #' @describeIn plotScoresByCellOrLabel Plot scores accross labels of an individual cells
 #' @export
 plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
+    colors = c("#F0E442", "#56B4E9", "gray70")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'other label')
     }
 
     # Get the scores data for all cells for the target label
@@ -134,15 +134,15 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
 #' @export
 plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
+    colors = c("#F0E442", "#56B4E9", "gray70")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'other label')
     }
 
     # Gathere the scores data in a dataframe
@@ -183,15 +183,9 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     # Create a dataframe with separate rows for each score in scores.
     df <- data.frame(
         #cell id of the cell
-        id = c(vapply(
-            rownames(results),
-            function(X) rep(X, length(labels.use)),
-            FUN.VALUE = character(length(labels.use)))),
+        id = rep(rownames(results), each=length(labels.use)),
         #final call of the cell
-        called = c(vapply(
-            results$labels,
-            function(X) rep(X, length(labels.use)),
-            FUN.VALUE = character(length(labels.use)))),
+        called = rep(results$labels, each=length(labels.use)),
         #label of the current score
         label = rep(
             colnames(results$scores)[colnames(results$scores) %in% labels.use],
@@ -205,23 +199,20 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     
     if (!is.null(results$pruned.labels)){
         # Retrieve if cells' calls were scored as to be prunes versus not,
-        #  then add this to df$cell.calls
+        #  then add this to df$cell.calls, but only when =="this label"
         prune.calls <- is.na(results$pruned.labels)
         prune.string <- as.character(factor(
             prune.calls,
             labels = c(""," - pruned")))
-        df$cell.calls <- paste0(
-            df$cell.calls,
-            c(vapply(
-                prune.string,
-                function(X) rep(X, length(labels.use)),
-                FUN.VALUE = character(length(labels.use)))))
+        df$cell.calls[df$cell.calls=="this label"] <- paste0(
+            df$cell.calls[df$cell.calls=="this label"],
+            rep(prune.string, each=length(labels.use))[df$cell.calls=="this label"])
         # Reorder levels of cell.calls (for proper coloring in plot functions).
         df$cell.calls <- factor(
             df$cell.calls,
             levels = c(
                 'this label', 'this label - pruned',
-                'other label', 'other label - pruned'))
+                'other label'))
     }
     
     df
