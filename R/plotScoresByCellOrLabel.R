@@ -7,7 +7,7 @@
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
 #' @param colors String vector that sets the colors.
-#' Order of colors should be: `this label`, `this label - pruned`, `any label`.
+#' Order of colors should be: `this label`, `this label - pruned`, `other label`/`any label`.
 #' Name differently to update the legend.
 #' @param size Scalar, the size of the dots
 #' @param ncol Integer number of labels to display per row

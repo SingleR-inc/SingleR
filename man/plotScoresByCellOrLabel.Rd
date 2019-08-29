@@ -29,7 +29,7 @@ If \code{labels.use} is left \code{NULL}, all labels available in \code{results}
 \item{size}{Scalar, the size of the dots}
 
 \item{colors}{String vector that sets the colors.
-Order of colors should be: `this label`, `this label - pruned`, `any label`.
+Order of colors should be: `this label`, `this label - pruned`, `other label`/`any label`.
 Name differently to update the legend.}
 
 \item{label}{String indicating which individual label to plot in \code{plotScoresSingleLabel}
