@@ -9,14 +9,14 @@
 \usage{
 plotScoresSingleCell(results, cell.id,
   labels.use = levels(as.factor(results$labels)), size = 2,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 
 plotScoresSingleLabel(results, label, size = 0.5, dots.on.top = FALSE,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 
 plotScoresMultiLabels(results, size = 0.2, dots.on.top = FALSE,
   labels.use = levels(as.factor(results$labels)), ncol = 5,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -28,7 +28,9 @@ If \code{labels.use} is left \code{NULL}, all labels available in \code{results}
 
 \item{size}{Scalar, the size of the dots}
 
-\item{colors}{String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.}
+\item{colors}{String vector that sets the colors.
+Order of colors should be: `this label`, `this label - pruned`, `any label`.
+Name differently to update the legend.}
 
 \item{label}{String indicating which individual label to plot in \code{plotScoresSingleLabel}
 This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame}
@@ -56,9 +58,9 @@ The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions creat
 the scores of all cells accross either a single label or multiple labels, respectively.
 These functions can be used to assess the distribution of scores of all cells for individual labels,
 and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
-
-Scores are grouped and colored by whether they were the final calls for a cell or not.
-If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
+All scores for a label are shown in the Cell Calls = "any label".
+Scores where this label was the final call for a cell are shown again, separately.
+If SingleR calls in \code{results} had been scored for pruning, scores for each label are also separated and colored based on whether cells' calls
 were pruned versus not.
 }
 \section{Functions}{

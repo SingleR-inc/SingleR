@@ -7,7 +7,7 @@
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
 #' @param colors String vector that sets the colors.
-#' Order of colors should be: `this label`, `this label - pruned`, `other label`.
+#' Order of colors should be: `this label`, `this label - pruned`, `any label`.
 #' Name differently to update the legend.
 #' @param size Scalar, the size of the dots
 #' @param ncol Integer number of labels to display per row
@@ -27,9 +27,9 @@
 #' the scores of all cells accross either a single label or multiple labels, respectively.
 #' These functions can be used to assess the distribution of scores of all cells for individual labels,
 #' and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
-#' 
-#' Scores are grouped and colored by whether they were the final calls for a cell or not.
-#' If SingleR calls have been scored for pruning, scores for each label are also separated and colored based on whether cells' calls
+#' All scores for a label are shown in the Cell Calls = "any label".
+#' Scores where this label was the final call for a cell are shown again, separately.
+#' If SingleR calls in \code{results} had been scored for pruning, scores for each label are also separated and colored based on whether cells' calls
 #' were pruned versus not.
 #' 
 #' @seealso
@@ -72,13 +72,16 @@ plotScoresSingleCell <- function(results, cell.id,
     }
 
     # Gather the scores data for all cells and labels
-    df <- .scores_data_gather(results)
+    df <- .scores_data_gather(results, dup.this.label = FALSE)
     # Trim to just the data for the target cell
     df <- df[df$id == rownames(results)[cell.id],]
     # Calculate the cell's median score based on all labels
     scores.median <- median(df$score)
     # Trim to just the data for the target labels
     df <- df[df$label %in% labels.use,]
+  
+    #Change "any label" to be "other label"
+    df$cell.calls[df$cell.calls == "any label"] <- "other label"
 
     p <- ggplot2::ggplot(
             data = df,
@@ -106,7 +109,7 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label')
+            'any label')
     }
 
     # Get the scores data for all cells for the target label
@@ -144,7 +147,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label')
+            'any label')
     }
 
     # Gathere the scores data in a dataframe
@@ -172,7 +175,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
 }
 
 .scores_data_gather <- function(
-    results, labels.use = levels(as.factor(results$labels)))
+    results, labels.use = levels(as.factor(results$labels)), dup.this.label = TRUE)
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -196,7 +199,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
         stringsAsFactors = FALSE)
     
     # Add whether this label is the final label given to each cell.
-    df$cell.calls <- "other label"
+    df$cell.calls <- "any label"
     df$cell.calls[df$label == df$called] <- "this label"
     
     if (!is.null(results$pruned.labels)){
@@ -214,8 +217,13 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
             df$cell.calls,
             levels = c(
                 'this label', 'this label - pruned',
-                'other label'))
+                'any label'))
     }
+    
+    #Duplicate the "this label" data, but changed df.cell.calls to "any label"
+    dup.me <- df[df$cell.calls %in% c("this label", "this label - pruned"),,drop=FALSE]
+    dup.me$cell.calls <- 'any label'
+    df <- rbind(dup.me, df)
     
     df
 }
