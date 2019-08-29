@@ -11,7 +11,14 @@ For more informations please refer to the manuscript: [Aran, Looney, Liu et al. 
 
 ## Install
 
+`SingleR` requires several development versions of Bioconductor packages, so you should be sure to switch to using `bioc-devel` prior to installation so that proper versions are installed.
+
 ```R
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "devel")
+BiocManager::valid()
+
 devtools::install_github('LTLA/SingleR')
 ```
 
@@ -27,10 +34,10 @@ This version does not support the browser application that accompanied the origi
 
 The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels.
 The package directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project).
-More details can be found in the datasets vignette.
+There are currently five data sets from human cells (Human Primary Cell Atlas, Blueprint/ENCODE, Database of Immune Cell Expression, Differentiation Map, and Monaco et al., 2019 Immune Cell Data) and two data sets from mouse cells (e.g. Immunological Genome Project).
+More details can be found in the vignette.
 
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `ImmGenData()`, `MouseBulkData()`.
+Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `DatabaseImmuneCellExpressionData()`, `NovershternHematopoieticData()`, `MonacoImmuneData()`, `ImmGenData()`, `MouseBulkData()`.
 Here, we show an example with data from HPCA:
 
 
@@ -40,7 +47,7 @@ hpca.se <- HumanPrimaryCellAtlasData()
 ```
 
 The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
-To illustrate this, we will use a hESC dataset from the `scRNAseq` pacakge, subsetted for the sake of speed.
+To illustrate this, we will use a hESC dataset from the `scRNAseq` package, subsetted for the sake of speed.
 
 ```R
 library(scRNAseq)
@@ -90,7 +97,7 @@ seurat.obj[["SingleR.labels"]] <- singler.results$labels
 
 # Or if `method="cluster"` was used:
 seurat.obj[["SingleR.cluster.labels"]] <- 
-        singler.results$labels[match(seurat.obj@meta.data[["my.input.clusters"]], singler.results$clusts)]
+        singler.results$labels[match(seurat.obj[[]][["my.input.clusters"]], singler.results$clusts)]
 ```
 
 ## Scalability
