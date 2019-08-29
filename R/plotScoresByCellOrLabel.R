@@ -6,7 +6,9 @@
 #' @param label String indicating which individual label to plot in \code{plotScoresSingleLabel}
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
-#' @param colors String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.
+#' @param colors String vector that sets the colors.
+#' Order of colors should be: `this label`, `this label - pruned`, `other label`.
+#' Name differently to update the legend.
 #' @param size Scalar, the size of the dots
 #' @param ncol Integer number of labels to display per row
 #' @name plotScoresByCellOrLabel
@@ -27,7 +29,7 @@
 #' and may be useful for visualizing and tuning the \code{nmads} per-label cutoff of the \code{\link{pruneScores}} function.
 #' 
 #' Scores are grouped and colored by whether they were the final calls for a cell or not.
-#' If SingleR calls have been scored for pruning, scores are also separated and colored based on whether cells' calls
+#' If SingleR calls have been scored for pruning, scores for each label are also separated and colored based on whether cells' calls
 #' were pruned versus not.
 #' 
 #' @seealso
