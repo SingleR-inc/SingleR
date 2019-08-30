@@ -22,7 +22,7 @@ vignette: >
 
 ```{r, echo=FALSE, results="hide", message=FALSE}
 knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
-library(BiocStyle)
+# library(BiocStyle)
 ```
 
 # Introduction
@@ -184,7 +184,7 @@ plotScoreHeatmap(pred, clusters=sceG$donor)
 
 ## Pruning of scores
 
-We can prune out potentially poor-qality assignments or cells for which SingleR could not make a strong determination between multiple labels.
+We can prune out potentially poor-qality assignments, and assignments in which SingleR could not make a strong determination between multiple labels, with the `pruneScores()` function.
 
 ```{r}
 # To determine what labels might need pruning, we can run.
@@ -198,7 +198,33 @@ pred$pruned.labels <- pred$labels
 pred$pruned.labels[pruneScores(pred)] <- NA_character_
 ```
 
-Ongoing...
+Default parameters for pruning may not be perfect for every dataset, so we provide a few visualization functions for assessing when cutoffs might need adjustment.
+
+The first cutoff is a per cell check that the maximum score associated with that cell (prior to fine-tuning) is at least minimum level above the median value of scores for that cell.  The cutoff is controlled by `pruneScores()` parameter `min.diff.med` and the function `plotScoresSingleCell()` aids visulaization of whether this parameter is set nicely.
+
+```{r}
+# For a non-pruned label:
+plotScoresSingleCell(pred, cell.id = 1)
+
+# For a pruned label:
+pruned.cell.ids <- seq_len(nrow(pred))[pruneScores(pred)]
+plotScoresSingleCell(pred, cell.id = pruned.cell.ids[1])
+```
+
+We can see that here, the maximal score was less than 0.05 greater than the median score of that cell.
+
+We would change the min.diff.med parameter if...
+
+
+The second cutoff...
+
+And a set of per label functions can help determine if this parameter needs to be adjusted, `plotScoresSingleLabel()` and `plotScoresMultiLabels()`
+
+```{r}
+plotScoresMultiLabels(pred, dots.on.top = TRUE)
+plotScoresSingleLabel(pred, label = "beta", dots.on.top = TRUE)
+plotScoresSingleLabel(pred, label = "alpha", dots.on.top = TRUE)
+```
 
 # Using a reference data set as training data with `SingleR`
 
