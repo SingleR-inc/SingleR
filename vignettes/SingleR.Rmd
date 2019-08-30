@@ -182,6 +182,24 @@ plotScoreHeatmap(pred, clusters=sceG$donor)
 
 `plotScoreHeatmap()` uses `r CRANpkg("pheatmap")` for plotting, so additional arguments can be passed to adjust the heatmap as needed.
 
+## Pruning of scores
+
+We can prune out potentially poor-qality assignments or cells for which SingleR could not make a strong determination between multiple labels.
+
+```{r}
+# To determine what labels might need pruning, we can run.
+pruneScores(pred)
+```
+
+To create a vector of labels where the pruned labels are set to `NA`, we can use the below code.  In fact, code like this is run by default when `SingleR()` is run.
+
+```{r}
+pred$pruned.labels <- pred$labels
+pred$pruned.labels[pruneScores(pred)] <- NA_character_
+```
+
+Ongoing...
+
 # Using a reference data set as training data with `SingleR`
 
 The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on
