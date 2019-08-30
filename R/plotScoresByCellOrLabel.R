@@ -59,7 +59,7 @@ NULL
 #' @importFrom stats median
 plotScoresSingleCell <- function(results, cell.id,
     labels.use = levels(as.factor(results$labels)), size = 2,
-    colors = c("#F0E442", "#56B4E9", "gray70")){
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
     if (length(colors)<3) {
         stop("3 colors are expected.")
@@ -104,7 +104,7 @@ plotScoresSingleCell <- function(results, cell.id,
 #' @export
 #' @rdname plotScoresByCellOrLabel 
 plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE,
-    colors = c("#F0E442", "#56B4E9", "gray70")){
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
     if (length(colors)<3) {
         stop("3 colors are expected.")
@@ -143,7 +143,7 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
 #' @rdname plotScoresByCellOrLabel 
 plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
-    colors = c("#F0E442", "#56B4E9", "gray70")){
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
     if (length(colors)<3) {
         stop("3 colors are expected.")
