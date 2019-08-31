@@ -82,6 +82,8 @@ plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
 \code{\link{SingleR}}, to generate \code{scores}.
 
 \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+
+\code{\link[pheatmap]{pheatmap}}, for additional tweaks to the heatmap.
 }
 \author{
 Daniel Bunis, based on code by Dvir Aran.

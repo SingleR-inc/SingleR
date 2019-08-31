@@ -105,6 +105,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' \code{\link{SingleR}}, to generate \code{scores}.
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#' 
+#' \code{\link[pheatmap]{pheatmap}}, for additional tweaks to the heatmap.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #'
@@ -206,6 +208,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (ncol(annotation_col)>0) {
         args$annotation_col <- annotation_col
     }
-
+    if (is.null(args$annotation_colors)) {
+        args <- .make_heatmap_annotation_colors(args, show.pruned)
+    }
+    
     do.call(pheatmap::pheatmap, args)
 }
