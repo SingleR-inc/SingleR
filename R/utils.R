@@ -41,8 +41,7 @@
     
     # Columns First (if there)
     if (!is.null(args$annotation_col)) {
-      
-        annots_numerical <- NULL
+
         for (i in seq_len(ncol(args$annotation_col))){
             
             # Determine the distinct contents of the first annotation
@@ -78,8 +77,7 @@
     
     # Rows Second (if there)
     if (!is.null(args$annotation_row)) {
-      
-        annots_numerical <- NULL
+
         for (i in seq_len(ncol(args$annotation_row))){
             
             # Determine the distinct contents of the first annotation
