@@ -65,6 +65,7 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
     
     expect_s3_class(plotScoreHeatmap(results = pred, show.pruned = TRUE), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(results = pred, show.labels = TRUE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred,

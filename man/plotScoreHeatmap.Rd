@@ -5,9 +5,9 @@
 \title{Plot a score heatmap}
 \usage{
 plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
-  clusters = NULL, show.pruned = FALSE, max.labels = 40,
-  normalize = TRUE, cells.order = NULL, order.by.clusters = FALSE,
-  annotation_col = NULL, ...)
+  clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
+  max.labels = 40, normalize = TRUE, cells.order = NULL,
+  order.by.clusters = FALSE, annotation_col = NULL, ...)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -20,7 +20,9 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{clusters}{String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.}
 
-\item{show.pruned}{Logical indicated whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.}
+\item{show.labels}{Logical indicating whether the final labels of cells should be shown as an annotation bar.}
+
+\item{show.pruned}{Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.}
 
 \item{max.labels}{Integer scalar specifying the maximum number of labels to show.}
 
@@ -46,8 +48,11 @@ A heatmap of assignment scores is generated on the current graphics device using
 Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 }
 \details{
-This function creates a heatmap containing the \code{\link{SingleR}} assignment scores for each cell (columns) to each reference label (rows).
+This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores for each cell (columns) to each reference label (rows).
 Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
+
+If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels given to cells.
+Note that scores shown in the heatmap are initial scores, unaffected by the fine-tuning step, so labels and maximum scores in the heatmap may not always match up. 
 
 If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
