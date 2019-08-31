@@ -9,14 +9,14 @@
 \usage{
 plotScoresSingleCell(results, cell.id,
   labels.use = levels(as.factor(results$labels)), size = 2,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 
 plotScoresSingleLabel(results, label, size = 0.5, dots.on.top = FALSE,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 
 plotScoresMultiLabels(results, size = 0.2, dots.on.top = FALSE,
   labels.use = levels(as.factor(results$labels)), ncol = 5,
-  colors = c("#F0E442", "#56B4E9", "gray70", "gray40"))
+  colors = c("#F0E442", "#56B4E9", "gray70"))
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -28,7 +28,9 @@ If \code{labels.use} is left \code{NULL}, all labels available in \code{results}
 
 \item{size}{Scalar, the size of the dots}
 
-\item{colors}{String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.}
+\item{colors}{String vector that sets the colors.
+Order of colors should be: `this label`, `this label - pruned`, `other label`/`any label`.
+Name differently to update the legend.}
 
 \item{label}{String indicating which individual label to plot in \code{plotScoresSingleLabel}
 This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame}
@@ -38,7 +40,7 @@ This input will be unnecessary once \code{\link{pruneScores}}'s output is added 
 \item{ncol}{Integer number of labels to display per row}
 }
 \value{
-Each function returns a \link{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
+Each function returns a \link[ggplot2]{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
 }
 \description{
 Plot SingleR scores on a per-label or per-cell basis.
@@ -50,12 +52,11 @@ This function may be useful for visualizing and tuning the \code{min.diff.med} p
 
 The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions create jitter and violin plots showing
 the scores of all cells across a single label or multiple labels, respectively.
-For a given label X, cells are split into several categories:
+For a given label X, cells in several categories are shown:
 \itemize{
 \item Was assigned to label X, and the label was not pruned away.
 \item Was assigned to label X, and the label was pruned away.
-\item Was not assigned to label X, and the label was not pruned away.
-\item Was not assigned to label X, and the label was pruned away.
+\item Was assigned as any label (including label X).
 }
 Each category is grouped and colored separately.
 These functions can be used to assess the distribution of scores of all cells for individual labels,

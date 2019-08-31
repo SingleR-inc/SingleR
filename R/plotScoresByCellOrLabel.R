@@ -7,7 +7,9 @@
 #' @param label String indicating which individual label to plot in \code{plotScoresSingleLabel}
 #' This input will be unnecessary once \code{\link{pruneScores}}'s output is added to the results DataFrame
 #' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots in \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel}
-#' @param colors String vector that sets the colors.  Order of colors should be: `this label`, `this label - pruned`, `other label`, `other label - pruned`.
+#' @param colors String vector that sets the colors.
+#' Order of colors should be: `this label`, `this label - pruned`, `other label`/`any label`.
+#' Name differently to update the legend.
 #' @param size Scalar, the size of the dots
 #' @param ncol Integer number of labels to display per row
 #' @name plotScoresByCellOrLabel
@@ -21,12 +23,11 @@
 #' 
 #' The \code{plotScoresSingleLabel} and \code{plotScoresMultiLabel} functions create jitter and violin plots showing
 #' the scores of all cells across a single label or multiple labels, respectively.
-#' For a given label X, cells are split into several categories:
+#' For a given label X, cells in several categories are shown:
 #' \itemize{
 #' \item Was assigned to label X, and the label was not pruned away.
 #' \item Was assigned to label X, and the label was pruned away.
-#' \item Was not assigned to label X, and the label was not pruned away.
-#' \item Was not assigned to label X, and the label was pruned away.
+#' \item Was assigned as any label (including label X).
 #' }
 #' Each category is grouped and colored separately.
 #' These functions can be used to assess the distribution of scores of all cells for individual labels,
@@ -58,15 +59,15 @@ NULL
 #' @importFrom stats median
 plotScoresSingleCell <- function(results, cell.id,
     labels.use = levels(as.factor(results$labels)), size = 2,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")) {
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'other label')
     }
 
     # Add rownames to the results, which will be used for trimming scores data
@@ -76,13 +77,16 @@ plotScoresSingleCell <- function(results, cell.id,
     }
 
     # Gather the scores data for all cells and labels
-    df <- .scores_data_gather(results)
+    df <- .scores_data_gather(results, dup.this.label = FALSE)
     # Trim to just the data for the target cell
     df <- df[df$id == rownames(results)[cell.id],]
     # Calculate the cell's median score based on all labels
     scores.median <- median(df$score)
     # Trim to just the data for the target labels
     df <- df[df$label %in% labels.use,]
+  
+    #Change "any label" to be "other label"
+    df$cell.calls[df$cell.calls == "any label"] <- "other label"
 
     ggplot2::ggplot(
             data = df,
@@ -100,15 +104,15 @@ plotScoresSingleCell <- function(results, cell.id,
 #' @export
 #' @rdname plotScoresByCellOrLabel 
 plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALSE,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'any label')
     }
 
     # Get the scores data for all cells for the target label
@@ -139,15 +143,15 @@ plotScoresSingleLabel <- function(results, label, size = 0.5, dots.on.top = FALS
 #' @rdname plotScoresByCellOrLabel 
 plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     labels.use = levels(as.factor(results$labels)), ncol = 5,
-    colors = c("#F0E442", "#56B4E9", "gray70", "gray40")){
+    colors = c("#F0E442", "#56B4E9", "gray30")){
 
-    if (length(colors)<4) {
-        stop("4 colors are expected.")
+    if (length(colors)<3) {
+        stop("3 colors are expected.")
     }
     if (is.null(names(colors))) {
         names(colors) <- 
             c('this label', 'this label - pruned',
-            'other label', 'other label - pruned')
+            'any label')
     }
 
     # Gathere the scores data in a dataframe
@@ -175,7 +179,7 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
 }
 
 .scores_data_gather <- function(
-    results, labels.use = levels(as.factor(results$labels)))
+    results, labels.use = levels(as.factor(results$labels)), dup.this.label = TRUE)
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -188,15 +192,9 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
     # Create a dataframe with separate rows for each score in scores.
     df <- data.frame(
         #cell id of the cell
-        id = c(vapply(
-            rownames(results),
-            function(X) rep(X, length(labels.use)),
-            FUN.VALUE = character(length(labels.use)))),
+        id = rep(rownames(results), each=length(labels.use)),
         #final call of the cell
-        called = c(vapply(
-            results$labels,
-            function(X) rep(X, length(labels.use)),
-            FUN.VALUE = character(length(labels.use)))),
+        called = rep(results$labels, each=length(labels.use)),
         #label of the current score
         label = rep(
             colnames(results$scores)[colnames(results$scores) %in% labels.use],
@@ -205,29 +203,31 @@ plotScoresMultiLabels <- function(results, size = 0.2, dots.on.top = FALSE,
         stringsAsFactors = FALSE)
     
     # Add whether this label is the final label given to each cell.
-    df$cell.calls <- "other label"
+    df$cell.calls <- "any label"
     df$cell.calls[df$label == df$called] <- "this label"
     
     if (!is.null(results$pruned.labels)){
         # Retrieve if cells' calls were scored as to be prunes versus not,
-        #  then add this to df$cell.calls
+        #  then add this to df$cell.calls, but only when =="this label"
         prune.calls <- is.na(results$pruned.labels)
         prune.string <- as.character(factor(
             prune.calls,
             labels = c(""," - pruned")))
-        df$cell.calls <- paste0(
-            df$cell.calls,
-            c(vapply(
-                prune.string,
-                function(X) rep(X, length(labels.use)),
-                FUN.VALUE = character(length(labels.use)))))
+        df$cell.calls[df$cell.calls=="this label"] <- paste0(
+            df$cell.calls[df$cell.calls=="this label"],
+            rep(prune.string, each=length(labels.use))[df$cell.calls=="this label"])
         # Reorder levels of cell.calls (for proper coloring in plot functions).
         df$cell.calls <- factor(
             df$cell.calls,
             levels = c(
                 'this label', 'this label - pruned',
-                'other label', 'other label - pruned'))
+                'any label'))
     }
+    
+    #Duplicate the "this label" data, but changed df.cell.calls to "any label"
+    dup.me <- df[df$cell.calls %in% c("this label", "this label - pruned"),,drop=FALSE]
+    dup.me$cell.calls <- 'any label'
+    df <- rbind(dup.me, df)
     
     df
 }
