@@ -41,7 +41,8 @@
     
     # Columns First (if there)
     if (!is.null(args$annotation_col)) {
-
+      
+        annots_numerical <- NULL
         for (i in seq_len(ncol(args$annotation_col))){
             
             # Determine the distinct contents of the first annotation
@@ -59,7 +60,9 @@
                     next.color.index.discrete + length(in.this.annot)
             } else {
                 # Make a 100 color split as in pheatmap code.
-                a <- cut(args$annotation_col[,i], breaks = 100)
+                a <- cut(
+                    args$annotation_col[order(args$annotation_col[,i]),i],
+                    breaks = 100)
                 # Assign to colors.
                 this.ramp <- annotation.colors.c[next.color.index.numeric]
                 new.colors <-
@@ -77,7 +80,8 @@
     
     # Rows Second (if there)
     if (!is.null(args$annotation_row)) {
-
+      
+        annots_numerical <- NULL
         for (i in seq_len(ncol(args$annotation_row))){
             
             # Determine the distinct contents of the first annotation
@@ -95,7 +99,9 @@
                     next.color.index.discrete + length(in.this.annot)
             } else {
                 # Make a 100 color split as in pheatmap code.
-                a <- cut(args$annotation_row[,i], breaks = 100)
+                a <- cut(
+                    args$annotation_crow[order(args$annotation_row[,i]),i],
+                    breaks = 100)
                 # Assign to colors.
                 this.ramp <- annotation.colors.c[next.color.index.numeric]
                 new.colors <-
