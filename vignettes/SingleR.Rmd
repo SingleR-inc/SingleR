@@ -210,27 +210,25 @@ summary(to.remove)
 
 By default, `SingleR()` will automatically report pruned labels where low-quality assignments are replaced with `NA`.
 However, the default pruning pruning may not be appropriate for every dataset - see `?pruneScores` for a more detailed discussion.
-We provide a few visualization functions to help in determining whether cutoffs might need adjustment.
 
-The first cut-off is a per-cell check that the maximum score associated with a cell (prior to fine-tuning) is greater than the median score for that cell by `min.diff.med`.
-We can use `plotScoresSingleCell()` to determine whether this parameter is set appropriately.
-Here, we can see that the maximal score was less than 0.05 greater than the median score of that cell.
+We provide plotScoreDistribution to help in determining whether cutoffs might need adjustment.
 
-```{r}
-# For a non-pruned label:
-plotScoresSingleCell(pred, cell.id = 1)
+The main check is a per-label check where low outliers within each label are removed, based on whether they are more than `nmads` median absolute deviations (MADs) below the median score for that label.  We additionally provide inputs for setting two additional pruning cutoffs, but these are set to 0 by default:
 
-# For a pruned label:
-pruned.cell.ids <- seq_len(nrow(pred))[pruneScores(pred)]
-plotScoresSingleCell(pred, cell.id = pruned.cell.ids[1])
-```
-
-The second cutoff is a per-label check where low outliers within each label are removed, based on whether they are more than `nmads` median absolute deviations (MADs) below the median score for that label.
-Again, several functions can help determine if this parameter needs to be adjusted:
+- a minimum delta between a cell's max score and the median of its scores, `min.diff.med`
+- a minimum difference between a cells best fine-tuning score and its next best fine-tuning score, `min.diff.next`
 
 ```{r}
-plotScoresMultiLabels(pred, dots.on.top = TRUE)
-plotScoresSingleLabel(pred, label = "beta", dots.on.top = TRUE)
+# Showing raw scores (default):
+plotScoreDistribution(pred, show = "scores", ncol = 3)
+
+# Showing deltas versus the median scores for a given label:
+  # This is useful for checking/adjusting nmads and min.diff.med
+plotScoreDistribution(pred, show = "delta.med", ncol = 3)
+
+# Showing deltas versus the median scores for a given label:
+  # This is useful for checking/adjusting min.diff.next
+plotScoreDistribution(pred, show = "delta.next", ncol = 3)
 ```
 
 If some tuning parameters must be adjusted, we can simply call `pruneScores()` directly with adjusted parameters.
