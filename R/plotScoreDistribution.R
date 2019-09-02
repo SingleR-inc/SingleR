@@ -57,8 +57,7 @@
 #' #   This is useful for checking/adjusting nmads and min.diff.med
 #' plotScoreDistribution(results = pred, show = "delta.med")
 #' # The nmads cutoff can be displayed using show.nmads.cutoff.
-#' plotScoreDistribution(results = pred, show = "delta.med",
-#'     show.nmads.cutoff = 3)
+#' plotScoreDistribution(results = pred, show = "delta.med")
 #'
 #' # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #' #   grouped by label, change `show` to "delta.next":
@@ -66,11 +65,12 @@
 #' plotScoreDistribution(results = pred, show = "delta.next")
 #' 
 #' @export
-plotScoreDistribution <- function(results, show = "scores",
+plotScoreDistribution <- function(results,
+    show = c("scores", "delta.med", "delta.next"),
     labels = colnames(results$scores), size = 0.5, ncol = 5,
     dots.on.top = TRUE, colors = c("#F0E442", "#E69F00", "gray60")) {
     
-    show <- match.arg(show, c("scores", "delta.med", "delta.next"))
+    show <- match.arg(show)
 
     if (length(colors)<3) {
         stop("3 colors are expected.")

@@ -4,9 +4,10 @@
 \alias{plotScoreDistribution}
 \title{Plot score distributions of labels.}
 \usage{
-plotScoreDistribution(results, show = "scores",
-  labels = colnames(results$scores), size = 0.5, ncol = 5,
-  dots.on.top = TRUE, colors = c("#F0E442", "#E69F00", "gray60"))
+plotScoreDistribution(results, show = c("scores", "delta.med",
+  "delta.next"), labels = colnames(results$scores), size = 0.5,
+  ncol = 5, dots.on.top = TRUE, colors = c("#F0E442", "#E69F00",
+  "gray60"))
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -69,8 +70,7 @@ plotScoreDistribution(results = pred, labels = "B")
 #   This is useful for checking/adjusting nmads and min.diff.med
 plotScoreDistribution(results = pred, show = "delta.med")
 # The nmads cutoff can be displayed using show.nmads.cutoff.
-plotScoreDistribution(results = pred, show = "delta.med",
-    show.nmads.cutoff = 3)
+plotScoreDistribution(results = pred, show = "delta.med")
 
 # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #   grouped by label, change `show` to "delta.next":
