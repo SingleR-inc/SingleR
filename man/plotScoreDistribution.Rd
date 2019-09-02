@@ -11,7 +11,8 @@ plotScoreDistribution(results, show = "scores",
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
 
-\item{show}{A string selecting the scores representation to show.}
+\item{show}{A string selecting the scores representation to show.
+Options: "scores" (default), "delta.med", "delta.next", see Details.}
 
 \item{labels}{String vector indicating one or more labels to show.
 If \code{labels} is left \code{NULL}, all labels available in \code{results} are presented.}
