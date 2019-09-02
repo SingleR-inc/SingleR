@@ -125,7 +125,7 @@ plotScoreDistribution <- function(results,
         p <- p + ggplot2::geom_jitter(
             height = 0, width = 0.3, color = "black", shape = 16,size = size)
     }
-    p <- p + ggplot2::geom_violin()
+    p <- p + ggplot2::geom_violin(na.rm=TRUE)
     if (show == "delta.med" && !(is.null(show.nmads))) {
         p <- .add_nmads_lines(p, results, df, show.nmads)
     }
@@ -233,13 +233,13 @@ plotScoreDistribution <- function(results,
         'first labels\n  delta median' = "#0072B2", 'nmad cutoff' = "red")
     p <- p +
         ggplot2::geom_errorbar(
-            data = df,
+            data = df, na.rm=TRUE,
             ggplot2::aes_string(
                 x = "cell.calls", ymin = "medians", ymax = "medians",
                 color = "med"),
             width = 0.5, show.legend = c(color = TRUE, fill = FALSE)) +
         ggplot2::geom_errorbar(
-            data = df,
+            data = df, na.rm=TRUE,
             ggplot2::aes_string(
                 x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff",
                 color = "mad"),
