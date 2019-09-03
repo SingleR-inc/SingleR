@@ -1,5 +1,5 @@
 # Tests for visualization functions
-# library(SingleR); library(testthat); source("setup.R"); source("test-visualizations.R")
+# library(SingleR); library(testthat); source("setup.R"); source("test-heatmap.R")
 
 colnames(test) <- sprintf("cell_%i", seq_len(ncol(test)))
 pred <- SingleR(test=test, ref=training, labels=training$label, genes="de")
