@@ -202,15 +202,14 @@ plotScoreDistribution <- function(results,
     p, results, df, show, show.nmads, show.min.diff) {
 
     if (show == "delta.med" && !(is.null(show.nmads))) {
-        # Add median and cutoff lines for nmads cutoff
-            # Uses geom_error (error bars, with ymin = ymax)
+        # Add cutoff line for nmads cutoff
+            # Uses geom_error (error bars, but with ymin = ymax)
         p <- .add_nmads_lines(p, results, df, show.nmads)
     }
 
     if (grepl("delta",show) && !(is.null(show.min.diff))) {
-        # Add median and cutoff lines for nmads cutoff
-            # Uses geom_error (error bars, with ymin = ymax)
-        df_min.diff <- data.frame(color = "3.min.diff")
+        # Add cutoff line for min.diff cutoff
+        df_min.diff <- data.frame(color = "2.min.diff")
         p <- p + 
             ggplot2::geom_hline(
                 data = df_min.diff, na.rm = TRUE, size = 1.1,
@@ -220,15 +219,14 @@ plotScoreDistribution <- function(results,
     p <- p + ggplot2::scale_color_manual(
         name = "Lines",
         values = c(
-            '1.delta median' = "gray30",
-            '2.nmad' = "#0072B2",
-            '3.min.diff' = "red"),
+            '1.nmad' = "#0072B2",
+            '2.min.diff' = "red"),
         labels = c(
-            '1.delta median' = "first labels\n  delta median",
-            '2.nmad' = "nmad cutoff",
-            '3.min.diff' = "min.diff cutoff")
+            '1.nmad' = "nmad cutoff",
+            '2.min.diff' = "min.diff cutoff")
         ) + 
-        guides(color = guide_legend(override.aes = list(size=2)))
+        ggplot2::guides(
+            color = ggplot2::guide_legend(override.aes = list(size=2)))
 
     p
 }
@@ -236,8 +234,14 @@ plotScoreDistribution <- function(results,
 #' @importFrom stats median mad
 .add_nmads_lines <- function(p, results, df, show.nmads) {
     labels <- levels(as.factor(df$label))
-    df$first.labels <- results$first.labels
     
+    if (is.null(results$first.labels)) {
+        df$first.labels <- results$labels
+    } else {
+        df$first.labels <- results$first.labels
+    }
+    
+    # Calculate the nmad cutoff for each label, (ignoring min.diff cutoffs).
     df_bars <- data.frame(
         labels = labels,
         medians = vapply(
@@ -250,18 +254,13 @@ plotScoreDistribution <- function(results,
         function (X) df_bars$medians[df_bars$labels == X] - show.nmads *
             mad(df$delta.med[df$first.labels == X]),
         FUN.VALUE = numeric(1))
-    df$medians <- df_bars$medians[match(df$label, df_bars$label)]
-    df$med <- "1.delta median"
+    # Add to main df
     df$nmads.cutoff <- df_bars$nmads.cutoff[match(df$label, df_bars$label)]
-    df$mad <- "2.nmad"
+    
+    # Add dummy var for setting color later utilizing ggplot scale_color.
+    df$mad <- "1.nmad"
+    
     p <- p +
-        ggplot2::geom_errorbar(
-            data = df, na.rm=TRUE,
-            ggplot2::aes_string(
-                x = "cell.calls", ymin = "medians", ymax = "medians",
-                color = "med"),
-            width = 0.5, size = 1.1,
-            show.legend = c(color = TRUE, fill = FALSE)) +
         ggplot2::geom_errorbar(
             data = df, na.rm=TRUE,
             ggplot2::aes_string(
