@@ -19,7 +19,7 @@
 #' If the delta is small, this indicates that the cell matches all labels with the same confidence such that the assigned label is not particularly meaningful.
 #' The aim is to discard low delta values caused by (i) ambiguous assignments with closely related reference labels and (ii) incorrect assignments that match poorly to all reference labels.
 #' 
-#' We consider delta values to be low using an outlier-based approach.
+#' We use an outlier-based approach to obtain a minimum threshold for filtering \dQuote{low} delta values.
 #' For each (pre-fine-tuning) label, we obtain a distribution of deltas across all assigned cells.
 #' Cells that are more than \code{nmads} below the median score for each label are ignored.
 #' This assumes that most cells are correctly assigned to their true label and that cells of the same label have a unimodal distribution of delta values.
@@ -28,38 +28,36 @@
 #' For example, references with many closely related cell types will naturally yield lower deltas.
 #' By comparison, references with more distinct cell types would yield large deltas, even for cells that have no representative type in the reference and are incorrectly assigned to the next-most-related label.
 #' The outlier definition procedure adjusts naturally to these situations.
-#' 
-#' @section Applying hard thresholds:
+#'
+#' The default \code{nmads} is motivated by the fact that, for a normal distribution, 99% of observations lie within 3 standard deviations from the mean.
+#' Smaller values for \code{nmads} will increase the stringency of the pruning.
+#'
+#' @section Applying a hard filter on the deltas: 
 #' If \code{min.diff.med} is specified, cells with deltas below this threshold are discarded.
 #' This is provided as an alternative filtering approach if the assumptions of outlier detection are violated.
-#' However, we do not use this by default as it cannot adjust to differences in the delta distribution.
-#' 
-#' A more aggressive filter is based on the fine-tuning scores in \code{results$tuned.scores}, if available.
-#' Here, the best and the next-best score at the final round of fine-tuning are reported for each cell.
-#' We ignore any cell for which the fine-tuning score is not more than \code{min.diff.next} greater than the next best score.
-#' The idea is to only report labels for which there is no ambiguity in assignment,
-#' especially when some labels have similar scores because they are closely related (and thus easily confused).
-#' Typical values of \code{min.diff.next} range between [0, 0.1].
-#' 
-#' @section Comments on parameter choices:
-#' The defaults for these parameters are largely arbitrary and chosen based on experience.
-#' Smaller values for \code{min.diff.med} or \code{min.diff.next} and larger values for \code{nmads} will reduce the stringency of the pruning.
-#' Note that decreasing \code{min.diff.med} may actually \emph{increase} the stringency of the outlier detection.
-#' depending on whether the additional retained cells decrease the MAD.
-#' 
-#' The delta values do not consider the effects of fine-tuning as scores are not comparable across different fine-tuning steps.
-#' In situations involving a majority of labels with only subtle distinctions, it is possible for the scores to be relatively similar but for the labels to be correctly assigned after fine-tuning.
-#' This should be considered if a threshold needs to be chosen for use in \code{min.diff.med}. 
+#' For example, if one label is consistently missassigned, the incorrect assignments would not be pruned.
+#' In such cases, one could set a threshold with \code{min.diff.med} to forcibly remove low-scoring cells.
 #'
 #' It is possible for the per-label delta distribution to be multimodal yet still correct,
 #' e.g., due to cells belonging to subtypes nested within a main type label.
 #' This violates the unimodal assumption mentioned above for the outlier detection.
-#' In such cases, the default \code{nmads} may be too stringent as it will remove minor subpopulations with low scores.
+#' In such cases, it may be better to set \code{nmads=Inf} and rely on \code{min.diff.med} for filtering instead. 
 #'
-#' The \code{min.diff.next} cutoff can be harmful in some applications involving highly related labels.
+#' Note that the deltas do not consider the effects of fine-tuning as scores are not comparable across different fine-tuning steps.
+#' In situations involving a majority of labels with only subtle distinctions, it is possible for the scores to be relatively similar but for the labels to be correctly assigned after fine-tuning.
+#' While outlier detection will automatically adapt to smaller scores, this effect should be considered if a threshold needs to be manually chosen for use in \code{min.diff.med}. 
+#'
+#' @section Filtering on fine-tuning scores:
+#' If fine-tuning was performed to generate \code{results},
+#' we ignore any cell for which the fine-tuning score is not more than \code{min.diff.next} greater than the next best score.
+#' This aims to only retain labels for which there is no ambiguity in assignment,
+#' especially when some labels have similar scores because they are closely related (and thus easily confused).
+#' 
+#' Typical values of \code{min.diff.next} woud lie between [0, 0.1].
+#' That said, the \code{min.diff.next} cutoff can be harmful in some applications involving highly related labels.
 #' From a user perspective, any confusion between these labels may not be a problem as the assignment is broadly correct;
 #' however, the best and next best scores will be very close and cause the labels to be unnecessarily discarded.
-#'
+#' 
 #' @author Aaron Lun and Daniel Bunis
 #'
 #' @seealso
@@ -84,11 +82,11 @@
 #' @importFrom DelayedMatrixStats rowMedians 
 #' @importFrom DelayedArray DelayedArray rowMaxs
 #' @importFrom stats median mad
-pruneScores <- function(results, nmads=3, min.diff.med=0, min.diff.next=0) {
+pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0) {
     scores <- results$scores
     labels <- results$labels
-    chosen <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
-    delta <- chosen - rowMedians(DelayedArray(scores))
+    assigned <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
+    delta <- assigned - rowMedians(DelayedArray(scores))
     keep <- delta >= min.diff.med
 
     tune.scores <- results$tuning.scores
