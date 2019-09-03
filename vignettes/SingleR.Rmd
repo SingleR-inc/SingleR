@@ -224,11 +224,11 @@ plotScoreDistribution(pred, show = "scores", ncol = 3)
 
 # Showing deltas versus the median scores for a given label:
   # This is useful for checking/adjusting nmads and min.diff.med
-plotScoreDistribution(pred, show = "delta.med", ncol = 3)
+plotScoreDistribution(pred, show = "delta.med", ncol = 3, show.nmads = 3, show.min.diff = 0.1)
 
 # Showing deltas versus the median scores for a given label:
   # This is useful for checking/adjusting min.diff.next
-plotScoreDistribution(pred, show = "delta.next", ncol = 3)
+plotScoreDistribution(pred, show = "delta.next", ncol = 3, show.min.diff = 0.05)
 ```
 
 If some tuning parameters must be adjusted, we can simply call `pruneScores()` directly with adjusted parameters.

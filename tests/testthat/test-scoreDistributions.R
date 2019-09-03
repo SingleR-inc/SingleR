@@ -181,3 +181,19 @@ test_that("we can produce multi label scoreDistributions when tuning was not run
         plotScoreDistribution(results = pred3, show = "delta.next"),
         NA)
 })
+
+test_that("we can add cutoffs to single and multi-label plots.", {
+    expect_s3_class(
+        plotScoreDistribution(
+            results = pred3, show = "delta.med", show.nmads = 3),
+        "ggplot")
+    expect_s3_class(
+        plotScoreDistribution(
+            results = pred3, show = "delta.med", show.min.diff = 0.05),
+        "ggplot")
+    expect_error(
+        plotScoreDistribution(
+            results = pred3, show = "delta.next", show.min.diff = 0.05),
+        NA)
+})
+

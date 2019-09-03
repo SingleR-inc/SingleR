@@ -10,13 +10,17 @@
 #' Order of colors should be: `this label`, `this label - pruned`, `any label`.
 #' @param size Scalar which sets the size of the dots
 #' @param ncol Integer number of labels to display per row
+#' @param show.nmads Number which, if provided, sets the number of mads away from the median display as the nmads cutoff.
+#' Only used when \code{show = "delta.med"}
+#' @param show.min.diff Number which, if provided, add a horiontal line showing where such a cutoff would cut.
+#' Only used when \code{show = "delta.med"} or \code{show = "delta.next"} and represents \code{min.diff.med} and \code{min.diff.next} respectively.
 #' 
 #' @return a \link[ggplot2]{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
 #' 
 #' @details
 #' 
 #' This function creates jitter and violin plots showing the representations of the scores of all cells across a single label or multiple labels,
-#' and may be useful for visualizing and tuning the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
+#' and can be useful for visualizing and tuning the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
 #'  
 #' The \code{show} input determines what representation to show.  Options are:
 #' \itemize{
@@ -37,11 +41,15 @@
 #' Note that when \code{show="scores"} or \code{show="delta.med"}, the function focuses on initial scores only, i.e., prior to fine tuning.
 #' However, the labels may be defined after fine-tuning in \code{\link{SingleR}} or \code{\link{classifySingleR}}.
 #' Thus, the best score for an individual cell may not be its final label.
+#' 
+#' Also note that \code{\link{pruneScores}} trims based on the \code{min.diff.med} and \code{min.diff.next} cutoffs first,
+#' before calculating the first-labels' delta medians.
+#' Thus, the actual \code{nmad cutoff} used in pruneScores may vary from the one portrayed in the plot.
 #'
 #' @seealso
 #' \code{\link{SingleR}}, to generate scores.
 #'
-#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
 #' 
 #' @author Daniel Bunis
 #' @examples
@@ -56,19 +64,27 @@
 #' #   grouped by label, change `show` to "delta.med":
 #' #   This is useful for checking/adjusting nmads and min.diff.med
 #' plotScoreDistribution(results = pred, show = "delta.med")
-#' # The nmads cutoff can be displayed using show.nmads.cutoff.
-#' plotScoreDistribution(results = pred, show = "delta.med")
+#' # The nmads cutoff can be displayed using show.nmads.
+#' plotScoreDistribution(results = pred, show = "delta.med",
+#'     show.nmads = 3)
+#' # A min.diff.med cutoff can be shown using show.min.diff
+#' plotScoreDistribution(results = pred, show = "delta.med",
+#'     min.diff = 0.03)
 #'
 #' # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #' #   grouped by label, change `show` to "delta.next":
 #' #   This is useful for checking/adjusting min.diff.next
 #' plotScoreDistribution(results = pred, show = "delta.next")
+#' # A min.diff.med cutoff can be shown using show.min.diff
+#' plotScoreDistribution(results = pred, show = "delta.next",
+#'     min.diff = 0.03)
 #' 
 #' @export
 plotScoreDistribution <- function(results,
     show = c("scores", "delta.med", "delta.next"),
     labels = colnames(results$scores), size = 0.5, ncol = 5,
-    dots.on.top = TRUE, colors = c("#F0E442", "#E69F00", "gray60")) {
+    dots.on.top = TRUE, colors = c("#F0E442", "#E69F00", "gray60"),
+    show.nmads = NULL, show.min.diff = NULL) {
     
     show <- match.arg(show)
 
@@ -103,13 +119,19 @@ plotScoreDistribution <- function(results,
     } else {
         p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
     }
-    if (dots.on.top) {
-        p <- p+ ggplot2::geom_violin()
-    }
-    p <- p + ggplot2::geom_jitter(
-        height = 0, width = 0.3, color = "black", shape = 16,size = size)
+    
+    # Add Data
     if (!dots.on.top) {
-        p <- p + ggplot2::geom_violin()
+        p <- p + ggplot2::geom_jitter(
+            height = 0, width = 0.3, color = "black", shape = 16,size = size)
+    }
+    p <- p + ggplot2::geom_violin(na.rm=TRUE)
+    if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
+        p <- .add_cutoff_lines(p, results, df, show, show.nmads, show.min.diff)
+    }
+    if (dots.on.top) {
+        p <- p + ggplot2::geom_jitter(
+            height = 0, width = 0.3, color = "black", shape = 16,size = size)
     }
     
     p
@@ -140,7 +162,7 @@ plotScoreDistribution <- function(results,
         delta.med = as.numeric(t(delta)),
         stringsAsFactors = FALSE)
     
-    if (!is.null(results$tuning.scores)){
+    if (!is.null(results$tuning.scores)) {
         df$delta.next <- 
             results$tuning.scores$first - results$tuning.scores$second
     }
@@ -149,7 +171,7 @@ plotScoreDistribution <- function(results,
     df$cell.calls <- "any label"
     df$cell.calls[df$label == df$called] <- "this label"
     
-    if (!is.null(results$pruned.labels)){
+    if (!is.null(results$pruned.labels)) {
         # Retrieve if cells' calls were scored as to be prunes versus not,
         #  then add this to df$cell.calls, but only when =="this label"
         prune.calls <- is.na(results$pruned.labels)
@@ -174,4 +196,77 @@ plotScoreDistribution <- function(results,
     }
     
     df
+}
+
+.add_cutoff_lines <- function(
+    p, results, df, show, show.nmads, show.min.diff) {
+
+    if (show == "delta.med" && !(is.null(show.nmads))) {
+        # Add cutoff line for nmads cutoff
+            # Uses geom_error (error bars, but with ymin = ymax)
+        p <- .add_nmads_lines(p, results, df, show.nmads)
+    }
+
+    if (grepl("delta",show) && !(is.null(show.min.diff))) {
+        # Add cutoff line for min.diff cutoff
+        df_min.diff <- data.frame(color = "2.min.diff")
+        p <- p + 
+            ggplot2::geom_hline(
+                data = df_min.diff, na.rm = TRUE, size = 1.1,
+                ggplot2::aes(yintercept = show.min.diff, color = color))
+    }
+    # Set the colors and a=labels for combined legend.
+    p <- p + ggplot2::scale_color_manual(
+        name = "Lines",
+        values = c(
+            '1.nmad' = "#0072B2",
+            '2.min.diff' = "red"),
+        labels = c(
+            '1.nmad' = "nmad cutoff",
+            '2.min.diff' = "min.diff cutoff")
+        ) + 
+        ggplot2::guides(
+            color = ggplot2::guide_legend(override.aes = list(size=2)))
+
+    p
+}
+
+#' @importFrom stats median mad
+.add_nmads_lines <- function(p, results, df, show.nmads) {
+    labels <- levels(as.factor(df$label))
+    
+    if (is.null(results$first.labels)) {
+        df$first.labels <- results$labels
+    } else {
+        df$first.labels <- results$first.labels
+    }
+    
+    # Calculate the nmad cutoff for each label, (ignoring min.diff cutoffs).
+    df_bars <- data.frame(
+        labels = labels,
+        medians = vapply(
+            labels,
+            function (X) median(df$delta.med[df$first.labels == X]),
+            FUN.VALUE = numeric(1))
+        )
+    df_bars$nmads.cutoff <- vapply(
+        labels,
+        function (X) df_bars$medians[df_bars$labels == X] - show.nmads *
+            mad(df$delta.med[df$first.labels == X]),
+        FUN.VALUE = numeric(1))
+    # Add to main df
+    df$nmads.cutoff <- df_bars$nmads.cutoff[match(df$label, df_bars$label)]
+    
+    # Add dummy var for setting color later utilizing ggplot scale_color.
+    df$mad <- "1.nmad"
+    
+    p <- p +
+        ggplot2::geom_errorbar(
+            data = df, na.rm=TRUE,
+            ggplot2::aes_string(
+                x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff",
+                color = "mad"),
+            width = 1, size = 1.1,
+            show.legend = c(color = TRUE, fill = FALSE))
+    p
 }
