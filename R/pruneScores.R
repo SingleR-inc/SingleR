@@ -15,8 +15,8 @@
 #' resulting in assignment of an incorrect label to that cell.
 #' The \code{pruneScores} function aims to mitigate this effect by removing poor-quality assignments with \dQuote{low} scores.
 #'
-#' We compute a \dQuote{delta} value for each cell, defined as the difference between the maximum and median scores for each cell.
-#' If the delta is small, this indicates that the cell matches all labels with the same confidence such that the reported label with the maximum score is not particularly meaningful.
+#' We compute a \dQuote{delta} value for each cell, defined as the difference between the score for the assigned label and the and median score across all labels.
+#' If the delta is small, this indicates that the cell matches all labels with the same confidence such that the assigned label is not particularly meaningful.
 #' The aim is to discard low delta values caused by (i) ambiguous assignments with closely related reference labels and (ii) incorrect assignments that match poorly to all reference labels.
 #' 
 #' We consider delta values to be low using an outlier-based approach.
@@ -86,8 +86,9 @@
 #' @importFrom stats median mad
 pruneScores <- function(results, nmads=3, min.diff.med=0, min.diff.next=0) {
     scores <- results$scores
-    maxed <- rowMaxs(DelayedArray(scores))
-    delta <- maxed - rowMedians(DelayedArray(scores))
+    labels <- results$labels
+    chosen <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
+    delta <- chosen - rowMedians(DelayedArray(scores))
     keep <- delta >= min.diff.med
 
     tune.scores <- results$tuning.scores
@@ -96,8 +97,7 @@ pruneScores <- function(results, nmads=3, min.diff.med=0, min.diff.next=0) {
     }
 
     # Ignoring the fine-tuning when allocating cells to labels.
-    best <- max.col(scores)
-    by.label <- split(which(keep), best[keep])
+    by.label <- split(which(keep), labels[keep])
     for (l in by.label) {
         current <- delta[l]
         med <- median(current)
