@@ -28,11 +28,13 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{pruned.color}{String specifying the color for cells that were assigned to the label but pruned.}
 
-\item{other.color}{String specifying the color for other cells not assigned to the label.
-Only used when \code{show="scores"}.}
+\item{other.color}{String specifying the color for other cells not assigned to the label.}
 
 \item{show.nmads}{Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
 Only used when \code{show="delta.med"}.}
+
+\item{show.min.diff}{Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
+Only used when \code{show="delta.med"} or \code{"delta.next"}.}
 }
 \value{
 A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.

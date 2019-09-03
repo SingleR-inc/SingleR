@@ -8,11 +8,12 @@
 #' @param this.color String specifying the color for cells that were assigned to the label.
 #' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
 #' @param other.color String specifying the color for other cells not assigned to the label.
-#' Only used when \code{show="scores"}.
 #' @param size Numeric scalar to set the size of the dots.
 #' @param ncol Integer scalar to set the number of labels to display per row.
 #' @param show.nmads Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
 #' Only used when \code{show="delta.med"}.
+#' @param show.min.diff Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
+#' Only used when \code{show="delta.med"} or \code{"delta.next"}.
 #' 
 #' @return A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
 #' 
