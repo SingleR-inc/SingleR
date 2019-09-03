@@ -22,7 +22,7 @@ vignette: >
 
 ```{r, echo=FALSE, results="hide", message=FALSE}
 knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
-# library(BiocStyle)
+library(BiocStyle)
 ```
 
 # Introduction

@@ -39,7 +39,7 @@ test_that("we can produce single label scoreDistributions when no labels were pr
     expect_s3_class(
         plotScoreDistribution(
             results = pred1, labels = "A",
-            show = "delta.med"),
+            show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -77,7 +77,7 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, show = "delta.med"),
+            results = pred1, show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -112,7 +112,7 @@ test_that("we can produce single label scoreDistributions", {
     expect_s3_class(
         plotScoreDistribution(
             results = pred2, labels = "A",
-            show = "delta.med"),
+            show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -150,7 +150,7 @@ test_that("we can produce multi label scoreDistributions", {
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, show = "delta.med"),
+            results = pred2, show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(

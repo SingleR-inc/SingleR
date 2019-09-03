@@ -8,11 +8,12 @@
 #' @param this.color String specifying the color for cells that were assigned to the label.
 #' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
 #' @param other.color String specifying the color for other cells not assigned to the label.
-#' Only used when \code{show="scores"}.
 #' @param size Numeric scalar to set the size of the dots.
 #' @param ncol Integer scalar to set the number of labels to display per row.
 #' @param show.nmads Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
 #' Only used when \code{show="delta.med"}.
+#' @param show.min.diff Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
+#' Only used when \code{show="delta.med"} or \code{"delta.next"}.
 #' 
 #' @return A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
 #' 
@@ -49,7 +50,7 @@
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
 #' 
-#' @author Daniel Bunis
+#' @author Daniel Bunis and Aaron Lun
 #' @examples
 #' example(SingleR, echo=FALSE)
 #' 
@@ -67,7 +68,7 @@
 #'     show.nmads = 3)
 #' # A min.diff.med cutoff can be shown using show.min.diff
 #' plotScoreDistribution(results = pred, show = "delta.med",
-#'     min.diff = 0.03)
+#'     show.min.diff = 0.03)
 #'
 #' # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #' #   grouped by label, change `show` to "delta.next":
@@ -75,7 +76,7 @@
 #' plotScoreDistribution(results = pred, show = "delta.next")
 #' # A min.diff.med cutoff can be shown using show.min.diff
 #' plotScoreDistribution(results = pred, show = "delta.next",
-#'     min.diff = 0.03)
+#'     show.min.diff = 0.03)
 #' 
 #' @export
 plotScoreDistribution <- function(results,
