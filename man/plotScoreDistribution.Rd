@@ -4,68 +4,69 @@
 \alias{plotScoreDistribution}
 \title{Plot score distributions of labels.}
 \usage{
-plotScoreDistribution(results, show = c("scores", "delta.med",
-  "delta.next"), labels = colnames(results$scores), size = 0.5,
-  ncol = 5, dots.on.top = TRUE, colors = c("#F0E442", "#E69F00",
-  "gray60"), show.nmads = NULL, show.min.diff = NULL)
+plotScoreDistribution(results, show = c("delta.med", "delta.next",
+  "scores"), labels = colnames(results$scores), size = 0.5, ncol = 5,
+  dots.on.top = TRUE, this.color = "#F0E442",
+  pruned.color = "#E69F00", other.color = "gray60",
+  show.nmads = NULL, show.min.diff = NULL)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
 
-\item{show}{A string selecting the scores representation to show.
-Options: "scores" (default), "delta.med", "delta.next", see Details.}
+\item{show}{String specifying whether to show the scores, the difference from the median or the difference from the next-best score.}
 
 \item{labels}{String vector indicating one or more labels to show.
-If \code{labels} is left \code{NULL}, all labels available in \code{results} are presented.}
+If \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{size}{Scalar which sets the size of the dots}
+\item{size}{Numeric scalar to set the size of the dots.}
 
-\item{ncol}{Integer number of labels to display per row}
+\item{ncol}{Integer scalar to set the number of labels to display per row.}
 
-\item{dots.on.top}{Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots.}
+\item{dots.on.top}{Logical specifying whether cell dots should be plotted on top of the violin plots.}
 
-\item{colors}{String vector that sets the colors.
-Order of colors should be: `this label`, `this label - pruned`, `any label`.}
+\item{this.color}{String specifying the color for cells that were assigned to the label.}
 
-\item{show.nmads}{Number which, if provided, sets the number of mads away from the median display as the nmads cutoff.
-Only used when \code{show = "delta.med"}}
+\item{pruned.color}{String specifying the color for cells that were assigned to the label but pruned.}
 
-\item{show.min.diff}{Number which, if provided, add a horiontal line showing where such a cutoff would cut.
-Only used when \code{show = "delta.med"} or \code{show = "delta.next"} and represents \code{min.diff.med} and \code{min.diff.next} respectively.}
+\item{other.color}{String specifying the color for other cells not assigned to the label.
+Only used when \code{show="scores"}.}
+
+\item{show.nmads}{Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
+Only used when \code{show="delta.med"}.}
 }
 \value{
-a \link[ggplot2]{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
+A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
 }
 \description{
 Plot score distributions of labels.
 }
 \details{
-This function creates jitter and violin plots showing the representations of the scores of all cells across a single label or multiple labels,
-and can be useful for visualizing and tuning the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
+This function creates jitter and violin plots showing assignment scores or related values for all cells across one or more labels.
+It is intended for visualizing and adjusting the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
  
-The \code{show} input determines what representation to show.  Options are:
+The \code{show} argument determines what values to show on the y-axis.
+Options are:
 \itemize{
-\item "scores" = shows the raw scores
-\item "delta.med" = shows the difference between max score of a cell and the median of all scores for that cell
-\item "delta.next" = shows the difference between best and second-best tuning scores of each cell
+\item \code{"delta.med"}, the difference between the score of the assigned label and the median of all scores for each cell.
+\item \code{"delta.next"}, the difference between best and second-best tuning scores of each cell.
+\item \code{"scores"}, the raw assignment scores prior to fine-tuning.
 }
 
 For a given label X, cells distributions in several categories are shown:
 \itemize{
 \item Was assigned to label X, and the label was not pruned away.
 \item Was assigned to label X, and the label was pruned away.
-\item For \code{show="scores"} only, Was assigned as any label, including label X.
+\item Was assigned as any label, including label X.
 }
-Each category is grouped and colored separately.
-When \code{show = "delta.med"} or \code{show = "delta.next"}, representations are only shown for a cell's final label.
+Each category is grouped and colored separately based on \code{this.color} and related parameters.
 
-Note that when \code{show="scores"} or \code{show="delta.med"}, the function focuses on initial scores only, i.e., prior to fine tuning.
-However, the labels may be defined after fine-tuning in \code{\link{SingleR}} or \code{\link{classifySingleR}}.
-Thus, the best score for an individual cell may not be its final label.
+Values are stratified according to the assigned labels in \code{results$labels}.
+If any fine-tuning was performed, the highest scoring label for an individual cell may not be its final label.
+This may manifest as negative values when \code{show="delta.med"}.
 
 Also note that \code{\link{pruneScores}} trims based on the \code{min.diff.med} and \code{min.diff.next} cutoffs first,
 before calculating the first-labels' delta medians.
-Thus, the actual \code{nmad cutoff} used in pruneScores may vary from the one portrayed in the plot.
+Thus, the actual \code{nmads} cut-off used in \code{\link{pruneScores}} may vary from the one portrayed in the plot.
 }
 \examples{
 example(SingleR, echo=FALSE)
@@ -84,7 +85,7 @@ plotScoreDistribution(results = pred, show = "delta.med",
     show.nmads = 3)
 # A min.diff.med cutoff can be shown using show.min.diff
 plotScoreDistribution(results = pred, show = "delta.med",
-    min.diff = 0.03)
+    show.min.diff = 0.03)
 
 # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #   grouped by label, change `show` to "delta.next":
@@ -92,7 +93,7 @@ plotScoreDistribution(results = pred, show = "delta.med",
 plotScoreDistribution(results = pred, show = "delta.next")
 # A min.diff.med cutoff can be shown using show.min.diff
 plotScoreDistribution(results = pred, show = "delta.next",
-    min.diff = 0.03)
+    show.min.diff = 0.03)
 
 }
 \seealso{
@@ -101,5 +102,5 @@ plotScoreDistribution(results = pred, show = "delta.next",
 \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
 }
 \author{
-Daniel Bunis
+Daniel Bunis and Aaron Lun
 }

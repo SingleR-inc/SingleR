@@ -49,7 +49,7 @@
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
 #' 
-#' @author Daniel Bunis
+#' @author Daniel Bunis and Aaron Lun
 #' @examples
 #' example(SingleR, echo=FALSE)
 #' 
@@ -67,7 +67,7 @@
 #'     show.nmads = 3)
 #' # A min.diff.med cutoff can be shown using show.min.diff
 #' plotScoreDistribution(results = pred, show = "delta.med",
-#'     min.diff = 0.03)
+#'     show.min.diff = 0.03)
 #'
 #' # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #' #   grouped by label, change `show` to "delta.next":
@@ -75,7 +75,7 @@
 #' plotScoreDistribution(results = pred, show = "delta.next")
 #' # A min.diff.med cutoff can be shown using show.min.diff
 #' plotScoreDistribution(results = pred, show = "delta.next",
-#'     min.diff = 0.03)
+#'     show.min.diff = 0.03)
 #' 
 #' @export
 plotScoreDistribution <- function(results,
