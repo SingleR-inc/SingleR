@@ -1,5 +1,5 @@
 # Tests for visualization functions
-# library(SingleR); library(testthat); source("setup.R"); source("test-scoreDistributions.R")
+# library(SingleR); library(testthat); source("setup.R"); source("test-score-dist.R")
 
 colnames(test) <- sprintf("cell_%i", seq_len(ncol(test)))
 pred1 <- SingleR(test=test, ref=training, labels=training$label, genes="de")
@@ -27,7 +27,9 @@ test_that("we can produce single label scoreDistributions when no labels were pr
     expect_s3_class(
         plotScoreDistribution(
             results = pred1, labels = "A",
-            colors = c("blue", "yellow", "orange")),
+            this.color = "blue", 
+            pruned.color = "yellow", 
+            other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -44,11 +46,6 @@ test_that("we can produce single label scoreDistributions when no labels were pr
             results = pred1, labels = "A",
             show = "delta.next"),
         "ggplot")
-    expect_error(
-        plotScoreDistribution(
-            results = pred1, labels = "A",
-            colors = c("blue", "yellow")),
-        NULL)
 })
 
 test_that("we can produce multi label scoreDistributions when no labels were pruned", {
@@ -70,7 +67,9 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
     expect_s3_class(
         plotScoreDistribution(
             results = pred1,
-            colors = c("blue", "yellow", "orange")),
+            this.color = "blue", 
+            pruned.color = "yellow", 
+            other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -84,11 +83,6 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
         plotScoreDistribution(
             results = pred1, show = "delta.next"),
         "ggplot")
-    expect_error(
-        plotScoreDistribution(
-            results = pred1,
-            colors = c("blue", "yellow")),
-        NULL)
 })
 
 test_that("we can produce single label scoreDistributions", {
@@ -106,7 +100,9 @@ test_that("we can produce single label scoreDistributions", {
     expect_s3_class(
         plotScoreDistribution(
             results = pred2, labels = "A",
-            colors = c("blue", "yellow", "orange")),
+            this.color = "blue", 
+            pruned.color = "yellow", 
+            other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -123,11 +119,6 @@ test_that("we can produce single label scoreDistributions", {
             results = pred2, labels = "A",
             show = "delta.next"),
         "ggplot")
-    expect_error(
-        plotScoreDistribution(
-            results = pred2, labels = "A",
-            colors = c("blue", "yellow")),
-        NULL)
 })
 
 test_that("we can produce multi label scoreDistributions", {
@@ -149,7 +140,9 @@ test_that("we can produce multi label scoreDistributions", {
     expect_s3_class(
         plotScoreDistribution(
             results = pred2,
-            colors = c("blue", "yellow", "orange")),
+            this.color = "blue", 
+            pruned.color = "yellow", 
+            other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
@@ -163,11 +156,6 @@ test_that("we can produce multi label scoreDistributions", {
         plotScoreDistribution(
             results = pred2, show = "delta.next"),
         "ggplot")
-    expect_error(
-        plotScoreDistribution(
-            results = pred2,
-            colors = c("blue", "yellow")),
-        NULL)
 })
 
 test_that("we can produce multi label scoreDistributions when tuning was not run.", {
@@ -179,7 +167,7 @@ test_that("we can produce multi label scoreDistributions when tuning was not run
         "ggplot")
     expect_error(
         plotScoreDistribution(results = pred3, show = "delta.next"),
-        NA)
+        "lacks fine-tuning diagnostics")
 })
 
 test_that("we can add cutoffs to single and multi-label plots.", {
@@ -190,10 +178,9 @@ test_that("we can add cutoffs to single and multi-label plots.", {
     expect_s3_class(
         plotScoreDistribution(
             results = pred3, show = "delta.med", show.min.diff = 0.05),
-        "ggplot")
+         "ggplot")
     expect_error(
         plotScoreDistribution(
-            results = pred3, show = "delta.next", show.min.diff = 0.05),
-        NA)
+            results = pred2, show = "delta.next", show.min.diff = 0.05),
+       NA)
 })
-
