@@ -1,50 +1,48 @@
 #' Plot score distributions of labels.
 #'
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
-#' @param show A string selecting the scores representation to show.
-#' Options: "scores" (default), "delta.med", "delta.next", see Details.
+#' @param show String specifying whether to show the scores, the difference from the median or the difference from the next-best score.
 #' @param labels String vector indicating one or more labels to show.
-#' If \code{labels} is left \code{NULL}, all labels available in \code{results} are presented.
-#' @param dots.on.top Logical which sets whether cell dots are plotted on top of, versus behind, the violin plots.
-#' @param colors String vector that sets the colors.
-#' Order of colors should be: `this label`, `this label - pruned`, `any label`.
-#' @param size Scalar which sets the size of the dots
-#' @param ncol Integer number of labels to display per row
-#' @param show.nmads Number which, if provided, sets the number of mads away from the median display as the nmads cutoff.
-#' Only used when \code{show = "delta.med"}
-#' @param show.min.diff Number which, if provided, add a horiontal line showing where such a cutoff would cut.
-#' Only used when \code{show = "delta.med"} or \code{show = "delta.next"} and represents \code{min.diff.med} and \code{min.diff.next} respectively.
+#' If \code{NULL}, all labels available in \code{results} are presented.
+#' @param dots.on.top Logical specifying whether cell dots should be plotted on top of the violin plots.
+#' @param this.color String specifying the color for cells that were assigned to the label.
+#' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
+#' @param other.color String specifying the color for other cells not assigned to the label.
+#' Only used when \code{show="scores"}.
+#' @param size Numeric scalar to set the size of the dots.
+#' @param ncol Integer scalar to set the number of labels to display per row.
+#' @param show.nmads Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
+#' Only used when \code{show="delta.med"}.
 #' 
-#' @return a \link[ggplot2]{ggplot} object showing SingleR scores in a dot and/or violin plot representation.
+#' @return A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
 #' 
 #' @details
-#' 
-#' This function creates jitter and violin plots showing the representations of the scores of all cells across a single label or multiple labels,
-#' and can be useful for visualizing and tuning the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
+#' This function creates jitter and violin plots showing assignment scores or related values for all cells across one or more labels.
+#' It is intended for visualizing and adjusting the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
 #'  
-#' The \code{show} input determines what representation to show.  Options are:
+#' The \code{show} argument determines what values to show on the y-axis.
+#' Options are:
 #' \itemize{
-#' \item "scores" = shows the raw scores
-#' \item "delta.med" = shows the difference between max score of a cell and the median of all scores for that cell
-#' \item "delta.next" = shows the difference between best and second-best tuning scores of each cell
+#' \item \code{"delta.med"}, the difference between the score of the assigned label and the median of all scores for each cell.
+#' \item \code{"delta.next"}, the difference between best and second-best tuning scores of each cell.
+#' \item \code{"scores"}, the raw assignment scores prior to fine-tuning.
 #' }
 #' 
 #' For a given label X, cells distributions in several categories are shown:
 #' \itemize{
 #' \item Was assigned to label X, and the label was not pruned away.
 #' \item Was assigned to label X, and the label was pruned away.
-#' \item For \code{show="scores"} only, Was assigned as any label, including label X.
+#' \item Was assigned as any label, including label X.
 #' }
-#' Each category is grouped and colored separately.
-#' When \code{show = "delta.med"} or \code{show = "delta.next"}, representations are only shown for a cell's final label.
-#' 
-#' Note that when \code{show="scores"} or \code{show="delta.med"}, the function focuses on initial scores only, i.e., prior to fine tuning.
-#' However, the labels may be defined after fine-tuning in \code{\link{SingleR}} or \code{\link{classifySingleR}}.
-#' Thus, the best score for an individual cell may not be its final label.
+#' Each category is grouped and colored separately based on \code{this.color} and related parameters.
+#'
+#' Values are stratified according to the assigned labels in \code{results$labels}.
+#' If any fine-tuning was performed, the highest scoring label for an individual cell may not be its final label.
+#' This may manifest as negative values when \code{show="delta.med"}.
 #' 
 #' Also note that \code{\link{pruneScores}} trims based on the \code{min.diff.med} and \code{min.diff.next} cutoffs first,
 #' before calculating the first-labels' delta medians.
-#' Thus, the actual \code{nmad cutoff} used in pruneScores may vary from the one portrayed in the plot.
+#' Thus, the actual \code{nmads} cut-off used in \code{\link{pruneScores}} may vary from the one portrayed in the plot.
 #'
 #' @seealso
 #' \code{\link{SingleR}}, to generate scores.
@@ -81,54 +79,50 @@
 #' 
 #' @export
 plotScoreDistribution <- function(results,
-    show = c("scores", "delta.med", "delta.next"),
-    labels = colnames(results$scores), size = 0.5, ncol = 5,
-    dots.on.top = TRUE, colors = c("#F0E442", "#E69F00", "gray60"),
-    show.nmads = NULL, show.min.diff = NULL) {
-    
+    show = c("delta.med", "delta.next", "scores"),
+    labels = colnames(results$scores), 
+    size = 0.5, ncol = 5, dots.on.top = TRUE, 
+    this.color = "#F0E442", 
+    pruned.color = "#E69F00", 
+    other.color = "gray60",
+    show.nmads = NULL, show.min.diff = NULL) 
+{
     show <- match.arg(show)
-
-    if (length(colors)<3) {
-        stop("3 colors are expected.")
-    }
-    if (is.null(names(colors))) {
-        names(colors) <- 
-            c('this label', 'this label - pruned',
-            'any label')
-    }
-    if (show == "scores") {
-        labels <- labels[labels %in% colnames(results$scores)]
+    if (show!="delta.next") {
+        df <- .scores_data_gather(results, show)
     } else {
-        labels <- labels[labels %in% levels(as.factor(results$labels))]
+        df <- .next_data_gather(results)
     }
 
-    # Gathere the scores data in a dataframe and trim to 'labels'
-    df <- .scores_data_gather(results, show)
+    labels <- labels[labels %in% colnames(results$scores)]
     df <- df[df$label %in% labels,]
-    
-    # Make the plot
-    p <- ggplot2::ggplot(
-            data = df,
-            ggplot2::aes_string(
-                x = "cell.calls", y = show, fill = "cell.calls")) + 
+
+    # Creating the plot object:
+    p <- ggplot2::ggplot(data = df, 
+            ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) + 
         ggplot2::theme_classic() +
-        ggplot2::scale_fill_manual(name = "Cell Calls", values = colors) +
-        ggplot2::facet_wrap(facets = ~label, ncol = ncol)
+        ggplot2::scale_fill_manual(name = "Cell Calls", 
+            values = c(assigned=this.color, pruned=pruned.color, other=other.color)) +
+        ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
+        ggplot2::ylab(show)
+
     if (length(labels) == 1) {
         p <- p + ggplot2::scale_x_discrete(name = NULL, labels = NULL)   
     } else {
         p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
     }
     
-    # Add Data
+    # Adding the frills:
     if (!dots.on.top) {
         p <- p + ggplot2::geom_jitter(
             height = 0, width = 0.3, color = "black", shape = 16,size = size)
     }
     p <- p + ggplot2::geom_violin(na.rm=TRUE)
+
     if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
         p <- .add_cutoff_lines(p, results, df, show, show.nmads, show.min.diff)
     }
+
     if (dots.on.top) {
         p <- p + ggplot2::geom_jitter(
             height = 0, width = 0.3, color = "black", shape = 16,size = size)
@@ -138,63 +132,55 @@ plotScoreDistribution <- function(results,
 }
 
 #' @importFrom DelayedMatrixStats rowMedians 
-#' @importFrom DelayedArray DelayedArray rowMaxs
 .scores_data_gather <- function(results, show) {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
+
+    values <- results$scores
+    if (show=="delta.med") {
+        values <- values - DelayedMatrixStats::rowMedians(DelayedArray(values))
+    }
     
-    scores <- results$scores
-    maxed <- rowMaxs(DelayedArray(scores))
-    delta <- maxed - DelayedMatrixStats::rowMedians(DelayedArray(scores))
-    
-    # Create a dataframe with separate rows for each score in scores.
+    # Create a dataframe with separate rows for each score in values.
     df <- data.frame(
-        #cell id of the cell
-        id = rep(rownames(results), each=ncol(scores)),
-        #final call of the cell
-        called = rep(results$labels, each=ncol(scores)),
-        #label of the current score
-        label = rep(
-            colnames(results$scores),
-            nrow(results)),
-        scores = as.numeric(t(scores)),
-        delta.med = as.numeric(t(delta)),
+        id = rep(rownames(results), each=ncol(values)),
+        called = rep(results$labels, each=ncol(values)),
+        label = rep(colnames(results$scores), nrow(results)),
+        values = as.numeric(t(values)),
         stringsAsFactors = FALSE)
     
-    if (!is.null(results$tuning.scores)) {
-        df$delta.next <- 
-            results$tuning.scores$first - results$tuning.scores$second
-    }
-    
     # Add whether this label is the final label given to each cell.
-    df$cell.calls <- "any label"
-    df$cell.calls[df$label == df$called] <- "this label"
+    df$cell.calls <- rep("other", nrow(df)) # rep() protects when nrow(df)=0.
+    df$cell.calls[df$label == df$called] <- "assigned"
     
     if (!is.null(results$pruned.labels)) {
-        # Retrieve if cells' calls were scored as to be prunes versus not,
-        #  then add this to df$cell.calls, but only when =="this label"
-        prune.calls <- is.na(results$pruned.labels)
-        prune.string <- as.character(prune.calls)
-        prune.string[prune.calls] <- " - pruned"
-        prune.string[!prune.calls] <- ""
-        df$cell.calls[df$cell.calls=="this label"] <- paste0(
-            df$cell.calls[df$cell.calls=="this label"],
-            rep(prune.string, each=ncol(scores))[df$cell.calls=="this label"])
+        is.pruned <- rep(is.na(results$pruned.labels), each=ncol(values))
+        df$cell.calls[is.pruned & df$cell.calls=="assigned"] <- "pruned"
     }
-    
-    #Duplicate the "this label" data, and change df$cell.calls to "any label"
-    df.thisLab <- 
-        df[df$cell.calls %in% c("this label", "this label - pruned"),
-           ,drop=FALSE]
-    df$cell.calls <- 'any label'
-    
-    if (show %in% c("delta.med", "delta.next")) {
-        df <- df.thisLab
-    } else {
-        df <- rbind(df.thisLab, df)
+        
+    df
+}
+
+.next_data_gather <- function(results) {
+    if (is.null(rownames(results))) {
+        rownames(results) <- seq_len(nrow(results))
     }
-    
+    if (is.null(results$tuning.scores)) {
+        stop("'results' lacks fine-tuning diagnostics for 'show=\"delta.next\"'")
+    }
+
+    df <- data.frame(
+        id = rownames(results), 
+        called = results$labels,
+        value = results$tuning.scores$first - results$tuning.scores$second,
+        cell.calls = rep("assigned", nrow(results)), # don't unrep, protects when nrow(results)=0.
+        stringsAsFactors = FALSE)
+
+    if (!is.null(results$pruned.labels)) {
+        df$cell.calls[is.na(results$pruned.labels)] <- "pruned"
+    }
+
     df
 }
 
