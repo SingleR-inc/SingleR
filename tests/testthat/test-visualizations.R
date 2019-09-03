@@ -65,6 +65,7 @@ test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
     
     expect_s3_class(plotScoreHeatmap(results = pred, show.pruned = TRUE), "pheatmap")
+    expect_s3_class(plotScoreHeatmap(results = pred, show.labels = TRUE), "pheatmap")
   
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred,
@@ -169,5 +170,24 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
         annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)[seq(nrow(pred),1)])),
+        "pheatmap")
+})
+
+test_that("Row and Column annotation coloring works", {
+    # Make prune.call TRUE for every 10th value.
+    pred$pruned.labels <- rep(c(rep(FALSE,9),NA),nrow(pred)/10)
+    
+    #When works:
+        # Clusters and Continuous are shades of the same color
+        # Pruned and Discrete are many discrete colors
+    expect_s3_class(plotScoreHeatmap(
+        results = pred,
+        cells.order = seq_len(nrow(pred)),
+        clusters = seq(nrow(pred),1),
+        show.pruned = TRUE,
+        annotation_row = data.frame(
+            Discrete = as.character(seq_len(ncol(pred$scores))),
+            Continuous = as.numeric(seq_len(ncol(pred$scores))),
+            row.names = colnames(pred$scores))),
         "pheatmap")
 })

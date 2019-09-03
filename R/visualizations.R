@@ -75,7 +75,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
-#' @param show.pruned Logical indicated whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
+#' @param show.labels Logical indicating whether the final labels of cells should be shown as an annotation bar.
+#' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
@@ -91,9 +92,12 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
 #' @details
-#' This function creates a heatmap containing the \code{\link{SingleR}} assignment scores for each cell (columns) to each reference label (rows).
+#' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores for each cell (columns) to each reference label (rows).
 #' Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
 #'
+#' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels given to cells.
+#' Note that scores shown in the heatmap are initial scores, unaffected by the fine-tuning step, so labels and maximum scores in the heatmap may not always match up. 
+#' 
 #' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 #' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
 #'
@@ -105,6 +109,8 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' \code{\link{SingleR}}, to generate \code{scores}.
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#' 
+#' \code{\link[pheatmap]{pheatmap}}, for additional tweaks to the heatmap.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
 #'
@@ -133,7 +139,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters = NULL, show.pruned = FALSE, 
+    clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
     annotation_col = NULL, ...)
@@ -150,6 +156,11 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             names(prune.calls) <- rownames(results)
             annotation_col$Pruned <- as.character(is.na(prune.calls[rownames(annotation_col)]))
         }
+    }
+    if (show.labels) {
+        labels <- results$labels
+            names(labels) <- rownames(results)
+            annotation_col$Labels <- labels[rownames(annotation_col)]
     }
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
@@ -206,6 +217,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (ncol(annotation_col)>0) {
         args$annotation_col <- annotation_col
     }
-
+    if (is.null(args$annotation_colors)) {
+        args <- .make_heatmap_annotation_colors(args, show.pruned)
+    }
+    
     do.call(pheatmap::pheatmap, args)
 }

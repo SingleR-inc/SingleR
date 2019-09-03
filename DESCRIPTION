@@ -40,7 +40,8 @@ Suggests:
     Matrix,
     BiocGenerics,
     ggplot2,
-    pheatmap
+    pheatmap,
+    grDevices
 biocViews: 
     Software,
     SingleCell, 
