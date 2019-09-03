@@ -144,19 +144,18 @@ plotScoreDistribution <- function(results,
     
     # Create a dataframe with separate rows for each score in values.
     df <- data.frame(
-        id = rep(rownames(results), each=ncol(values)),
-        called = rep(results$labels, each=ncol(values)),
         label = rep(colnames(results$scores), nrow(results)),
         values = as.numeric(t(values)),
         stringsAsFactors = FALSE)
     
     # Add whether this label is the final label given to each cell.
     df$cell.calls <- rep("other", nrow(df)) # rep() protects when nrow(df)=0.
-    df$cell.calls[df$label == df$called] <- "assigned"
+    is.called <- df$label == rep(results$labels, each=ncol(values))
+    df$cell.calls[is.called] <- "assigned"
     
     if (!is.null(results$pruned.labels)) {
         is.pruned <- rep(is.na(results$pruned.labels), each=ncol(values))
-        df$cell.calls[is.pruned & df$cell.calls=="assigned"] <- "pruned"
+        df$cell.calls[is.pruned & is.called] <- "pruned"
     }
         
     df
@@ -171,9 +170,8 @@ plotScoreDistribution <- function(results,
     }
 
     df <- data.frame(
-        id = rownames(results), 
-        called = results$labels,
-        value = results$tuning.scores$first - results$tuning.scores$second,
+        values = results$tuning.scores$first - results$tuning.scores$second,
+        label = results$labels,
         cell.calls = rep("assigned", nrow(results)), # don't unrep, protects when nrow(results)=0.
         stringsAsFactors = FALSE)
 
@@ -201,6 +199,7 @@ plotScoreDistribution <- function(results,
                 data = df_min.diff, na.rm = TRUE, size = 1.1,
                 ggplot2::aes(yintercept = show.min.diff, color = color))
     }
+
     # Set the colors and a=labels for combined legend.
     p <- p + ggplot2::scale_color_manual(
         name = "Lines",
@@ -219,40 +218,14 @@ plotScoreDistribution <- function(results,
 
 #' @importFrom stats median mad
 .add_nmads_lines <- function(p, results, df, show.nmads) {
-    labels <- levels(as.factor(df$label))
-    
-    if (is.null(results$first.labels)) {
-        df$first.labels <- results$labels
-    } else {
-        df$first.labels <- results$first.labels
-    }
-    
-    # Calculate the nmad cutoff for each label, (ignoring min.diff cutoffs).
-    df_bars <- data.frame(
-        labels = labels,
-        medians = vapply(
-            labels,
-            function (X) median(df$delta.med[df$first.labels == X]),
-            FUN.VALUE = numeric(1))
-        )
-    df_bars$nmads.cutoff <- vapply(
-        labels,
-        function (X) df_bars$medians[df_bars$labels == X] - show.nmads *
-            mad(df$delta.med[df$first.labels == X]),
-        FUN.VALUE = numeric(1))
-    # Add to main df
-    df$nmads.cutoff <- df_bars$nmads.cutoff[match(df$label, df_bars$label)]
-    
-    # Add dummy var for setting color later utilizing ggplot scale_color.
-    df$mad <- "1.nmad"
-    
-    p <- p +
-        ggplot2::geom_errorbar(
-            data = df, na.rm=TRUE,
-            ggplot2::aes_string(
-                x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff",
-                color = "mad"),
-            width = 1, size = 1.1,
-            show.legend = c(color = TRUE, fill = FALSE))
-    p
+    to.show <- pruneScores(results, get.thresholds=TRUE)
+
+    df <- data.frame(label=names(to.show), nmads.cutoff=to.show, 
+        values=0, # to keep the inherited aes_string() happy.
+        cell.calls=rep("assigned", length(to.show)),
+        mad=rep("1.nmad", length(to.show))) # Add dummy var for setting color later.
+
+    p + ggplot2::geom_errorbar(data = df, na.rm=TRUE,
+        ggplot2::aes_string(x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff", color = "mad"),
+        width = 1, size = 1.1, show.legend = c(color = TRUE, fill = FALSE))
 }
