@@ -170,31 +170,16 @@ table(pred$labels, pred2$labels)
 ## Initial visualization
 
 `r Biocpkg("SingleR")` provides a few basic yet powerful visualization tools.
-We can use `plotCellVsReference()` to manually check how an individual cell in our test set compares to a reference cell of the same or different type. 
-This function creates a scatter plot of the chosen cell's expression profile against the specified reference where each point is an individual gene, along with the linear regression fit and Spearman's rank correlation coefficient.
 
-```{r}
-# Get first cell label from our predictions - "acinar" in this case.
-pred$labels[1]
-
-# Get all cells in reference set with "acinar" label and plot against the first
-# in this list.
-same.type <- grep(pred$labels[1], sceM$label)
-plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = same.type[1])
-
-# And now compare to a cell of a different type than our cell of interest.
-diff.type <- seq_along(pred$labels)[-same.type]
-plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = diff.type[1])
-```
-
-Another useful function is `plotScoreHeatmap()`, which visualizes the scores for all cells across all reference labels.
+We can use `plotScoreHeatmap()` to visualize the scores for all cells across all reference labels.
 This allows users to inspect the confidence of the predicted labels across the dataset.
 We can also display clusters (or other metadata information) for each cell by setting `clusters=` or `annotation_col=`.
-In this case, we display which donor the cells came from.
+In this case, we display which donor the cells came from and the labels assigned to each cell.
 
 ```{r}
-plotScoreHeatmap(pred, annotation_col=data.frame(donor=sceG$donor,
-    row.names=rownames(pred)))
+plotScoreHeatmap(pred, show.labels = TRUE,
+    annotation_col=data.frame(donor=sceG$donor,
+        row.names=rownames(pred)))
 ```
 
 ## Pruning of scores
