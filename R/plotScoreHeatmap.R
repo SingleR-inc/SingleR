@@ -1,70 +1,3 @@
-#' Plot a cell versus a reference 
-#'
-#' Plot a single cell's expression profile against that of a reference sample across all genes. 
-#' 
-#' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param test.id Integer scalar or string specifying the index or name of the target cell to use.
-#' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}), where rows are genes and columns are cells.
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param ref.id Integer scalar or string specifying the index or name of the reference cell/sample to use.
-#' @param assay.type.test Integer scalar or string specifying the assay of \code{test} containing the relevant expression data.  
-#' Used if \code{test} is a \linkS4class{SummarizedExperiment}.
-#' @param assay.type.ref Integer scalar or string specifying the assay of \code{ref} containing the relevant expression data.  
-#' Used if \code{ref} is a \linkS4class{SummarizedExperiment}.
-#'
-#' @return A \link[ggplot2]{ggplot} object containing a scatter plot of the cell against a reference.
-#'
-#' @details 
-#' This function allows a user to manually check how an individual cell compares to reference cells of the same or different type.
-#' It generates a scatter plot of one cell's expression profile against a chosen reference where each point is an individual gene.
-#' It also displays a linear regression fit and the value of Spearman's rank correlation coefficient.
-#' 
-#' @author Daniel Bunis, based on code by Dvir Aran.
-#' @examples
-#' # Running the SingleR() example.
-#' example(SingleR, echo=FALSE)
-#' test <- scater::logNormCounts(test)
-#' 
-#' # Checking if cell#1 resembles reference-set cells of its assigned label.
-#' pred$labels[1]
-#' same.type <- grep(pred$labels[1], sce$label)
-#' 
-#' # Compare expression of target cell to a reference cell of the same type
-#' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = same.type[1])
-#' 
-#' # Compare expression of target cell to reference cells of a different type
-#' diff.type <- seq_along(pred$labels)[-same.type]
-#' plotCellVsReference(test, test.id = 1, ref = sce, ref.id = diff.type[1])
-#' 
-#' @export
-#' @importFrom SummarizedExperiment assay
-#' @importClassesFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom methods is
-#' @importFrom stats cor
-plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'logcounts', assay.type.ref = 'logcounts') {
-    if (is(test, "SummarizedExperiment")) {
-        test <- assay(test, assay.type.test)
-    }
-    if (is(ref, "SummarizedExperiment")) {
-        ref <- assay(ref, assay.type.ref)
-    }
-
-    rownames(test) <- tolower(rownames(test))
-    rownames(ref) <- tolower(rownames(ref))
-    A <- intersect(rownames(test),rownames(ref))
-
-    df <- data.frame(x = test[A,test.id], y = ref[A,ref.id])
-    ggplot2::ggplot(df, ggplot2::aes_string(x="x", y="y")) + 
-        ggplot2::geom_point(size=0.5,alpha=0.5,color='blue') +
-        ggplot2::geom_smooth(method='lm',color='red') +
-        ggplot2::theme(legend.position="none") + 
-        ggplot2::xlab('Single cell') + 
-        ggplot2::ylab('Reference sample') +
-        ggplot2::ggtitle(paste('R =', format(round(cor(df$x,df$y,method='spearman',use='pairwise'), 3), 3))) + 
-        ggplot2::theme_classic()
-}
-
 #' Plot a score heatmap
 #'
 #' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
@@ -85,7 +18,7 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
 #' @param annotation_col A data.frame containing data for additional/alternative column annotations 
-#' (clustering and pruning annotations are automatically added).
+#' (clustering, pruning, and labels annotations are automatically added).
 #' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
@@ -117,23 +50,31 @@ plotCellVsReference <- function(test, test.id, ref, ref.id, assay.type.test = 'l
 #' @examples
 #' # Running the SingleR() example.
 #' example(SingleR, echo=FALSE)
+#' # Grab the original identities of the cells as mock clusters
+#' clusts <- g
 #'
 #' # Creating a heatmap that shows cells showed.
 #' plotScoreHeatmap(pred)
 #'
-#' # Creating a heatmap with clusters.
-#' plotScoreHeatmap(pred, clusters=test$label)
+#' # Creating a heatmap with clusters displayed.
+#' plotScoreHeatmap(pred, clusters=clusts)
+#' 
+#' # Creating a heatmap with labels displayed.
+#' plotScoreHeatmap(pred, show.labels = TRUE)
+#' 
+#' # Creating a heatmap with whether cells were pruned displayed.
+#' plotScoreHeatmap(pred, show.pruned = TRUE)
 #'
 #' # We can also turn off the normalization with Normalize = FALSE
-#' plotScoreHeatmap(pred, clusters=test$label, normalize = FALSE)
+#' plotScoreHeatmap(pred, clusters=clusts, normalize = FALSE)
 #' 
 #' # To only show certain labels, you can use labels.use or max.labels
-#' plotScoreHeatmap(pred, clusters=test$label, labels.use = c("A","B","D"))
-#' plotScoreHeatmap(pred, clusters=test$label, max.labels = 4)
+#' plotScoreHeatmap(pred, clusters=clusts, labels.use = c("A","B","D"))
+#' plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
 #' 
 #' # We can pass extra tweaks the heatmap as well
-#' plotScoreHeatmap(pred, clusters=test$label, fontsize.row = 9)
-#' plotScoreHeatmap(pred, clusters=test$label, cutree_col = 3)
+#' plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
+#' plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
 #' 
 #' @export
 #' @importFrom utils head
@@ -154,7 +95,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         prune.calls <- results$pruned.labels
         if (!is.null(prune.calls)) {
             names(prune.calls) <- rownames(results)
-            annotation_col$Pruned <- as.character(is.na(prune.calls[rownames(annotation_col)]))
+            Pruned <- data.frame(
+                Pruned = as.character(is.na(prune.calls)),
+                row.names = rownames(results))[rownames(annotation_col),]
+            annotation_col <- cbind(Pruned,annotation_col)
         }
     }
     if (show.labels) {
@@ -222,4 +166,120 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
     
     do.call(pheatmap::pheatmap, args)
+}
+
+.make_heatmap_annotation_colors <- function(args, show.pruned) {
+    # Create pheatmap annotations_colors dataframe
+        # list of character vectors, all named.
+            # vector names = annotation titles
+            # vector members' (colors') names = annotation identities 
+    
+    # Extract a default color-set
+    annotation.colors.d <- .make_heatmap_colors_discrete(show.pruned)
+    annotation.colors.n <- .make_heatmap_colors_numeric()
+    
+    # Initiate variables
+    next.color.index.discrete <- 1
+    next.color.index.numeric <- 1
+    col_colors <- NULL
+    row_colors <- NULL
+    
+    # Columns First (if there)
+    if (!is.null(args$annotation_col)) {
+        dfcolors_out <- .pick_colors_for_df(
+            args$annotation_col,
+            next.color.index.discrete, next.color.index.numeric,
+            annotation.colors.d, annotation.colors.n)
+        col_colors <- dfcolors_out$df_colors
+        next.color.index.discrete <- dfcolors_out$next.color.index.discrete
+        next.color.index.numeric <- dfcolors_out$next.color.index.numeric
+    }
+    
+    # Rows Second (if there)
+    if (!is.null(args$annotation_col)) {
+        dfcolors_out <- .pick_colors_for_df(
+            args$annotation_col,
+            next.color.index.discrete, next.color.index.numeric,
+            annotation.colors.d, annotation.colors.n)
+        row_colors <- dfcolors_out$df_colors
+        next.color.index.discrete <- dfcolors_out$next.color.index.discrete
+        next.color.index.numeric <- dfcolors_out$next.color.index.numeric
+    }
+    
+    args$annotation_colors <- c(col_colors, row_colors)
+    args
+}
+
+.make_heatmap_colors_discrete <- function(show.pruned) {
+    # Creates a default vector of colors with 24*10 (overkill) options.
+    annotation.colors <- rep(
+        c(  # DittoSeq-v0.2.10 Colors
+            "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
+            "#D55E00", "#CC79A7", "#666666", "#AD7700", "#1C91D4",
+            "#007756", "#D5C711", "#005685", "#A04700", "#B14380",
+            "#4D4D4D", "#FFBE2D", "#80C7EF", "#00F6B3", "#F4EB71",
+            "#06A5FF", "#FF8320", "#D99BBD", "#8C8C8C"),
+        10)
+    if (show.pruned) {
+        annotation.colors <- c("white", annotation.colors)
+    }
+    annotation.colors
+}
+
+.make_heatmap_colors_numeric <- function() {
+    # Creates a default vector of colors with 8*3 (overkill) options.
+        # These represent max.colors for discrete color scales.
+    rep(
+        c(  # DittoSeq-v0.2.10 Colors, distinct order 
+            "#B14380", "#A04700", "#005685", "#D5C711", "#007756",
+            "#1C91D4", "#AD7700", "#4D4D4D", "#CC79A7", "#D55E00",
+            "#0072B2", "#F0E442", "#009E73", "#56B4E9", "#E69F00",
+            "#666666"),
+        3)
+}
+
+# Interpret annotations dataframe,
+# Pick, name, and add colors.
+.pick_colors_for_df <- function(
+    annotation_df,
+    next.color.index.discrete, next.color.index.numeric,
+    annotation.colors.d, annotation.colors.n
+    ) {
+    df_colors <- NULL
+    for (i in seq_len(ncol(annotation_df))){
+        
+        # Determine the distinct contents of the first annotation
+        in.this.annot <- levels(as.factor(annotation_df[,i]))
+        
+        # Make new colors
+        if(!is.numeric(annotation_df[,i])){
+            # Take colors for each, and name them.
+            new.colors <- annotation.colors.d[
+                seq_along(in.this.annot) + next.color.index.discrete - 1
+                ]
+            names(new.colors) <- in.this.annot
+            
+            next.color.index.discrete <-
+                next.color.index.discrete + length(in.this.annot)
+        } else {
+            # Make a 100 color split as in pheatmap code.
+            a <- cut(
+                annotation_df[order(annotation_df[,i]),i],
+                breaks = 100)
+            # Assign to colors.
+            this.ramp <- annotation.colors.n[next.color.index.numeric]
+            new.colors <-
+                grDevices::colorRampPalette(c("white",this.ramp))(100)[a]
+            
+            next.color.index.numeric <- next.color.index.numeric + 1
+        }
+        # Add the new colors as the list
+        df_colors <- c(
+            df_colors,
+            list(new.colors))
+    }
+    names(df_colors) <- names(annotation_df)
+    list(df_colors = df_colors,
+         next.color.index.discrete = next.color.index.discrete,
+         next.color.index.numeric = next.color.index.numeric)
 }
