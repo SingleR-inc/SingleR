@@ -6,8 +6,12 @@
 #' @param nmads Numeric scalar specifying the number of MADs to use for defining low outliers in the per-label distribution of delta values (i.e., difference from median).
 #' @param min.diff.med Numeric scalar specifying the minimum acceptable delta for each cell.
 #' @param min.diff.next Numeric scalar specifying the minimum difference between the best score and the next best score in fine-tuning.
+#' @param get.thresholds Logical scalar indicating whether the per-label thresholds on the deltas should be returned.
 #' 
-#' @return A logical vector specifying which assignments should be ignored.
+#' @return
+#' A logical vector is returned by default, specifying which assignments in \code{results} should be ignored.
+#'
+#' If \code{get.thresholds=TRUE}, a numeric vector is returned containing the per-label thresholds on the deltas, as defined using the outlier-based approach with \code{nmads}.
 #'
 #' @details
 #' By itself, the SingleR algorithm will always assign a label to every cell.
@@ -68,6 +72,7 @@
 #' example(SingleR, echo=FALSE)
 #'
 #' summary(pruneScores(pred))
+#' pruneScores(pred, get.thresholds=TRUE)
 #'
 #' # Less stringent:
 #' summary(pruneScores(pred, min.diff.med=0))
@@ -82,7 +87,7 @@
 #' @importFrom DelayedMatrixStats rowMedians 
 #' @importFrom DelayedArray DelayedArray rowMaxs
 #' @importFrom stats median mad
-pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0) {
+pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0, get.thresholds=FALSE) {
     scores <- results$scores
     labels <- results$labels
     assigned <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
@@ -96,12 +101,21 @@ pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0) {
 
     # Ignoring the fine-tuning when allocating cells to labels.
     by.label <- split(which(keep), labels[keep])
-    for (l in by.label) {
-        current <- delta[l]
+    thresholds <- list()
+    for (l in names(by.label)) {
+        idx <- by.label[[l]]
+        current <- delta[idx]
+
         med <- median(current)
         MAD <- mad(current, center=med)
-        keep[l] <- keep[l] & (current >= med - nmads * MAD)
+        thresholds[[l]] <- curthresh <- med - nmads * MAD
+
+        keep[idx] <- keep[idx] & current >= curthresh
     }
 
-    !keep
+    if (get.thresholds) {
+        unlist(thresholds) 
+    } else {
+        !keep
+    }
 }
