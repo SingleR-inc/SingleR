@@ -1,0 +1,285 @@
+#' Plot a score heatmap
+#'
+#' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
+#'
+#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
+#' @param cells.use Integer or string vector specifying the single cells to show.
+#' If \code{NULL}, all cells are presented.
+#' @param labels.use String vector indicating what labels to show.
+#' If \code{NULL}, all labels available in \code{results} are presented.
+#' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
+#' @param show.labels Logical indicating whether the final labels of cells should be shown as an annotation bar.
+#' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
+#' @param max.labels Integer scalar specifying the maximum number of labels to show.
+#' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
+#' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
+#' If set, this takes precedence over \code{cells.order} input.
+#' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
+#' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
+#' If set, turns off clustering of columns based on scoring.
+#' @param annotation_col A data.frame containing data for additional/alternative column annotations 
+#' (clustering, pruning, and labels annotations are automatically added).
+#' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
+#' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#'
+#' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
+#'
+#' @details
+#' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores for each cell (columns) to each reference label (rows).
+#' Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
+#'
+#' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels given to cells.
+#' Note that scores shown in the heatmap are initial scores, unaffected by the fine-tuning step, so labels and maximum scores in the heatmap may not always match up. 
+#' 
+#' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
+#' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
+#'
+#' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
+#' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
+#' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+#' 
+#' @seealso
+#' \code{\link{SingleR}}, to generate \code{scores}.
+#'
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+#' 
+#' \code{\link[pheatmap]{pheatmap}}, for additional tweaks to the heatmap.
+#'
+#' @author Daniel Bunis, based on code by Dvir Aran.
+#'
+#' @examples
+#' # Running the SingleR() example.
+#' example(SingleR, echo=FALSE)
+#' # Grab the original identities of the cells as mock clusters
+#' clusts <- g
+#'
+#' # Creating a heatmap that shows cells showed.
+#' plotScoreHeatmap(pred)
+#'
+#' # Creating a heatmap with clusters displayed.
+#' plotScoreHeatmap(pred, clusters=clusts)
+#' 
+#' # Creating a heatmap with labels displayed.
+#' plotScoreHeatmap(pred, show.labels = TRUE)
+#' 
+#' # Creating a heatmap with whether cells were pruned displayed.
+#' plotScoreHeatmap(pred, show.pruned = TRUE)
+#'
+#' # We can also turn off the normalization with Normalize = FALSE
+#' plotScoreHeatmap(pred, clusters=clusts, normalize = FALSE)
+#' 
+#' # To only show certain labels, you can use labels.use or max.labels
+#' plotScoreHeatmap(pred, clusters=clusts, labels.use = c("A","B","D"))
+#' plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
+#' 
+#' # We can pass extra tweaks the heatmap as well
+#' plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
+#' plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
+#' 
+#' @export
+#' @importFrom utils head
+#' @importFrom DelayedArray rowMaxs rowMins
+plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
+    clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
+    max.labels = 40, normalize = TRUE,
+    cells.order=NULL, order.by.clusters=FALSE, 
+    annotation_col = NULL, ...)
+{
+    if (is.null(rownames(results))) {
+        rownames(results) <- seq_len(nrow(results))
+    }
+    if (is.null(annotation_col)) {
+        annotation_col <- data.frame(row.names = rownames(results))
+    }
+    if (show.pruned) {
+        prune.calls <- results$pruned.labels
+        if (!is.null(prune.calls)) {
+            names(prune.calls) <- rownames(results)
+            Pruned <- data.frame(
+                Pruned = as.character(is.na(prune.calls)),
+                row.names = rownames(results))[rownames(annotation_col),]
+            annotation_col <- cbind(Pruned,annotation_col)
+        }
+    }
+    if (show.labels) {
+        labels <- results$labels
+            names(labels) <- rownames(results)
+            annotation_col$Labels <- labels[rownames(annotation_col)]
+    }
+    if (!is.null(clusters)) {
+        names(clusters) <- rownames(results)
+        annotation_col$Clusters <- clusters[rownames(annotation_col)]
+    }
+
+    scores <- results$scores
+    rownames(scores) <- rownames(results)
+    
+    # Trim the scores by requested cells or labels
+    if (!is.null(cells.use)) {
+        scores <- scores[cells.use,,drop=FALSE]
+        clusters <- clusters[cells.use]
+        cells.order <- cells.order[cells.use]
+    }
+    if (!is.null(labels.use)) {
+        scores <- scores[,labels.use,drop=FALSE]
+    }
+    
+    # Determining how to order the cells. 
+    cluster_cols <- FALSE
+    if (order.by.clusters) {
+        order <- order(clusters)
+    } else if (!is.null(cells.order)) {
+        order <- order(cells.order)
+    } else {
+        # no ordering requested
+        order <- seq_len(nrow(scores))
+        cluster_cols <- TRUE
+    }
+    
+    # Determine labels to show based on 'max.labels' with the highest
+    # pre-normalized scores (not removed until later, as we still need these
+    # values when normalizing the scores).
+    m <- rowMaxs(scale(t(scores)))
+    to.keep <- head(order(m,decreasing=TRUE), max.labels)
+
+    # Normalize the scores between [0, 1] and cube to create more separation.
+    if (normalize) {
+        mmax <- rowMaxs(scores)
+        mmin <- rowMins(scores)
+        scores <- (scores-mmin)/(mmax-mmin)
+        scores <- scores^3
+    }
+
+    scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
+    scores <- t(scores)
+    
+    # Create args list for making the heatmap
+    args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
+        show_colnames = FALSE, clustering_method = 'ward.D2',
+        cluster_cols = cluster_cols, ...)
+
+    if (ncol(annotation_col)>0) {
+        args$annotation_col <- annotation_col
+    }
+    if (is.null(args$annotation_colors)) {
+        args <- .make_heatmap_annotation_colors(args, show.pruned)
+    }
+    
+    do.call(pheatmap::pheatmap, args)
+}
+
+.make_heatmap_annotation_colors <- function(args, show.pruned) {
+    # Create pheatmap annotations_colors dataframe
+        # list of character vectors, all named.
+            # vector names = annotation titles
+            # vector members' (colors') names = annotation identities 
+    
+    # Extract a default color-set
+    annotation.colors.d <- .make_heatmap_colors_discrete(show.pruned)
+    annotation.colors.n <- .make_heatmap_colors_numeric()
+    
+    # Initiate variables
+    next.color.index.discrete <- 1
+    next.color.index.numeric <- 1
+    col_colors <- NULL
+    row_colors <- NULL
+    
+    # Columns First (if there)
+    if (!is.null(args$annotation_col)) {
+        dfcolors_out <- .pick_colors_for_df(
+            args$annotation_col,
+            next.color.index.discrete, next.color.index.numeric,
+            annotation.colors.d, annotation.colors.n)
+        col_colors <- dfcolors_out$df_colors
+        next.color.index.discrete <- dfcolors_out$next.color.index.discrete
+        next.color.index.numeric <- dfcolors_out$next.color.index.numeric
+    }
+    
+    # Rows Second (if there)
+    if (!is.null(args$annotation_col)) {
+        dfcolors_out <- .pick_colors_for_df(
+            args$annotation_col,
+            next.color.index.discrete, next.color.index.numeric,
+            annotation.colors.d, annotation.colors.n)
+        row_colors <- dfcolors_out$df_colors
+        next.color.index.discrete <- dfcolors_out$next.color.index.discrete
+        next.color.index.numeric <- dfcolors_out$next.color.index.numeric
+    }
+    
+    args$annotation_colors <- c(col_colors, row_colors)
+    args
+}
+
+.make_heatmap_colors_discrete <- function(show.pruned) {
+    # Creates a default vector of colors with 24*10 (overkill) options.
+    annotation.colors <- rep(
+        c(  # DittoSeq-v0.2.10 Colors
+            "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
+            "#D55E00", "#CC79A7", "#666666", "#AD7700", "#1C91D4",
+            "#007756", "#D5C711", "#005685", "#A04700", "#B14380",
+            "#4D4D4D", "#FFBE2D", "#80C7EF", "#00F6B3", "#F4EB71",
+            "#06A5FF", "#FF8320", "#D99BBD", "#8C8C8C"),
+        10)
+    if (show.pruned) {
+        annotation.colors <- c("white", annotation.colors)
+    }
+    annotation.colors
+}
+
+.make_heatmap_colors_numeric <- function() {
+    # Creates a default vector of colors with 8*3 (overkill) options.
+        # These represent max.colors for discrete color scales.
+    rep(
+        c(  # DittoSeq-v0.2.10 Colors, distinct order 
+            "#B14380", "#A04700", "#005685", "#D5C711", "#007756",
+            "#1C91D4", "#AD7700", "#4D4D4D", "#CC79A7", "#D55E00",
+            "#0072B2", "#F0E442", "#009E73", "#56B4E9", "#E69F00",
+            "#666666"),
+        3)
+}
+
+# Interpret annotations dataframe,
+# Pick, name, and add colors.
+.pick_colors_for_df <- function(
+    annotation_df,
+    next.color.index.discrete, next.color.index.numeric,
+    annotation.colors.d, annotation.colors.n
+    ) {
+    df_colors <- NULL
+    for (i in seq_len(ncol(annotation_df))){
+        
+        # Determine the distinct contents of the first annotation
+        in.this.annot <- levels(as.factor(annotation_df[,i]))
+        
+        # Make new colors
+        if(!is.numeric(annotation_df[,i])){
+            # Take colors for each, and name them.
+            new.colors <- annotation.colors.d[
+                seq_along(in.this.annot) + next.color.index.discrete - 1
+                ]
+            names(new.colors) <- in.this.annot
+            
+            next.color.index.discrete <-
+                next.color.index.discrete + length(in.this.annot)
+        } else {
+            # Make a 100 color split as in pheatmap code.
+            a <- cut(
+                annotation_df[order(annotation_df[,i]),i],
+                breaks = 100)
+            # Assign to colors.
+            this.ramp <- annotation.colors.n[next.color.index.numeric]
+            new.colors <-
+                grDevices::colorRampPalette(c("white",this.ramp))(100)[a]
+            
+            next.color.index.numeric <- next.color.index.numeric + 1
+        }
+        # Add the new colors as the list
+        df_colors <- c(
+            df_colors,
+            list(new.colors))
+    }
+    names(df_colors) <- names(annotation_df)
+    list(df_colors = df_colors,
+         next.color.index.discrete = next.color.index.discrete,
+         next.color.index.numeric = next.color.index.numeric)
+}
