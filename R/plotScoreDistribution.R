@@ -194,11 +194,11 @@ plotScoreDistribution <- function(results,
 
     if (grepl("delta",show) && !(is.null(show.min.diff))) {
         # Add cutoff line for min.diff cutoff
-        df_min.diff <- data.frame(color = "2.min.diff")
+        df_min.diff <- data.frame(color = "2.min.diff", show.min.diff = show.min.diff)
         p <- p + 
             ggplot2::geom_hline(
                 data = df_min.diff, na.rm = TRUE, size = 1.1,
-                ggplot2::aes(yintercept = show.min.diff, color = color))
+                ggplot2::aes_string(yintercept = "show.min.diff", color = "color"))
     }
 
     # Set the colors and a=labels for combined legend.
