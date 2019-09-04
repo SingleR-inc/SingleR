@@ -22,7 +22,7 @@ vignette: >
 
 ```{r, echo=FALSE, results="hide", message=FALSE}
 knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
-# library(BiocStyle)
+library(BiocStyle)
 ```
 
 # Introduction
@@ -75,7 +75,7 @@ pred.hpca
 Each row of the output `DataFrame` contains prediction results for a single cell.
 Labels are shown before fine-tuning (`first.labels`), after fine-tuning (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
 We summarize the distribution of labels across our subset of cells:
-
+[6~
 ```{r}
 table(pred.hpca$labels)
 ```
@@ -85,55 +85,48 @@ The above example uses `SummarizedExperiment` objects, but the same functions wi
 
 # Using single-cell references
 
-## Obtaining the data 
+## Setting up the data
 
-Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package [@muraro2016singlecell;@grun2016denovo].
+Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package.
 The aim is to use one pre-labelled dataset to annotate the other unlabelled dataset.
+First, we set up the @muraro2016singlecell dataset to be our reference.
 
 ```{r}
 library(scRNAseq)
 sceM <- MuraroPancreasData()
-sceG <- GrunPancreasData()
 
-# Restrict to common genes:
+# One should normally do cell-based quality control at this point, but for
+# brevity's sake, we will just remove the unlabelled libraries here.
+sceM <- sceM[,!is.na(sceM$label)]
+table(sceM$label)
+
+sceM <- logNormCounts(sceM)
+```
+
+We then set up our test dataset from @grun2016denovo. 
+To speed up this demonstration, we will subset to the first 100 cells.
+
+```{r}
+sceG <- GrunPancreasData()
+sceG <- sceG[,colSums(counts(sceG)) > 0]
+
+# Some of the cells have no spike-in counts, so we
+# set use_altexps=FALSE to avoid normalization errors.
+# This is fine as we don't use the spike-ins anyway.
+sceG <- logNormCounts(sceG, use_altexps=FALSE)
+
+sceG <- sceG[,1:100]
+```
+
+We then restrict to common genes:
+
+```{r}
 common <- intersect(rownames(sceM), rownames(sceG))
 sceM <- sceM[common,]
 sceG <- sceG[common,]
 ```
 
-One should normally do cell-based quality control at this point, but for brevity's sake, 
-we will just remove the empty or unlabelled libraries here.
-
-```{r}
-sceM <- sceM[,!is.na(sceM$label)]
-sceG <- sceG[,colSums(counts(sceG)) > 0]
-```
-
-We then compute the log-normalized expression values that will be used by `SingleR()` for annotation.
-
-```{r}
-library(scater)
-sceM <- logNormCounts(sceM)
-
-# Some of the cells have no spike-in counts, so we 
-# set use_altexps=FALSE to avoid normalization errors.
-# This is fine as we don't use the spike-ins anyway.
-sceG <- logNormCounts(sceG, use_altexps=FALSE)
-```
-
-The @muraro2016singlecell dataset contains labels so we will use this as our reference dataset.
-
-```{r}
-table(sceM$label)
-```
-
-To speed up this demonstration, we will subset the @grun2016denovo dataset to the first 100 cells.
-
-```{r}
-sceG <- sceG[,1:100]
-```
-
-## Using custom markers
+## Defining custom markers
 
 The default marker definition in `SingleR()` is intended for references derived from bulk RNA-seq data.
 When using single-cell data as a reference, we suggest building your own marker list.
@@ -167,12 +160,9 @@ table(pred$labels, pred2$labels)
 
 # Annotation diagnostics
 
-## Initial visualization
-
 `r Biocpkg("SingleR")` provides a few basic yet powerful visualization tools.
-
-We can use `plotScoreHeatmap()` to visualize the scores for all cells across all reference labels.
-This allows users to inspect the confidence of the predicted labels across the dataset.
+`plotScoreHeatmap()` displays the scores for all cells across all reference labels,
+which allows users to inspect the confidence of the predicted labels across the dataset.
 We can also display clusters (or other metadata information) for each cell by setting `clusters=` or `annotation_col=`.
 In this case, we display which donor the cells came from and the labels assigned to each cell.
 
@@ -182,40 +172,23 @@ plotScoreHeatmap(pred, show.labels = TRUE,
         row.names=rownames(pred)))
 ```
 
-## Pruning of scores
-
 The `pruneScores()` function will remove potentially poor-quality or ambiguous assignments.
-In particular, ambiguous assignments are identified from cells where the top score is not appreciably better than the median (before fine-tuning) or the next-best score (after fine-tuning).
-We also remove cells that have lower top scores than other cells that have been assigned the same label, which may represent a misassignment from a different cell subpopulation.
+In particular, ambiguous assignments are identified based on the per-cell delta, i.e., the difference between the score for the assigned label and the median across all labels for each cell.
+Low deltas indicate that the assignment is uncertain, which is especially relevant if the cell's true label does not exist in the reference.
+The exact threshold used for pruning is identified using an outlier-based approach that accounts for differences in the scale of the correlations in various contexts.
 
 ```{r}
 to.remove <- pruneScores(pred)
 summary(to.remove)
 ```
 
-By default, `SingleR()` will automatically report pruned labels where low-quality assignments are replaced with `NA`.
-However, the default pruning pruning may not be appropriate for every dataset - see `?pruneScores` for a more detailed discussion.
-We provide a few visualization functions to help in determining whether cutoffs might need adjustment.
-
-The first cut-off is a per-cell check that the maximum score associated with a cell (prior to fine-tuning) is greater than the median score for that cell by `min.diff.med`.
-We can use `plotScoresSingleCell()` to determine whether this parameter is set appropriately.
-Here, we can see that the maximal score was less than 0.05 greater than the median score of that cell.
+By default, `SingleR()` will also report pruned labels where low-quality assignments are replaced with `NA`.
+However, the default pruning thresholds may not be appropriate for every dataset - see `?pruneScores` for a more detailed discussion.
+We also provide the `plotScoreDistribution()` to help determine whether the thresholds are appropriate.
+This displays the per-label distribution of the differences-from-median across cells, from which `pruneScores()` defines an appropriate threshold as 3 median absolute deviations (MADs) below the median.
 
 ```{r}
-# For a non-pruned label:
-plotScoresSingleCell(pred, cell.id = 1)
-
-# For a pruned label:
-pruned.cell.ids <- seq_len(nrow(pred))[pruneScores(pred)]
-plotScoresSingleCell(pred, cell.id = pruned.cell.ids[1])
-```
-
-The second cutoff is a per-label check where low outliers within each label are removed, based on whether they are more than `nmads` median absolute deviations (MADs) below the median score for that label.
-Again, several functions can help determine if this parameter needs to be adjusted:
-
-```{r}
-plotScoresMultiLabels(pred, dots.on.top = TRUE)
-plotScoresSingleLabel(pred, label = "beta", dots.on.top = TRUE)
+plotScoreDistribution(pred, show = "delta.med", ncol = 3, show.nmads = 3)
 ```
 
 If some tuning parameters must be adjusted, we can simply call `pruneScores()` directly with adjusted parameters.
@@ -223,23 +196,20 @@ Here, we set labels to `NA` if they are to be discarded, which is also how `Sing
 
 ```{r}
 new.pruned <- pred$labels
-new.pruned[pruneScores(pred, nmads=5, min.diff.med=0.01)] <- NA
+new.pruned[pruneScores(pred, nmads=5)] <- NA
 table(new.pruned, useNA="always")
 ```
 
 # Available reference data sets
 
-## Overview
-
-The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on
-bulk RNA-seq, microarray and single-cell RNA-seq data from:
+The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on bulk RNA-seq, microarray and single-cell RNA-seq data from:
 
 * Blueprint and Encode (`blueprint_encode`),
 * the Human Primary Cell Atlas (`hpca`),
 * the murine [ImmGen](http://www.immgen.org/) (`immgen`), and
 * a collection of mouse data sets downloaded from GEO (`mouse.rna.seq`).
 
-The bulk RNA-seq and microarray data sets of the first three reference data sets were obtained from pre-sorted cell populations, i.e. the cell labels of these samples were mostly derived based on the respective sorting/purification strategy, not via *in silico* prediction methods.
+The bulk RNA-seq and microarray data sets of the first three reference data sets were obtained from pre-sorted cell populations, i.e., the cell labels of these samples were mostly derived based on the respective sorting/purification strategy, not via *in silico* prediction methods.
 
 Three additional reference datasets from bulk RNA-seq and microarray data for immune cells have also been prepared. 
 Each of these datasets were also obtained from pre-sorted cell populations:
@@ -247,6 +217,8 @@ Each of these datasets were also obtained from pre-sorted cell populations:
 * The [Database for Immune Cell Expression(/eQTLs/Epigenomics)](https://dice-database.org) [@diceRef],
 * Novershtern Hematopoietic Cell Data - [GSE24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759) - formerly known as Differentiation Map [@dmapRef], and
 * Monaco Immune Cell Data - [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011)  [@monaco_immuneRef].
+
+The characteristics of each dataset are summarized below:
 
 | Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
 |------------------|----------|----------|-------------|----------------------|------------|----------|
@@ -258,336 +230,17 @@ Each of these datasets were also obtained from pre-sorted cell populations:
 |`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 | Hematopoietic & Immune |
 |`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 | Non-specific |
 
+We examine the main cell types contained within each reference:
 
-## Mouse reference datasets
-
-### The Immunological Genome Project (ImmGen)
-
-> The Immunological Genome Project is a collaborative group of immunologists and computational biologists who are generating a complete microarray dissection of gene expression and its regulation in the immune system of the mouse. The project encompasses the innate and adaptive immune systems, surveying all cell types of the myeloid and lymphoid lineages with a focus on primary cells directly *ex vivo*. [Source](http://www.immgen.org/)
-
-**830 microarray samples** of ImmGen raw expression data (phases 1 and 2) were downloaded as CEL files from the Gene Expression Omnibus (GEO; GSE15907 and GSE37448), processed, and normalized 
-using the robust multi-array average (RMA) procedure on probe-level data using Matlab functions.
-The analysis was performed using a custom CDF file obtained from Brainarray  [@aran2019reference].
-
-There are **20 main cell types** and **253 "fine" cell subtypes**.
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-  
-| Label type | Labels |
-|------------|--------|
-| main | B cells, B cells, pro, Basophils, DC, Endothelial cells, Eosinophils, Epithelial cells, Fibroblasts, ILC, Macrophages, Mast cells, Microglia, Monocytes, Neutrophils, NK cells, NKT, Stem cells, Stromal cells, T cells, Tgd |
-| fine | e.g. DC (DC.11B-), DC (DC.103-11B+24+), Macrophages (MF.103-11B+.SALM3, Macrophages (MF.11CLOSER.SALM3), Tgd (Tgd.vg2+.act)|
-</details>
-
-### Mouse RNA-seq samples of pure cell populations
-
-The dataset entails **358 mouse RNA-seq** samples annotated to **18 main cell types** and
-**28 "fine" cell subtypes**.
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-
-* Adipocytes
-  - Adipocytes
-* Astrocytes
-  - aNSCs 
-  - Astrocytes 
-  - Astrocytes activated
-* B cells
-  - B cells
-* Cardiomyocytes
-  - Cardiomyocytes
-* Dendritic cells
-  - Dendritic cells
-* Endothelial cells
-  - Endothelial cells
-* Epithelial cells
-  - Ependymal
-* Erythrocytes
-  - Erythrocytes
-* Fibroblasts
-  - Fibroblasts
-  - Fibroblasts activated
-  - Fibroblasts senescent
-* Granulocytes
-  - Granulocytes
-* Hepatocytes
-  - Hepatocytes
-* Macrophages
-  - Macrophages
-  - Macrophages activated
-* Microglia
-  - Microglia
-  - Microglia activated
-* Monocytes
-  - Monocytes
-* Neurons
-  - Neurons
-  - Neurons activated
-  - NPCs
-  - qNSCs
-* NK cells 
-  - NK cells
-* Oligodendrocytes
-  - Oligodendrocytes
-  - OPCs
-* T cells
-  - T cells
-
-</details>
-
-The RNA-seq data were downloaded from GEO and processed by the Benayoun Lab as follows [@Benayoun2019]:
-
->Paired-end 75-bp reads were trimmed using Trim Galore! 0.3.1 (github.com/FelixKrueger/TrimGalore) to retain high-quality bases with phred score >15 and a remaining length >35 bp. Read pairs were mapped to the UCSC mm9 genome build using STAR 2.4.0j (Dobin et al. 2013). Read counts were assigned to genes using subread 1.4.5-p1 (Liao et al. 2014) and were imported into R to estimate differential gene expression as a function of age using the DESeq2 R package (DESeq2 1.6.3). 
-
-More details can be found in the [Benayoun Lab github repo](https://github.com/BenayounLaboratory/Mouse_Aging_Epigenomics_2018/tree/master/FigureS7_CIBERSORT).
-
-## Human reference datasets
-
-### Blueprint and ENCODE
-
-Blueprint: 144 bulk RNA-seq of pure immune samples annotated to 28 cell types [@blueprintRef]
-
-ENCODE: 115 RNA-seq pure stroma and immune samples annotated to 17 cell types [@encodeRef]
-
-Altogether, **259 samples** with **24 main cell types** and  **43 "fine" cell subtypes**.
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-  
-
-* Adipocytes
-  - Adipocytes
-  - Astrocytes
-  - Preadipocytes
-* B-cells
-  - Class-switched memory B-cells
-  - Memory B-cells
-  - naive B-cells
-  - Plasma cells
-* CD4+ T-cells
-  - CD4+ T-cells 
-  - CD4+ Tcm 
-  - CD4+ Tem
-  - Tregs
-* CD8+ T-cells
-  - CD8+ T-cells 
-  - CD8+ Tcm 
-  - CD8+ Tem
-* Chondrocytes
-  - Chondrocytes
-* DC 
-  - DC
-* Endothelial cells
-  - Endothelial cells
-  - mv Endothelial cells
-* Eosinophils
-  - Eosinophils
-* Epithelial cells 
-  - Epithelial cells
-* Erythrocytes
-  - Erythrocytes
-* Fibroblasts
-  - Fibroblasts
-* HSC
-  - CLP 
-  - CMP
-  - GMP 
-  - HSC
-  - Megakaryocytes
-  - MEP
-  - MPP
-* Keratinocytes
-  - Keratinocytes
-* Macrophages
-  - Macrophages 
-  - Macrophages M1 
-  - Macrophages M2
-* Melanocytes
-  - Melanocytes
-* Mesangial cells
-  - Mesangial cells
-* Monocytes
-  - Monocytes
-* Myocytes
-  - Myocytes
-* Neurons
-  - Neurons
-* Neutrophils
-  - Neutrophils
-* NK cells
-  - NK cells
-* Pericytes
-  - Pericytes
-* Skeletal muscle
-  - Skeletal muscle
-* Smooth muscle 
-  - Smooth muscle
-
-</details>
-
-### Human Primary Cell Atlas
-
-Human Primary Cell Atlas (HPCA): a collection of Gene Expression Omnibus (GEO datasets), which
-contains **713 microarray samples** classified to **37 main cell types** and further annotated to **157  "fine" cell subtypes** [@hpcaRef].
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-  
-| Label type | Labels |
-|------------|--------|
-| main | Astrocyte, B_cell, BM, BM & Prog., Chondrocytes, CMP, DC, Embryonic_stem_cells, Endothelial_cells, Epithelial_cells, Erythroblast, Fibroblasts, Gametocytes, GMP, Hepatocytes, HSC_-G-CSF, HSC_CD34+, iPS_cells, Keratinocytes, Macrophage, MEP, Monocyte, MSC, Myelocyte, Neuroepithelial_cell, Neurons, Neutrophil, Neutrophils, NK_cell, Osteoblasts, Platelets, Pre-B_cell_CD34-, Pro-B_cell_CD34+, Pro-Myelocyte, Smooth_muscle_cells, T_cells, Tissue_stem_cells |
-| fine | e.g. DC:monocyte-derived:AM580, DC:monocyte-derived:Poly(IC), T_cell:CD8+_naive, Keratinocytes:IL22, Keratinocytes:KGF |
-</details>
-
-### Database of Immune Cell Expression
-
-[DICE](https://dice-database.org): **1561 bulk RNA-seq samples** of 15 immune cell types [@diceRef].
-Samples were annotated to **5 main cell types** and **15 "fine" cell subtypes**.
-
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-  
-* B cells
-  - B cells, naive
-* Monocytes
-  - Monocytes, CD14+
-  - Monocytes, CD16+
-* NK cells
-  - NK cells
-* T cells, CD8+
-  - T cells, CD8+, naive 
-  - T cells, CD8+, naive, stimulated
-* T cells, CD4+
-  - T cells, memory TREG 
-  - T cells, CD4+, naive 
-  - T cells, CD4+, naive, stimulated 
-  - T cells, CD4+, naive Treg 
-  - T cells, CD4+, Th1 
-  - T cells, CD4+, Th1_Th17 
-  - T cells, CD4+, Th2  
-  - T cells, CD4+, TFH 
-  - T cells, CD4+, Th17
-  
-</details> 
-
-### Novershtern Hematopoietic Data (Differentiation Map)
-
-This dataset is composed of **211 microarray samples** from hematopoietic cell subsets as described in [@dmapRef].
-Samples were annotated to **16 main cell types** and **38 "fine" cell subtypes**. 
-
-<details>
-  <summary>Click for Dataset Cell Types</summary>
-  
-* Basophils
-  - Basophils
-* B cells
-  - Naive B cells
-  - Mature B-cells class able to switch
-  - Mature B-cells
-  - Mature B-cells class switched
-  - Early B-cells
-  - Pro B-cells
-* CMPs
-  - Common myeloid progenitors
-* Dendritic cells
-  - Plasmacytoid Dendritic Cells
-  - Myeloid Dendritic Cells
-* Eosinophils
-  - Eosinophils
-* Erythroid cells
-  - Erythroid_CD34+ CD71+ GlyA-
-  - Erythroid_CD34- CD71+ GlyA-
-  - Erythroid_CD34- CD71+ GlyA+
-  - Erythroid_CD34- CD71lo GlyA+
-  - Erythroid_CD34- CD71- GlyA+
-* GMPs
-  - Granulocyte/monocyte progenitors
-* Granulocytes
-  - Colony Forming Unit-Granulocytes
-  - Granulocyte (Neutrophilic Metamyelocytes)
-  - Granulocyte (Neutrophils)
-* HSCs
-  - Hematopoietic stem cells_CD133+ CD34dim
-  - Hematopoietic stem cell_CD38- CD34+
-* Megakaryocytes
-  - Colony Forming Unit-Megakaryocytic
-  - Megakaryocytes
-* MEPs
-  - Megakaryocyte/erythroid progenitors
-* Monocytes
-  - Colony Forming Unit-Monocytes, Monocytes
-  - Monocytes
-* NK cells
-  - Mature NK cells_CD56- CD16+ CD3-
-  - Mature NK cells_CD56+ CD16+ CD3-
-  - Mature NK cells_CD56- CD16- CD3-
-* NK T cells
-  - NK T cells
-* CD8+ T cells
-  - CD8+ Effector Memory RA
-  - Naive CD8+ T-cells
-  - CD8+ Effector Memory
-  - CD8+ Central Memory
-* CD4+ T cells
-  - Naive CD4+ T-cells
-  - CD4+ Effector Memory
-  - CD4+ Central Memory
-
-</details>
-
-### Monaco Immune Data
-
-This dataset is composed of **114 bulk RNA-seq samples** immune cell subsets as described in [@monaco_immuneRef].
-Samples were annotated to **11 main cell types** and **29 "fine" cell subtypes**. 
-
-<details>
-  <summary>Click for Dataset Details</summary>
-  
-* CD8+ T cells
-  - Tcell.CD8.naive 
-  - Tcell.CD8.CentralMemory 
-  - Tcell.CD8.EffectorMemory 
-  - Tcell.CD8.TerminalEffector 
-* T cells
-  - Tcell.MAIT 
-  - Tcell.VD2pos.gd 
-  - Tcell.VD2neg.gd 
-* CD4+ T cells
-  - Tcell.FollicularHelper 
-  - Tcell.Treg 
-  - Tcell.Th1 
-  - Tcell.Th1.Th17 
-  - Tcell.Th17 
-  - Tcell.Th2 
-  - Tcell.CD4.naive 
-  - Tcell.CD4.TerminalEffector
-* Progenitors
-  - Progenitor
-* B cells
-  - Bcell.naive 
-  - Bcell.NonSwitchedMemory 
-  - Bcell.Exhausted 
-  - Bcell.SwitchedMemory
-* Plasmablasts
-  - Plasmablast
-* Monocytes
-  - Monocyte.Classical 
-  - Monocyte.Int 
-  - Monocyte.NonClassical
-* NK cells
-  - NK
-* Dendritic cells
-  - Dendritic.Plasmacytoid 
-  - Dendritic.Myeloid
-* Neutrophils
-  - Neutrophil
-* Basophils 
-  - Basophil
-
-</details>
+```{r}
+unique(HumanPrimaryCellAtlasData()$label.main)
+unique(BlueprintEncodeData()$label.main)
+unique(DatabaseImmuneCellExpressionData()$label.main)
+unique(NovershternHematopoieticData()$label.main)
+unique(MonacoImmuneData()$label.main)
+unique(ImmGenData()$label.main)
+unique(MouseRNAseqData()$label.main)
+```
 
 # Separating training from classification
 
