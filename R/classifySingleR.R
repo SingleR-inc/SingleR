@@ -61,9 +61,9 @@
 #' However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 #'
 #' @examples
-#' ###########################################
-#' ## Mocking up some example training data ##
-#' ###########################################
+#' ##############################
+#' ## Mocking up training data ##
+#' ##############################
 #'
 #' Ngroups <- 5
 #' Ngenes <- 1000
@@ -71,21 +71,20 @@
 #' means[1:900,] <- 0
 #' colnames(means) <- LETTERS[1:5]
 #'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+#' g <- rep(LETTERS[1:5], each=4)
+#' ref <- SummarizedExperiment(
+#'     list(counts=matrix(rpois(1000*length(g), 
+#'         lambda=10*2^means[,g]), ncol=length(g))),
 #'     colData=DataFrame(label=g)
 #' )
+#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
 #' 
-#' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
-#' sce <- scater::logNormCounts(sce)
-#' 
-#' trained <- trainSingleR(sce, sce$label)
+#' ref <- scater::logNormCounts(ref)
+#' trained <- trainSingleR(ref, ref$label)
 #'
-#' ##################################################
-#' ## Mocking up some test data for classification ##
-#' ##################################################
+#' ###############################
+#' ## Mocking up some test data ##
+#' ###############################
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
@@ -96,6 +95,10 @@
 #' 
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 #' test <- scater::logNormCounts(test)
+#'
+#' ###############################
+#' ## Performing classification ##
+#' ###############################
 #' 
 #' pred <- classifySingleR(test, trained)
 #' table(predicted=pred$labels, truth=g)
