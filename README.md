@@ -12,6 +12,7 @@ For more informations please refer to the manuscript: [Aran, Looney, Liu et al. 
 ## Install
 
 `SingleR` requires several development versions of Bioconductor packages, so you should be sure to switch to using `bioc-devel` prior to installation so that proper versions are installed.
+This will no longer be necessary once `SingleR` is added to Bioconductor.
 
 ```R
 if (!requireNamespace("BiocManager", quietly=TRUE))
@@ -37,7 +38,7 @@ The package directly provides a number of reference datasets generated from bulk
 There are currently five data sets from human cells (Human Primary Cell Atlas, Blueprint/ENCODE, Database of Immune Cell Expression, Differentiation Map, and Monaco et al., 2019 Immune Cell Data) and two data sets from mouse cells (e.g. Immunological Genome Project).
 More details can be found in the vignette.
 
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `DatabaseImmuneCellExpressionData()`, `NovershternHematopoieticData()`, `MonacoImmuneData()`, `ImmGenData()`, `MouseBulkData()`.
+Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `DatabaseImmuneCellExpressionData()`, `NovershternHematopoieticData()`, `MonacoImmuneData()`, `ImmGenData()`, `MouseRNAseqData()`.
 Here, we show an example with data from HPCA:
 
 
