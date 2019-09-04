@@ -5,15 +5,15 @@ df <- data.frame(
     RDataPath = file.path("SingleR", "dice","1.0.0", c("logcounts.rds", "coldata.rds")),
     BiocVersion="3.10", # The first Bioconductor version the resource was made available for.
     Genome=NA, # Can be NA.
-    SourceType="RDA", #  Format of original data, e.g., FASTA, BAM, BigWig, etc. ‘getValidSourceTypes()’ for currently acceptable values
-    SourceUrl="https://www.dropbox.com/sh/ts8hi9ljmsvvvaa/AADYWlfFXVYYRH3NQokojPeXa?dl=0",
-    SourceVersion="dice.rda",
+    SourceType="TXT", #  Format of original data, e.g., FASTA, BAM, BigWig, etc. ‘getValidSourceTypes()’ for currently acceptable values
+    SourceUrl="https://dice-database.org/downloads",
+    SourceVersion="1.0.0",
     Species="Homo sapiens", # getSpeciesList, validSpecies, or suggestSpecies(); can be NA
     TaxonomyId="9606",
     Coordinate_1_based=NA, #TRUE, FALSE, NA
     DataProvider="DICE",
     Maintainer="Jared Andrews <jared.andrews@wustl.edu>",
-    RDataClass="character", # R / Bioconductor class the data are stored in, e.g., GRanges, SummarizedExperiment, ExpressionSet etc.
+    RDataClass="data.frame", # R / Bioconductor class the data are stored in, e.g., GRanges, SummarizedExperiment, ExpressionSet etc.
     DispatchClass="Rds", # Determines how data are loaded into R.
     stringsAsFactors = FALSE
 )
