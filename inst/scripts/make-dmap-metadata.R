@@ -14,7 +14,7 @@ df <- data.frame(
     DataProvider="GEO",
     Maintainer="Jared Andrews",
     RDataClass=c("matrix", "DataFrame"), 
-    DispatchClass="Rds", # Determines how data are loaded into R.
+    DispatchClass="Rds", 
     stringsAsFactors = FALSE
 )
 
