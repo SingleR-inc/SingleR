@@ -1,7 +1,7 @@
 ---
 title: "Obtaining reference data from DICE"
 author: "Jared Andrews"
-date: "8/23/2019"
+date: "September 4th, 2019"
 output: 
   BiocStyle::html_document
 ---
@@ -13,66 +13,183 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 
 # Overview
 
-Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with **normalized expression values from reference data sets** such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen). 
-I created several other reference datasets specifically for immune/hematopoietic cells.
-These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
+This RNA-seq dataset was downloaded from the [Database of Immune Cell Expression(/eQTLs/Epigenomics)](https://dice-database.org/downloads).
 Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
-
-This dataset was downloaded directly from the [Database for Immune Cell Expression/eQTL/Epigenomics](https://dice-database.org/downloads).
-Values were already TPM normalized, so the only additional processing done was to remove genes with no reads across samples and log2 normalize values after adding a pseudocount of 1.
-'Main' and 'fine' labels were manually assigned to each sample based on cell type as specified in DICE.
+Values were already TPM normalized, so the only additional processing done was to remove genes with no reads across samples, collapse duplicate genes, and log2 normalize values.
+'main' and 'fine' labels were manually assigned to each sample based on cell type as specified on the DICE website.
 
 # Data retrieval
 
-For now, we're going to retrieve the processed data from a Dropbox repository:
+First, we'll download the TPM normalized values from [DICE](https://dice-database.org/downloads). 
+Each cell type is in a different file with column names that overlap between them, so we will re-name the headers and create our label lists as we go.
 
-```{r retrieve_from_github}
-dataset <- "dice" 
-full.url <- "https://www.dropbox.com/s/qzh0k3g0ulihpyd/dice.rda?dl=1"
-
+```{r retrieve_from_dice}
 library(BiocFileCache)
-bfc <- BiocFileCache(ask=FALSE)
-ref <- bfcrpath(bfc, full.url)
-
-env <- new.env()
-load(ref, envir = env)
-ref.set <- get(dataset, envir = env)
-names(ref.set)
+url <- "https://dice-database.org/download/B_CELL_NAIVE_TPM.csv"
+bfc <- BiocFileCache(ask = FALSE)
+ref <- bfcrpath(bfc, url)
+set1 <- read.csv(ref, as.is = TRUE)
 ```
 
-These objects contain numerous nested lists, similar to Dvir's original reference datasets.
-We only need the matrix of normalized expression values and the labels assigned to each sample/cell.
+# Data processing
+We don't need the first two columns, but the third contains the gene symbols along with some other annotations we don't care about.
+We'll just extract the symbols.
 
-# Data extraction 
-
-Extract the normalized expression matrix:
-
-```{r get_logcounts}
-logcounts <- ref.set$data
-dim(logcounts)
+```{r drop_cols}
+set1 <- set1[-c(1:2)]
+set1[1] <- unlist(strsplit(set1$Additional_annotations, ";", fixed = TRUE))[c(TRUE, FALSE)]
 ```
 
-Extract cell labels, which represent the metadata:
+The sample columns names are just "TPM_1", "TPM_2", and so on, which will cause redundant column names that will interfere with the `SummarizedExperiment` creation.
+We will rename them based on the URL.
 
-```{r get_coldata}
+```{r rename_cols}
+base.name <- unlist(strsplit(url, "download/", fixed = TRUE))[2]
+base.name <- unlist(strsplit(base.name, "_TPM.csv", fixed = TRUE))[1]
+
+colnames(set1) <- gsub("TPM", base.name, colnames(set1))
+```
+
+DICE's data is spread among many files, so we can write a function to do the above processing for each and combine them before further work.
+
+```{r combine_files}
+CombineFiles <- function(urls) {
+	bfc <- BiocFileCache(ask = FALSE)
+	df <- NULL
+
+	for (f in urls) {
+		# Download and read file.
+		ref <- bfcrpath(bfc, f)
+		set1 <- read.csv(ref, as.is = TRUE)
+
+		# Drop unnecessary columns and parse gene symbols.
+		set1 <- set1[-c(1:2)]
+		set1[1] <- unlist(strsplit(set1$Additional_annotations, ";", fixed = TRUE))[c(TRUE, FALSE)]
+
+		# Rename columns.
+		base.name <- unlist(strsplit(f, "download/", fixed = TRUE))[2]
+		base.name <- unlist(strsplit(base.name, "_TPM.csv", fixed = TRUE))[1]
+		colnames(set1) <- gsub("TPM", base.name, colnames(set1))
+
+		# To help us create labels later.
+		print(paste0(base.name, " contains ", ncol(set1) - 1, " samples"))
+
+		# Add to the data.frame.
+		if (is.null(df)) {
+			df <- set1
+		} else {
+			set1[1] <- NULL
+			df <- cbind(df, set1)
+		}
+
+	}
+
+	return(df)
+}
+```
+
+And then run the function on a vector of the URLs.
+
+```{r run_func}
+urls <- c(
+		"https://dice-database.org/download/B_CELL_NAIVE_TPM.csv",
+		"https://dice-database.org/download/MONOCYTES_TPM.csv",
+		"https://dice-database.org/download/M2_TPM.csv",
+		"https://dice-database.org/download/NK_TPM.csv",
+		"https://dice-database.org/download/TREG_MEM_TPM.csv",
+		"https://dice-database.org/download/CD4_NAIVE_TPM.csv",
+		"https://dice-database.org/download/CD4_STIM_TPM.csv",
+		"https://dice-database.org/download/TREG_NAIVE_TPM.csv",
+		"https://dice-database.org/download/TFH_TPM.csv",
+		"https://dice-database.org/download/TH1_TPM.csv",
+		"https://dice-database.org/download/THSTAR_TPM.csv",
+		"https://dice-database.org/download/TH17_TPM.csv",
+		"https://dice-database.org/download/TH2_TPM.csv",
+		"https://dice-database.org/download/CD8_NAIVE_TPM.csv",
+		"https://dice-database.org/download/CD8_STIM_TPM.csv"
+		)
+
+dice <- CombineFiles(urls)
+```
+
+Genes with no reads in any samples don't provide any value for our purpose, so we will remove these.
+
+```{r drop_no_read_rows}
+dice <- dice[rowSums(dice[, 2:ncol(dice)]) != 0, ]
+```
+
+A small number of genes are duplicated, so those will be collapsed by keeping the instances with the highest median of reads across samples.
+
+```{r collapse_dup_genes}
+dice$med <- rowMedians(as.matrix(dice[, 2:ncol(dice)]))
+dice <- dice[order(dice[, 'Additional_annotations'], -dice[, 'med']),]
+dice <- dice[!duplicated(dice$Additional_annotations), ]
+row.names(dice) <- dice$Additional_annotations
+
+dice$Additional_annotations <- NULL
+dice$med <- NULL
+```
+
+Then we will log2 normalize after adding a pseudocount of 1.
+
+```{r log_normalize}
+dice <- dice + 1
+dice <- log2(dice)
+```
+
+# Label the samples
+We can now apply human-readable labels to each sample.
+Our print logs from the `CombineSamples` function provide the number of samples in each file, allowing us to create label vectors of the correct size.
+
+```{r create_metadata}
+# 'Main' labels first.
+b.cells <- rep("B cells", length.out = 106)
+monocytes <- rep("Monocytes", length.out = 211)
+nk <- rep("NK cells", length.out = 105)
+cd4.tcells <- rep("T cells, CD4+", length.out = 933)
+cd8.tcells <- rep("T cells, CD8+", length.out = 206)
+
+main <- c(b.cells, monocytes, nk, cd4.tcells, cd8.tcells)
+
+# Then 'fine' labels.
+b.naive <- rep("B cells, naive", length.out = 106)
+mono.cd14 <- rep("Monocytes, CD14+", length.out = 106)
+mono.cd16 <- rep("Monocytes, CD16+", length.out = 105)
+nk <- rep("NK cells", length.out = 105)
+t.mem.treg <- rep("T cells, CD4+, memory TREG", length.out = 104)
+t.cd4.naive <- rep("T cells, CD4+, naive", length.out = 103)
+t.cd4.naive.stim <- rep("T cells, CD4+, naive, stimulated", length.out = 102)
+t.cd4.naive.treg <- rep("T cells, CD4+, naive TREG", length.out = 104)
+t.cd4.tfh <- rep("T cells, CD4+, TFH", length.out = 104)
+t.cd4.th1 <- rep("T cells, CD4+, Th1", length.out = 104)
+t.cd4.th117 <- rep("T cells, CD4+, Th1_17", length.out = 104)
+t.cd4.th17 <- rep("T cells, CD4+, Th17", length.out = 104)
+t.cd4.th2 <- rep("T cells, CD4+, Th2", length.out = 104)
+t.cd8.naive <- rep("T cells, CD8+, naive", length.out = 104)
+t.cd8.naive.stim <- rep("T cells, CD8+, naive, stimulated", length.out = 102)
+
+fine <- c(b.naive, mono.cd14, mono.cd16, nk, t.mem.treg, t.cd4.naive, t.cd4.naive.stim, t.cd4.naive.treg,
+	t.cd4.tfh, t.cd4.th1, t.cd4.th117, t.cd4.th17, t.cd4.th2, t.cd8.naive, t.cd8.naive.stim)
+
+
+logcounts <- as.matrix(dice)
+
 library(S4Vectors)
 coldata <- DataFrame(row.names = colnames(logcounts),
-    label.main = ref.set$main_types,
-    label.fine = ref.set$types)
+                     label.main = main,
+                     label.fine = fine)
 ```
+
 
 # Saving to file
 
-Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
+Now the counts and metadata can be saved for upload to `r Biocpkg("ExperimentHub")`.
 
 ```{r save_for_ExpHub}
-path <- file.path("SingleR", dataset, "1.0.0")
+path <- file.path("SingleR", "dice", "1.0.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-## saving counts
 saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
-
-## saving metadata
 saveRDS(coldata, file = file.path(path, "coldata.rds"))
 ```
 

@@ -1,7 +1,7 @@
 ---
-title: "Obtaining reference data from Differentiation Map (DMAP)"
+title: "Obtaining reference data from Differentiation Map (GSE24759)"
 author: "Jared Andrews"
-date: "8/23/2019"
+date: "September 4th, 2019"
 output: 
   BiocStyle::html_document
 ---
@@ -13,11 +13,6 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 
 # Overview
 
-Dvir Aran's original `r Githubpkg("dviraran/SingleR")` github repository contains Robjects with **normalized expression values from reference data sets** such as those collected by Blueprint & Encode, the Human Primary Cell Atlas (HPCA), and the Immunological Genome Project (ImmGen). 
-I created several other reference datasets specifically for immune/hematopoietic cells.
-These expression data are based on bulk RNA-seq or microarrays from purified cell populations or single-cell RNA-seq of individual tissues.
-Every sample represents the transcriptome of a specific cell type; this data is therefore well suited to be used as a general training data set for the typical _SingleR_ analysis.
-
 This RNA microarray dataset was downloaded from [GEO24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759).
 Values were already RMA normalized. 
 The only additional processing done was to collapse probes to gene level values by keeping probes with the highest average across all samples.
@@ -25,55 +20,234 @@ The only additional processing done was to collapse probes to gene level values 
 
 # Data retrieval
 
-For now, we're going to retrieve the processed data from a Dropbox repository:
+First, we'll retrieve the normalized data from the GEO repository.
 
-```{r retrieve_from_github}
-dataset <- "dmap" 
-full.url <- "https://www.dropbox.com/s/fz118owqdm6bty2/dmap.rda?dl=1"
-
-library(BiocFileCache)
-bfc <- BiocFileCache(ask=FALSE)
-ref <- bfcrpath(bfc, full.url)
-
-env <- new.env()
-load(ref, envir = env)
-ref.set <- get(dataset, envir = env)
-names(ref.set)
+```{r retrieve_from_geo}
+library(GEOquery)
+gse24759 <- getGEO("GSE24759")
+logcounts <- gse24759$GSE24759_series_matrix.txt.gz@assayData$exprs
+logcounts <- as.data.frame(logcounts)
 ```
 
-These objects contain numerous nested lists, similar to Dvir's original reference datasets.
-We only need the matrix of normalized expression values and the labels assigned to each sample/cell.
+# Data processing
+The counts matrix has probes rather than gene symbols, so we need to get the appropriate gene symbols.
 
-# Data extraction 
-
-Extract the normalized expression matrix:
-
-```{r get_logcounts}
-logcounts <- ref.set$data
-dim(logcounts)
+```{r get_symbols}
+genes <- gse24759$GSE24759_series_matrix.txt.gz@featureData@data$`Gene Symbol`
+probes <- row.names(logcounts)
+mapper <- as.data.frame(cbind(genes, probes))
+logcounts$genes <- mapper$genes[match(rownames(logcounts), mapper$probes)]
+logcounts <- logcounts[,c(ncol(logcounts),1:(ncol(logcounts)-1))]
 ```
 
-Extract cell labels, which represent the metadata:
+Some probes don't have gene symbols, so we'll remove those rows.
 
-```{r get_coldata}
+```{r drop_empties}
+logcounts <- logcounts[!(logcounts$genes == ""),]
+logcounts <- logcounts[!(is.na(logcounts$genes)),]
+```
+
+Some genes have multiple probes, so we will collapse them to use the probe with the highest median signal across samples.
+
+```{r collapse_dup_genes}
+logcounts$med <- rowMedians(as.matrix(logcounts[, 2:ncol(logcounts)]))
+logcounts <- logcounts[order(logcounts[, 'genes'], -logcounts[, 'med']),]
+logcounts <- logcounts[!duplicated(logcounts$genes), ]
+row.names(logcounts) <- logcounts$genes
+
+logcounts$genes <- NULL
+logcounts$med <- NULL
+```
+
+# Label the samples
+We can now apply human-readable labels to each sample.
+Our print logs from the `CombineSamples` function provide the number of samples in each file, allowing us to create label vectors of the correct size.
+
+```{r create_metadata}
+main <- c(
+	"Basophils", "Basophils", "Basophils", "Basophils",
+	"Basophils", "Basophils", "B cells", "B cells",
+	"B cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "CMPs", "CMPs",
+	"CMPs", "CMPs", "Dendritic cells", "Dendritic cells",
+	"Dendritic cells", "Dendritic cells", "Dendritic cells", "Dendritic cells",
+	"Dendritic cells", "Dendritic cells", "Dendritic cells", "Dendritic cells",
+	"Eosinophils", "Eosinophils", "Eosinophils", "Eosinophils",
+	"Eosinophils", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "Erythroid cells", "Erythroid cells",
+	"Erythroid cells", "Erythroid cells", "GMPs", "GMPs",
+	"GMPs", "GMPs", "Granulocytes", "Granulocytes",
+	"Granulocytes", "Granulocytes", "Granulocytes", "Granulocytes",
+	"Granulocytes", "Granulocytes", "Granulocytes", "Granulocytes",
+	"Granulocytes", "Granulocytes", "Granulocytes", "HSCs",
+	"HSCs", "HSCs", "HSCs", "HSCs",
+	"HSCs", "HSCs", "HSCs", "HSCs",
+	"HSCs", "HSCs", "HSCs", "HSCs",
+	"HSCs", "Megakaryocytes", "Megakaryocytes", "Megakaryocytes",
+	"Megakaryocytes", "Megakaryocytes", "Megakaryocytes", "Megakaryocytes",
+	"Megakaryocytes", "Megakaryocytes", "Megakaryocytes", "Megakaryocytes",
+	"Megakaryocytes", "MEPs", "MEPs", "MEPs",
+	"MEPs", "MEPs", "MEPs", "MEPs",
+	"MEPs", "MEPs", "Monocytes", "Monocytes",
+	"Monocytes", "Monocytes", "Monocytes", "Monocytes",
+	"Monocytes", "Monocytes", "Monocytes", "NK cells",
+	"NK cells", "NK cells", "NK cells", "NK cells",
+	"NK cells", "NK cells", "NK cells", "NK cells",
+	"NK cells", "NK cells", "NK cells", "NK cells",
+	"NK cells", "NK T cells", "NK T cells", "NK T cells",
+	"NK T cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "B cells", "B cells",
+	"B cells", "B cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD8+ T cells", "CD8+ T cells",
+	"CD8+ T cells", "CD8+ T cells", "CD4+ T cells", "CD4+ T cells",
+	"CD4+ T cells", "CD4+ T cells", "CD4+ T cells", "CD4+ T cells",
+	"CD4+ T cells", "CD4+ T cells", "CD4+ T cells", "CD4+ T cells",
+	"CD4+ T cells", "CD4+ T cells", "CD4+ T cells", "CD4+ T cells",
+	"CD4+ T cells", "CD4+ T cells", "CD4+ T cells", "CD4+ T cells",
+	"CD4+ T cells", "CD4+ T cells", "CD4+ T cells"
+)
+
+# Then 'fine' labels.
+fine <- c(
+	"Basophils", "Basophils",  
+	"Basophils", "Basophils",  
+	"Basophils", "Basophils",  
+	"Naïve B cells", "Naïve B cells",    
+	"Naïve B cells", "Naïve B cells",    
+	"Naïve B cells", "Mature B-cells class able to switch",
+	"Mature B-cells class able to switch", "Mature B-cells class able to switch",
+	"Mature B-cells class able to switch", "Mature B-cells class able to switch",
+	"Mature B-cells", "Mature B-cells",   
+	"Mature B-cells", "Mature B-cells",   
+	"Mature B-cells", "Mature B-cells class switched",
+	"Mature B-cells class switched", "Mature B-cells class switched",
+	"Mature B-cells class switched", "Mature B-cells class switched",
+	"Common myeloid progenitors", "Common myeloid progenitors",   
+	"Common myeloid progenitors", "Common myeloid progenitors",   
+	"Plasmacytoid Dendritic Cells", "Plasmacytoid Dendritic Cells", 
+	"Plasmacytoid Dendritic Cells", "Plasmacytoid Dendritic Cells", 
+	"Plasmacytoid Dendritic Cells", "Myeloid Dendritic Cells",
+	"Myeloid Dendritic Cells", "Myeloid Dendritic Cells",
+	"Myeloid Dendritic Cells", "Myeloid Dendritic Cells",
+	"Eosinophils", "Eosinophils",
+	"Eosinophils", "Eosinophils",
+	"Eosinophils", "Erythroid_CD34+ CD71+ GlyA-",  
+	"Erythroid_CD34+ CD71+ GlyA-", "Erythroid_CD34+ CD71+ GlyA-",  
+	"Erythroid_CD34+ CD71+ GlyA-", "Erythroid_CD34+ CD71+ GlyA-",  
+	"Erythroid_CD34+ CD71+ GlyA-", "Erythroid_CD34+ CD71+ GlyA-",  
+	"Erythroid_CD34- CD71+ GlyA-", "Erythroid_CD34- CD71+ GlyA-",  
+	"Erythroid_CD34- CD71+ GlyA-", "Erythroid_CD34- CD71+ GlyA-",  
+	"Erythroid_CD34- CD71+ GlyA-", "Erythroid_CD34- CD71+ GlyA-",  
+	"Erythroid_CD34- CD71+ GlyA-", "Erythroid_CD34- CD71+ GlyA+",  
+	"Erythroid_CD34- CD71+ GlyA+", "Erythroid_CD34- CD71+ GlyA+",  
+	"Erythroid_CD34- CD71+ GlyA+", "Erythroid_CD34- CD71+ GlyA+",  
+	"Erythroid_CD34- CD71+ GlyA+", "Erythroid_CD34- CD71lo GlyA+", 
+	"Erythroid_CD34- CD71lo GlyA+", "Erythroid_CD34- CD71lo GlyA+", 
+	"Erythroid_CD34- CD71lo GlyA+", "Erythroid_CD34- CD71lo GlyA+", 
+	"Erythroid_CD34- CD71lo GlyA+", "Erythroid_CD34- CD71lo GlyA+", 
+	"Erythroid_CD34- CD71- GlyA+", "Erythroid_CD34- CD71- GlyA+",  
+	"Erythroid_CD34- CD71- GlyA+", "Erythroid_CD34- CD71- GlyA+",  
+	"Erythroid_CD34- CD71- GlyA+", "Erythroid_CD34- CD71- GlyA+",  
+	"Granulocyte/monocyte progenitors", "Granulocyte/monocyte progenitors",   
+	"Granulocyte/monocyte progenitors", "Granulocyte/monocyte progenitors",   
+	"Colony Forming Unit-Granulocytes", "Colony Forming Unit-Granulocytes",   
+	"Colony Forming Unit-Granulocytes", "Colony Forming Unit-Granulocytes",   
+	"Colony Forming Unit-Granulocytes", "Granulocyte (Neutrophilic Metamyelocytes)",
+	"Granulocyte (Neutrophilic Metamyelocytes)", "Granulocyte (Neutrophilic Metamyelocytes)",
+	"Granulocyte (Neutrophilic Metamyelocytes)", "Granulocyte (Neutrophils)",    
+	"Granulocyte (Neutrophils)", "Granulocyte (Neutrophils)",    
+	"Granulocyte (Neutrophils)", "Hematopoietic stem cells_CD133+ CD34dim",  
+	"Hematopoietic stem cells_CD133+ CD34dim", "Hematopoietic stem cells_CD133+ CD34dim",  
+	"Hematopoietic stem cells_CD133+ CD34dim", "Hematopoietic stem cells_CD133+ CD34dim",  
+	"Hematopoietic stem cells_CD133+ CD34dim", "Hematopoietic stem cells_CD133+ CD34dim",  
+	"Hematopoietic stem cells_CD133+ CD34dim", "Hematopoietic stem cells_CD133+ CD34dim",  
+	"Hematopoietic stem cells_CD133+ CD34dim", "Hematopoietic stem cell_CD38- CD34+",
+	"Hematopoietic stem cell_CD38- CD34+", "Hematopoietic stem cell_CD38- CD34+",
+	"Hematopoietic stem cell_CD38- CD34+", "Colony Forming Unit-Megakaryocytic", 
+	"Colony Forming Unit-Megakaryocytic", "Colony Forming Unit-Megakaryocytic", 
+	"Colony Forming Unit-Megakaryocytic", "Colony Forming Unit-Megakaryocytic", 
+	"Megakaryocytes", "Megakaryocytes",   
+	"Megakaryocytes", "Megakaryocytes",   
+	"Megakaryocytes", "Megakaryocytes",   
+	"Megakaryocytes", "Megakaryocyte/erythroid progenitors",
+	"Megakaryocyte/erythroid progenitors", "Megakaryocyte/erythroid progenitors",
+	"Megakaryocyte/erythroid progenitors", "Megakaryocyte/erythroid progenitors",
+	"Megakaryocyte/erythroid progenitors", "Megakaryocyte/erythroid progenitors",
+	"Megakaryocyte/erythroid progenitors", "Megakaryocyte/erythroid progenitors",
+	"Colony Forming Unit-Monocytes", "Colony Forming Unit-Monocytes",
+	"Colony Forming Unit-Monocytes", "Colony Forming Unit-Monocytes",
+	"Monocytes", "Monocytes",  
+	"Monocytes", "Monocytes",  
+	"Monocytes", "Mature NK cells_CD56- CD16+ CD3-",   
+	"Mature NK cells_CD56- CD16+ CD3-", "Mature NK cells_CD56- CD16+ CD3-",   
+	"Mature NK cells_CD56- CD16+ CD3-", "Mature NK cells_CD56+ CD16+ CD3-",   
+	"Mature NK cells_CD56+ CD16+ CD3-", "Mature NK cells_CD56+ CD16+ CD3-",   
+	"Mature NK cells_CD56+ CD16+ CD3-", "Mature NK cells_CD56+ CD16+ CD3-",   
+	"Mature NK cells_CD56- CD16- CD3-", "Mature NK cells_CD56- CD16- CD3-",   
+	"Mature NK cells_CD56- CD16- CD3-", "Mature NK cells_CD56- CD16- CD3-",   
+	"Mature NK cells_CD56- CD16- CD3-", "NK T cells", 
+	"NK T cells", "NK T cells", 
+	"NK T cells", "Early B-cells",    
+	"Early B-cells", "Early B-cells",    
+	"Early B-cells", "Pro B-cells",
+	"Pro B-cells", "Pro B-cells",
+	"Pro B-cells", "Pro B-cells",
+	"CD8+ Effector Memory RA", "CD8+ Effector Memory RA",
+	"CD8+ Effector Memory RA", "CD8+ Effector Memory RA",
+	"Naive CD8+ T-cells", "Naive CD8+ T-cells",     
+	"Naive CD8+ T-cells", "Naive CD8+ T-cells",     
+	"Naive CD8+ T-cells", "Naive CD8+ T-cells",     
+	"Naive CD8+ T-cells", "CD8+ Effector Memory",   
+	"CD8+ Effector Memory", "CD8+ Effector Memory",   
+	"CD8+ Effector Memory", "CD8+ Effector Memory",   
+	"CD8+ Effector Memory", "CD8+ Central Memory",   
+	"CD8+ Central Memory", "CD8+ Central Memory",    
+	"CD8+ Central Memory", "CD8+ Central Memory",    
+	"CD8+ Central Memory", "CD8+ Central Memory",    
+	"Naive CD4+ T-cells", "Naive CD4+ T-cells",     
+	"Naive CD4+ T-cells", "Naive CD4+ T-cells",     
+	"Naive CD4+ T-cells", "Naive CD4+ T-cells",     
+	"Naive CD4+ T-cells", "CD4+ Effector Memory",  
+	"CD4+ Effector Memory", "CD4+ Effector Memory",   
+	"CD4+ Effector Memory", "CD4+ Effector Memory",   
+	"CD4+ Effector Memory", "CD4+ Effector Memory",   
+	"CD4+ Central Memory", "CD4+ Central Memory",    
+	"CD4+ Central Memory", "CD4+ Central Memory",    
+	"CD4+ Central Memory", "CD4+ Central Memory",    
+	"CD4+ Central Memory"
+)
+
+logcounts <- as.matrix(logcounts)
+
 library(S4Vectors)
 coldata <- DataFrame(row.names = colnames(logcounts),
-    label.main = ref.set$main_types,
-    label.fine = ref.set$types)
+                     label.main = main,
+                     label.fine = fine)
 ```
+
 
 # Saving to file
 
-Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
+Now the counts and metadata can be saved for upload to `r Biocpkg("ExperimentHub")`.
 
 ```{r save_for_ExpHub}
-path <- file.path("SingleR", dataset, "1.0.0")
+path <- file.path("SingleR", "dmap", "1.0.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-## saving counts
 saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
-
-## saving metadata
 saveRDS(coldata, file = file.path(path, "coldata.rds"))
 ```
 

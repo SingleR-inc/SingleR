@@ -1,7 +1,7 @@
 ---
 title: "Obtaining reference data from GSE107011"
 author: "Jared Andrews"
-date: "8/28/2019"
+date: "September 4th, 2019"
 output: 
   BiocStyle::html_document
 ---
@@ -55,7 +55,7 @@ res <- res[!(res$hgnc_symbol == ""),]
 GSE107011 <- GSE107011[GSE107011$X %in% res$ensembl_gene_id_version, ]
 
 # Assign symbols.
-GSE107011$X <- n.res$hgnc_symbol[match(GSE107011$X, n.res$ensembl_gene_id_version)]
+GSE107011$X <- res$hgnc_symbol[match(GSE107011$X, res$ensembl_gene_id_version)]
 ```
 
 Genes with no reads in any samples don't provide any value for our purpose, so we will remove those as well.
@@ -143,7 +143,7 @@ fine <- c('Tcell.CD8.naive', 'Tcell.CD8.CentralMemory', 'Tcell.CD8.EffectorMemor
           'Monocyte.Int', 'Monocyte.NonClassical', 'NK', 'Dendritic.Plasmacytoid', 
           'Dendritic.Myeloid', 'Neutrophil', 'Basophil')
 
-logcounts <- GSE107011
+logcounts <- as.matrix(GSE107011)
 
 library(S4Vectors)
 coldata <- DataFrame(row.names = colnames(logcounts),

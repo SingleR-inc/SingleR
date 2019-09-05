@@ -13,7 +13,7 @@ df <- data.frame(
     Coordinate_1_based=NA, #TRUE, FALSE, NA
     DataProvider="DICE",
     Maintainer="Jared Andrews <jared.andrews@wustl.edu>",
-    RDataClass="data.frame", # R / Bioconductor class the data are stored in, e.g., GRanges, SummarizedExperiment, ExpressionSet etc.
+    RDataClass="matrix", # R / Bioconductor class the data are stored in, e.g., GRanges, SummarizedExperiment, ExpressionSet etc.
     DispatchClass="Rds", # Determines how data are loaded into R.
     stringsAsFactors = FALSE
 )
