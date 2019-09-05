@@ -8,7 +8,7 @@ author:
   affiliation: Applied Bioinformatics Core, Weill Cornell Medicine
 - name: Daniel Bunis
   affiliation: Bakar Computational Health Sciences Institute, University of California San Francisco, San Francisco, CA
-date: "Revised: September 3, 2019"
+date: "Revised: September 4th, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true

@@ -1,7 +1,9 @@
 ---
 title: "Obtaining reference data from Differentiation Map (GSE24759)"
-author: "Jared Andrews"
-date: "September 4th, 2019"
+author: 
+- name: Jared M. Andrews
+  affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
+date: "Revised: September 4th, 2019"
 output: 
   BiocStyle::html_document
 ---
