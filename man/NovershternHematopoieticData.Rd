@@ -41,9 +41,9 @@ Samples were additionally annotated to 38 fine cell types:
 \itemize{
     \item Basophils
     \item Naive B cells
-    \item Mature B-cells class able to switch
-    \item Mature B-cells
-    \item Mature B-cells class switched
+    \item Mature B cells class able to switch
+    \item Mature B cells
+    \item Mature B cells class switched
     \item Common myeloid progenitors
     \item Plasmacytoid Dendritic Cells
     \item Myeloid Dendritic Cells
@@ -68,13 +68,13 @@ Samples were additionally annotated to 38 fine cell types:
     \item Mature NK cells_CD56+ CD16+ CD3-
     \item Mature NK cells_CD56- CD16- CD3-
     \item NK T cells
-    \item Early B-cells
-    \item Pro B-cells
+    \item Early B cells
+    \item Pro B cells
     \item CD8+ Effector Memory RA
-    \item Naive CD8+ T-cells
+    \item Naive CD8+ T cells
     \item CD8+ Effector Memory
     \item CD8+ Central Memory
-    \item Naive CD4+ T-cells
+    \item Naive CD4+ T cells
     \item CD4+ Effector Memory
     \item CD4+ Central Memory
 }
