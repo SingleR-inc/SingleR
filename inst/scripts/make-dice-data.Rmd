@@ -139,7 +139,7 @@ dice <- dice + 1
 dice <- log2(dice)
 ```
 
-# Label the samples
+# Sample labelling
 We can now apply human-readable labels to each sample.
 Our print logs from the `CombineSamples` function provide the number of samples in each file, allowing us to create label vectors of the correct size.
 

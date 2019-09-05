@@ -17,14 +17,13 @@ of sorted immune cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011}{GSE107011}.
 }
 \details{
-The dataset entails 114 human RNA-seq samples annotated to 11 main cell types: 
+The dataset entails 114 human RNA-seq samples annotated to 10 main cell types: 
 \itemize{
     \item CD8+ T cells
     \item T cells
     \item CD4+ T cells
     \item Progenitors
     \item B cells
-    \item Plasmablasts
     \item Monocytes
     \item NK cells
     \item Dendritic cells
@@ -34,35 +33,35 @@ The dataset entails 114 human RNA-seq samples annotated to 11 main cell types:
 
 Samples were additionally annotated to 29 fine cell types:
 \itemize{
-    \item Tcell.CD8.naive
-    \item Tcell.CD8.CentralMemory
-    \item Tcell.CD8.EffectorMemory
-    \item Tcell.CD8.TerminalEffector
-    \item Tcell.MAIT
-    \item Tcell.VD2pos.gd
-    \item Tcell.VD2neg.gd
-    \item Tcell.FollicularHelper
-    \item Tcell.Treg
-    \item Tcell.Th1
-    \item Tcell.Th1.Th17
-    \item Tcell.Th17
-    \item Tcell.Th2
-    \item Tcell.CD4.naive
-    \item Tcell.CD4.TerminalEffector
-    \item Progenitor
-    \item Bcell.naive
-    \item Bcell.NonSwitchedMemory
-    \item Bcell.Exhausted
-    \item Bcell.SwitchedMemory
-    \item Plasmablast
-    \item Monocyte.Classical
-    \item Monocyte.Int
-    \item Monocyte.NonClassical
-    \item NK
-    \item Dendritic.Plasmacytoid
-    \item Dendritic.Myeloid
-    \item Neutrophil
-    \item Basophil
+    \item Naive CD8 T cells
+    \item Central memory CD8 T cells
+    \item Effector memory CD8 T cells
+    \item Terminal effector CD8 T cells
+    \item MAIT cells
+    \item Vd2 gd T cells
+    \item Non-Vd2 gd T cells
+    \item Follicular helper T cells
+    \item T regulatory cells
+    \item Th1 cells
+    \item Th1/Th17 cells
+    \item Th17 cells
+    \item Th2 cells
+    \item Naive CD4 T cells
+    \item Terminal effector CD4 T cells
+    \item Progenitor cells
+    \item Naive B cells
+    \item Non-switched memory B cells
+    \item Exhausted B cells
+    \item Switched memory B cells
+    \item Plasmablasts
+    \item Classical monocytes
+    \item Intermediate monocytes
+    \item Non classical monocytes
+    \item Natural killer cells
+    \item Plasmacytoid dendritic cells
+    \item Myeloid dendritic cells
+    \item Low-density neutrophils
+    \item Low-density basophils
 }
 }
 \examples{
