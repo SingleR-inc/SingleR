@@ -11,7 +11,7 @@ df <- data.frame(
     Species="Homo sapiens",
     TaxonomyId="9606",
     Coordinate_1_based=NA,
-    DataProvider="Noa Novershtern",
+    DataProvider="GEO",
     Maintainer="Jared Andrews",
     RDataClass=c("matrix", "DataFrame"), 
     DispatchClass="Rds", # Determines how data are loaded into R.
