@@ -73,7 +73,7 @@ A small number of genes are duplicated, so those will be collapsed by keeping th
 ```{r collapse_dup_genes}
 library(matrixStats)
 mat <- mat[order(rownames(mat), -rowMedians(mat)),]
-mat <- mat[!is.duplicated(rownames(mat)),]
+mat <- mat[!duplicated(rownames(mat)),]
 dim(mat)
 ```
 
@@ -149,7 +149,7 @@ Now the counts and metadata can be saved for upload to `r Biocpkg("ExperimentHub
 path <- file.path("SingleR", "monaco_immune", "1.0.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-saveRDS(mat, file = file.path(path, "logcounts.rds"))
+saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
 saveRDS(coldata, file = file.path(path, "coldata.rds"))
 ```
 
