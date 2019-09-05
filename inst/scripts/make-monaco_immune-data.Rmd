@@ -72,11 +72,8 @@ A small number of genes are duplicated, so those will be collapsed by keeping th
 
 ```{r collapse_dup_genes}
 library(matrixStats)
-meds <- rowMedians(mat)
-o <- order(rownames(mat), -meds)
-keep <- logical(length(o))
-keep[o] <- !duplicated(rownames(mat)[o])
-mat <- mat[keep,]
+mat <- mat[order(rownames(mat), -rowMedians(mat)),]
+mat <- mat[!is.duplicated(rownames(mat)),]
 dim(mat)
 ```
 
