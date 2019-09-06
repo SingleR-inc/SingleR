@@ -5,7 +5,7 @@ Date: 2019-09-05
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
-    person("Jared", "Andrews", email = "jared.andrews@wustl.edu", role="ctb"),
+    person("Jared", "Andrews", email = "jared.andrews07@gmail.com", role="ctb"),
     person("Friederike", "Dündar", email = "frd2007@med.cornell.edu", role="ctb"))
 Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell

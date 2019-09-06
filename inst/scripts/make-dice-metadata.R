@@ -12,7 +12,7 @@ df <- data.frame(
     TaxonomyId="9606",
     Coordinate_1_based=NA, 
     DataProvider="DICE",
-    Maintainer="Jared Andrews <jared.andrews@wustl.edu>",
+    Maintainer="Jared Andrews <jared.andrews07@gmail.com>",
     RDataClass=c("matrix", "DataFrame"), 
     DispatchClass="Rds", 
     stringsAsFactors = FALSE
