@@ -97,7 +97,9 @@ summary(pruneScores(pred, min.diff.next=0.1))
 
 }
 \seealso{
-\code{\link{classifySingleR}}, to generate \code{scores}.
+\code{\link{classifySingleR}}, to generate \code{results}.
+
+\code{\link{getDeltaFromMedian}}, to compute the per-cell deltas.
 }
 \author{
 Aaron Lun and Daniel Bunis
