@@ -13,7 +13,7 @@ df <- data.frame(
     Coordinate_1_based=NA, 
     DataProvider="Dvir Aran",
     Maintainer="Friederike Duendar <frd2007@med.cornell.edu>",
-    RDataClass=c("matrix", "DataFrame"),
+    RDataClass=c("matrix", "DFrame"),
     DispatchClass="Rds", 
     stringsAsFactors = FALSE
 )
