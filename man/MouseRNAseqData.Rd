@@ -20,7 +20,7 @@ This dataset was contributed by the Benayoun Lab that identified,
 downloaded and processed data sets on GEO that corresponded to sorted cell
 types (Benayoun et al., 2019).
 
-The dataset entails 358 mouse RNA-seq samples annotated to 18 main cell types: 
+The dataset contains 358 mouse RNA-seq samples annotated to 18 main cell types: 
 \itemize{
     \item Adipocytes
     \item Astrocytes

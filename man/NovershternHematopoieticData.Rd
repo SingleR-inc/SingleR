@@ -2,7 +2,7 @@
 % Please edit documentation in R/datasets.R
 \name{NovershternHematopoieticData}
 \alias{NovershternHematopoieticData}
-\title{Obtain human bulk microarray expression data of sorted cell populations from GSE24759 (DMAP)}
+\title{Obtain bulk microarray expression for sorted hematopoietic cells}
 \usage{
 NovershternHematopoieticData()
 }
@@ -17,7 +17,7 @@ of sorted hematopoietic cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759}{GSE24759}.
 }
 \details{
-The dataset entails 211 human microarray samples annotated to 16 main cell types: 
+The dataset contains 211 human microarray samples annotated to 16 main cell types: 
 \itemize{
     \item Basophils
     \item B cells

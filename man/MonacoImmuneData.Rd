@@ -2,7 +2,7 @@
 % Please edit documentation in R/datasets.R
 \name{MonacoImmuneData}
 \alias{MonacoImmuneData}
-\title{Obtain human bulk RNA-seq data of sorted cell populations from GSE107011}
+\title{Obtain bulk RNA-seq data of sorted human immune cells}
 \usage{
 MonacoImmuneData()
 }
@@ -17,7 +17,7 @@ of sorted immune cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011}{GSE107011}.
 }
 \details{
-The dataset entails 114 human RNA-seq samples annotated to 10 main cell types: 
+The dataset contains 114 human RNA-seq samples annotated to 10 main cell types: 
 \itemize{
     \item CD8+ T cells
     \item T cells
