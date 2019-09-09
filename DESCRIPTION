@@ -22,7 +22,6 @@ Imports:
     stats,
     utils,
     Rcpp,
-    BiocFileCache,
     ExperimentHub
 LinkingTo:
     Rcpp,
