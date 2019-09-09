@@ -65,7 +65,9 @@
 #' @author Aaron Lun and Daniel Bunis
 #'
 #' @seealso
-#' \code{\link{classifySingleR}}, to generate \code{scores}.
+#' \code{\link{classifySingleR}}, to generate \code{results}.
+#'
+#' \code{\link{getDeltaFromMedian}}, to compute the per-cell deltas.
 #' 
 #' @examples
 #' # Running the SingleR() example.
@@ -84,14 +86,9 @@
 #' summary(pruneScores(pred, min.diff.next=0.1))
 #' 
 #' @export
-#' @importFrom DelayedMatrixStats rowMedians 
-#' @importFrom DelayedArray DelayedArray rowMaxs
 #' @importFrom stats median mad
 pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0, get.thresholds=FALSE) {
-    scores <- results$scores
-    labels <- results$labels
-    assigned <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
-    delta <- assigned - rowMedians(DelayedArray(scores))
+    delta <- getDeltaFromMedian(results)
     keep <- delta >= min.diff.med
 
     tune.scores <- results$tuning.scores
@@ -100,7 +97,9 @@ pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0, ge
     }
 
     # Ignoring the fine-tuning when allocating cells to labels.
+    labels <- results$labels
     by.label <- split(which(keep), labels[keep])
+
     thresholds <- list()
     for (l in names(by.label)) {
         idx <- by.label[[l]]
