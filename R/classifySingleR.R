@@ -186,7 +186,33 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
 
 #' @importFrom BiocNeighbors queryKNN
 .find_nearest_quantile <- function(ranked, index, quantile) {
-    k <- max(1, round(nrow(index) * (1-quantile)))
-    nn.d <- queryKNN(query=ranked, k=k, BNINDEX=index, get.index=FALSE, get.distance=FALSE)
-    1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
+    # We want to find the cells with correlations just before and after 'quantile'.
+    # Given correlations 'rho', the quantile value for each observation is:
+    # 
+    #     (seq_along(rho)-1)/(length(rho)-1)
+    #
+    # This means that we can just find the floor and ceiling of:
+    #
+    #     quantile * (length(rho) -1) + 1
+    #
+    # to obtain the relevant values. Specifically, we consider the floor 
+    # as this represents the furthest neighbor in terms of distance. We
+    # then convert this to the 'k' in a k-nearest neighbor search.
+    denom <- nrow(index) - 1L
+    qn <- as.integer(denom * quantile) + 1L
+    k <- max(1L, nrow(index) - qn + 1L)
+
+    nn.d <- queryKNN(query=ranked, k=k, last=2, BNINDEX=index, get.index=FALSE, warn.ties=FALSE)$distance
+    rho <- 1 - 2*nn.d^2 # see https://arxiv.org/abs/1208.3145
+
+    if (k==1) {
+        drop(rho)
+    } else {
+        # Linear interpolation between the floor/ceiling elements to obtain the
+        # quantile. The right weight is that of the higher correlation, and the
+        # left weight is that of the lower correlation. 
+        rightweight <- quantile - (qn-1)/denom
+        furtherweight <- qn/denom - quantile
+        (rho[,1] * rightweight + rho[,2] * furtherweight)/(rightweight + furtherweight)
+    }
 }

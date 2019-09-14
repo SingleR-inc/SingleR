@@ -15,8 +15,7 @@ test_that("correlations are computed correctly by classifySingleR", {
 
     for (x in seq_along(y)) {
         ref <- cor(assay(training)[genes,y[[x]]], assay(test)[genes,], method="spearman")
-        k <- max(1, round((1-Q) * nrow(ref)))
-       collected[,x] <- apply(ref, 2, FUN=function(x) sort(x, decreasing=TRUE)[k])
+        collected[,x] <- apply(ref, 2, FUN=quantile, prob=Q)
     }
 
     # Checking that they're the same.

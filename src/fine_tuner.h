@@ -100,12 +100,27 @@ public:
                     const double tmp=scaled_left[j] - scaled_right[j];
                     dist+=tmp*tmp;
                 }
-                all_correlations.push_back(-(1 - 2*dist)); // -1, for sorting purposes.
+                all_correlations.push_back(1 - 2*dist);
             }
 
-            const int k=std::max(1, static_cast<int>((1-quantile) * ncells + 0.5)) - 1;
-            std::nth_element(all_correlations.begin(), all_correlations.begin()+k, all_correlations.end());
-            new_scores.push_back(-all_correlations[k]);
+            if (quantile==1) {
+                new_scores.push_back(*std::max_element(all_correlations.begin(), all_correlations.end()));
+            } else {
+                // See logic in .find_nearest_quantile().
+                const double denom=ncells-1;
+                const size_t qn=std::floor(denom * quantile) + 1;
+
+                // Do NOT be tempted to do the second nth_element with the end at end()+qn;
+                // this does not handle ties properly.
+                std::nth_element(all_correlations.begin(), all_correlations.begin()+qn, all_correlations.end());
+                const double rightval=all_correlations[qn];
+                std::nth_element(all_correlations.begin(), all_correlations.begin()+qn-1, all_correlations.end());
+                const double leftval=all_correlations[qn-1];
+
+                const double rightweight=quantile - ((qn-1)/denom);
+                const double leftweight=(qn/denom) - quantile;
+                new_scores.push_back((rightval * rightweight + leftval * leftweight)/(rightweight + leftweight));
+            }
         }
     }
 private:
