@@ -110,10 +110,13 @@ public:
                 const double denom=ncells-1;
                 const size_t qn=std::floor(denom * quantile) + 1;
 
-                // Do NOT be tempted to do the second nth_element with the end at end()+qn;
-                // this does not handle ties properly.
+                // Technically, I should do (qn-1)+1, with the first -1 being to get zero-indexed values
+                // and the second +1 to obtain the ceiling. But they cancel out, so I won't.
                 std::nth_element(all_correlations.begin(), all_correlations.begin()+qn, all_correlations.end());
                 const double rightval=all_correlations[qn];
+
+                // Do NOT be tempted to do the second nth_element with the end at end()+qn;
+                // this does not handle ties properly.
                 std::nth_element(all_correlations.begin(), all_correlations.begin()+qn-1, all_correlations.end());
                 const double leftval=all_correlations[qn-1];
 
