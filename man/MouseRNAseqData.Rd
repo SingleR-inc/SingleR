@@ -20,10 +20,27 @@ This dataset was contributed by the Benayoun Lab that identified,
 downloaded and processed data sets on GEO that corresponded to sorted cell
 types (Benayoun et al., 2019).
 
-The dataset entails 358 mouse RNA-seq samples annotated to 18 main cell types: 
-Adipocytes, Astrocytes, B cells, Cardiomyocytes, Dendritic cells, Endothelial 
-cells, Epithelial cells, Erythrocytes, Fibroblasts, Granulocytes, Hepatocytes,
-Macrophages, Microglia, Monocytes, Neurons, NK cells, Oligodendrocytes, T cells.
+The dataset contains 358 mouse RNA-seq samples annotated to 18 main cell types: 
+\itemize{
+    \item Adipocytes
+    \item Astrocytes
+    \item B cells 
+    \item Cardiomyocytes
+    \item Dendritic cells
+    \item Endothelial cells
+    \item Epithelial cells
+    \item Erythrocytes
+    \item Fibroblasts
+    \item Granulocytes
+    \item Hepatocytes
+    \item Macrophages
+    \item Microglia
+    \item Monocytes
+    \item Neurons
+    \item NK cells
+    \item Oligodendrocytes
+    \item T cells
+}
 }
 \examples{
 ref.se <- MouseRNAseqData()

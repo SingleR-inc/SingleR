@@ -55,6 +55,12 @@ coldata <- DataFrame(row.names = colnames(logcounts),
     label.fine = ref.set$types)
 ```
 
+Some fixing of the main labels is required for the neutrophils.
+
+```{r}
+coldata$label.main[coldata$label.main=="Neutrophil"] <- "Neutrophils"
+```
+
 # Saving to file
 
 Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.

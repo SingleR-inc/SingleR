@@ -9,13 +9,13 @@
 #' This should have the same rows as or a subset of the rows in \code{test}.
 #'
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param labels A character vector or factor of known labels for all cells in \code{ref}.
+#' @param labels A character vector or factor of known labels for all samples in \code{ref}.
 #' @param method String specifying whether annotation should be performed on single cells in \code{test},
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
 #' Only used if \code{method="cluster"}.
 #' @param genes,sd.thresh Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.
-#' @param quantile,fine.tune,tune.thresh Further arguments to pass to \code{\link{classifySingleR}}.
+#' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \linkS4class{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
@@ -34,6 +34,8 @@
 #'
 #' The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
 #' If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
+#'
+#' \code{ref} can contain both single-cell or bulk data, but in the case of the former, read the Note in \code{?\link{trainSingleR}}.
 #' 
 #' @references
 #' Aran D, Looney AP, Liu L et al. (2019).
@@ -42,9 +44,9 @@
 #'
 #' @author Aaron Lun, based on code by Dvir Aran.
 #' @examples
-#' ###########################################
-#' ## Mocking up some example training data ##
-#' ###########################################
+#' ##############################
+#' ## Mocking up training data ##
+#' ##############################
 #'
 #' Ngroups <- 5
 #' Ngenes <- 1000
@@ -52,19 +54,20 @@
 #' means[1:900,] <- 0
 #' colnames(means) <- LETTERS[1:5]
 #'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+#' g <- rep(LETTERS[1:5], each=4)
+#' ref <- SummarizedExperiment(
+#'     list(counts=matrix(rpois(1000*length(g), 
+#'         lambda=10*2^means[,g]), ncol=length(g))),
 #'     colData=DataFrame(label=g)
 #' )
+#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
 #' 
-#' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
-#' sce <- scater::logNormCounts(sce)
+#' ref <- scater::logNormCounts(ref)
+#' trained <- trainSingleR(ref, ref$label)
 #'
-#' ##################################################
-#' ## Mocking up some test data for classification ##
-#' ##################################################
+#' ###############################
+#' ## Mocking up some test data ##
+#' ###############################
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
@@ -72,7 +75,7 @@
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
-#'
+#' 
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 #' test <- scater::logNormCounts(test)
 #' 
@@ -80,10 +83,10 @@
 #' ## Performing classification ##
 #' ###############################
 #' 
-#' pred <- SingleR(test, sce, labels=sce$label)
+#' pred <- SingleR(test, ref, labels=ref$label)
 #' table(predicted=pred$labels, truth=g)
 #'
-#' pred2 <- SingleR(test, sce, labels=sce$label, 
+#' pred2 <- SingleR(test, ref, labels=ref$label, 
 #'     method="cluster", clusters=test$label) 
 #' table(predicted=pred2$labels, truth=rownames(pred2))
 #'
@@ -96,7 +99,8 @@
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, ref, labels, method = c("single", "cluster"),
     clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, assay.type.test = "logcounts", assay.type.ref="logcounts", 
+    tune.thresh = 0.05, sd.thresh = 1, prune=TRUE, 
+    assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
@@ -126,5 +130,5 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
 
     # Do not set sd.thresh, use the value from 'trainSingleR'.
     classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, check.missing=FALSE, BPPARAM=BPPARAM)
+        tune.thresh=tune.thresh, prune=prune, check.missing=FALSE, BPPARAM=BPPARAM)
 }

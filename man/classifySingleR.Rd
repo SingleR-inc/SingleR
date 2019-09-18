@@ -5,8 +5,9 @@
 \title{Classify cells with SingleR}
 \usage{
 classifySingleR(test, trained, quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = NULL, assay.type = "logcounts",
-  check.missing = TRUE, BPPARAM = SerialParam())
+  tune.thresh = 0.05, sd.thresh = NULL, prune = TRUE,
+  assay.type = "logcounts", check.missing = TRUE,
+  BPPARAM = SerialParam())
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
@@ -24,6 +25,8 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 \item{sd.thresh}{A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
 This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.}
 
+\item{prune}{A logical scalar indicating whether label pruning should be performed.}
+
 \item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
@@ -36,15 +39,19 @@ If \code{fine.tune=FALSE}, fields are:
 \itemize{
 \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
 \item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+\item \code{prune.scores}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
+Only added if \code{prune=TRUE}.
 }
 
 If \code{fine.tune=TRUE}, fields are:
 \itemize{
 \item \code{scores}, a numeric matrix of correlations as above.
-\item \code{first.labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+\item \code{first.labels}, a character vector containing the predicted label \emph{before} fine-tuning.
 \item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
 These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
 \item \code{labels}, a character vector containing the predicted label after fine-tuning.
+\item \code{prune.scores}, a character vector of pruned labels as above.
+Only added if \code{prune=TRUE}.
 }
 }
 \description{
@@ -67,11 +74,15 @@ The best and next-best scores are reported in the output for use in diagnostics,
 The default \code{assay.type} is set to \code{"logcounts"} simply for consistency with \code{\link{trainSingleR}}.
 In practice, the raw counts (for UMI data) or the transcript counts (for read count data) can also be used without normalization and log-transformation.
 Any monotonic transformation will have no effect the calculation of the correlation values other than for some minor differences due to numerical precision.
+
+If \code{prune=TRUE}, label pruning is performed as described in \code{\link{pruneScores}} with default arguments.
+This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
+However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 }
 \examples{
-###########################################
-## Mocking up some example training data ##
-###########################################
+##############################
+## Mocking up training data ##
+##############################
 
 Ngroups <- 5
 Ngenes <- 1000
@@ -79,21 +90,20 @@ means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
 means[1:900,] <- 0
 colnames(means) <- LETTERS[1:5]
 
-N <- 100
-g <- sample(LETTERS[1:5], N, replace=TRUE)
-sce <- SummarizedExperiment(
-    list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+g <- rep(LETTERS[1:5], each=4)
+ref <- SummarizedExperiment(
+    list(counts=matrix(rpois(1000*length(g), 
+        lambda=10*2^means[,g]), ncol=length(g))),
     colData=DataFrame(label=g)
 )
+rownames(ref) <- sprintf("GENE_\%s", seq_len(nrow(ref)))
 
-rownames(sce) <- sprintf("GENE_\%s", seq_len(nrow(sce)))
-sce <- scater::logNormCounts(sce)
+ref <- scater::logNormCounts(ref)
+trained <- trainSingleR(ref, ref$label)
 
-trained <- trainSingleR(sce, sce$label)
-
-##################################################
-## Mocking up some test data for classification ##
-##################################################
+###############################
+## Mocking up some test data ##
+###############################
 
 N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
@@ -105,9 +115,18 @@ test <- SummarizedExperiment(
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
 test <- scater::logNormCounts(test)
 
+###############################
+## Performing classification ##
+###############################
+
 pred <- classifySingleR(test, trained)
 table(predicted=pred$labels, truth=g)
 
+}
+\seealso{
+\code{\link{trainSingleR}}, to prepare the training set for classification.
+
+\code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.

@@ -1,11 +1,11 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 0.99.5
-Date: 2019-08-20
+Version: 0.99.12
+Date: 2019-09-14
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
-    person("Jared", "Andrews", role="ctb"),
+    person("Jared", "Andrews", email = "jared.andrews07@gmail.com", role="ctb"),
     person("Friederike", "Dündar", email = "frd2007@med.cornell.edu", role="ctb"))
 Description: Performs unbiased cell type recognition from single-cell RNA
     sequencing data, by leveraging reference transcriptomic datasets of pure cell
@@ -23,7 +23,6 @@ Imports:
     stats,
     utils,
     Rcpp,
-    BiocFileCache,
     ExperimentHub
 LinkingTo:
     Rcpp,
@@ -40,7 +39,8 @@ Suggests:
     scran,
     BiocGenerics,
     ggplot2,
-    pheatmap
+    pheatmap,
+    grDevices
 biocViews: 
     Software,
     SingleCell, 

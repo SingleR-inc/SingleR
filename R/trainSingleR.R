@@ -73,15 +73,21 @@
 #'
 #' If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 #'
+#' @section Note on single-cell references:
+#' The default marker selection is based on log-fold changes in medians, and is very much designed with bulk references in mind.
+#' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts.
+#' Users are recommended to either aggregate their single-cell references to create pseudo-bulk samples, 
+#' or detect markers externally and pass a list of markers to \code{genes} (see Examples).
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
 #' @examples
-#' ###########################################
-#' ## Mocking up some example training data ##
-#' ###########################################
+#' ##############################
+#' ## Mocking up training data ##
+#' ##############################
 #'
 #' Ngroups <- 5
 #' Ngenes <- 1000
@@ -89,38 +95,36 @@
 #' means[1:900,] <- 0
 #' colnames(means) <- LETTERS[1:5]
 #'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' sce <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
+#' g <- rep(LETTERS[1:5], each=4)
+#' ref <- SummarizedExperiment(
+#'     list(counts=matrix(rpois(1000*length(g), 
+#'         lambda=10*2^means[,g]), ncol=length(g))),
 #'     colData=DataFrame(label=g)
 #' )
-#' rownames(sce) <- sprintf("GENE_%s", seq_len(nrow(sce)))
+#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
 #' 
 #' ########################
 #' ## Doing the training ##
 #' ########################
 #'
 #' # Normalizing and log-transforming for automated marker detection.
-#' sce <- scater::logNormCounts(sce)
+#' ref <- scater::logNormCounts(ref)
 #'
-#' trained <- trainSingleR(sce, sce$label)
+#' trained <- trainSingleR(ref, ref$label)
 #' trained
 #' trained$nn.indices
 #' length(trained$common.genes)
 #'
-#' # Alternatively, supplying a set of label-specific markers
-#' # (in this case, the last 100 genes are DE for each cluster).
-#' last.100 <- tail(rownames(sce), 100)
-#' markers <- rep(list(last.100), 5)
-#' names(markers) <- LETTERS[1:5]
-#' 
-#' trained <- trainSingleR(sce, sce$label, genes=markers)
-#' trained$common.genes
+#' # Alternatively, computing and supplying a set of label-specific markers.
+#' by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label)
+#' markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
+#' trained <- trainSingleR(ref, ref$label, genes=markers)
+#' length(trained$common.genes)
 #' 
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
 #' @importFrom S4Vectors List
+#' @importClassesFrom S4Vectors List
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL, 
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
@@ -128,14 +132,17 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
 
     # Choosing the gene sets of interest. 
     args <- list()
-    if (is.list(genes)) {
+    if (is.list(genes) || is(genes, "List")) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
             genes <- .convert_per_label_set(genes)
         } else if (any(is.char)) {
             stop("'genes' must be a list of character vectors or a list of list of vectors")
         }
+
+        genes <- lapply(genes, as.list) # to convert from List of Lists.
         .validate_de_gene_set(genes, labels)
+
         extra <- genes
         common <- unique(unlist(extra))
         genes <- "de"

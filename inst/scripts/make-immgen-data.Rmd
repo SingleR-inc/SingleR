@@ -44,6 +44,9 @@ Extract the normalized expression matrix:
 
 ```{r get_logcounts}
 logcounts <- ref.set$data
+
+# Removing a NA row name.
+logcounts <- logcounts[!is.na(rownames(logcounts)),,drop=FALSE]
 ```
 
 Extract cell labels, which represent the metadata:

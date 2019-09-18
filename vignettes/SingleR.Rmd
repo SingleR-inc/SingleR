@@ -1,17 +1,21 @@
 ---
 title: Using SingleR to annotate single-cell RNA-seq data
-author: 
-- name: Aaron Lun 
+author:
+- name: Aaron Lun
 - name: Jared M. Andrews
   affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
-date: "Revised: August 13, 2019"
+- name: Friederike Dündar
+  affiliation: Applied Bioinformatics Core, Weill Cornell Medicine
+- name: Daniel Bunis
+  affiliation: Bakar Computational Health Sciences Institute, University of California San Francisco, San Francisco, CA
+date: "Revised: September 4th, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
-package: SingleR 
+package: SingleR
 bibliography: ref.bib
 vignette: >
-  %\VignetteIndexEntry{1. Annotating scRNA-seq data}
+  %\VignetteIndexEntry{Annotating scRNA-seq data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}    
 ---
@@ -24,10 +28,10 @@ library(BiocStyle)
 # Introduction
 
 `r Biocpkg("SingleR")` is an automatic annotation method for single-cell RNA sequencing (scRNAseq) data [@aran2019reference].
-Given a reference dataset of samples^[This can be individual cells or bulk samples.] with known labels, it labels new cells from a test dataset based on similarity to the reference set.
+Given a reference dataset of samples (single-cell or bulk) with known labels, it labels new cells from a test dataset based on similarity to the reference set.
 Specifically, for each test cell:
 
-1. We compute the Spearman correlation between its expression profile and that of each reference sample. 
+1. We compute the Spearman correlation between its expression profile and that of each reference sample.
 2. We define the per-label score as a fixed quantile (by default, 0.8) of the distribution of correlations.
 3. We repeat this for all labels and we take the label with the highest score as the annotation for this cell.
 4. We optionally perform a fine-tuning step:
@@ -38,22 +42,83 @@ Specifically, for each test cell:
 Automatic annotation provides a convenient way of transferring biological knowledge across datasets.
 In this manner, the burden of interpreting clusters and defining marker genes only has to be done once.
 
-`r Biocpkg("SingleR")` is workflow/package agnostic - as long as you can provide it a normalized count matrix, you can use it.
+# Using the built-in references
 
-# Demonstration on pancreas data
+`r Biocpkg("SingleR")` provides several reference datasets (mostly derived from bulk RNA-seq or microarray data) through dedicated data retrieval functions.
+For example, to obtain reference data from the Human Primary Cell Atlas:
 
-## Obtaining the data 
+```{r}
+library(SingleR)
+hpca.se <- HumanPrimaryCellAtlasData()
+hpca.se
+```
 
-Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package [@muraro2016singlecell;@grun2016denovo].
+We use this reference in the `SingleR()` function to annotate a scRNA-seq dataset from @lamanno2016molecular.
+For the sake of speed, we will only label the first 100 cells from this dataset.
+
+```{r}
+library(scRNAseq)
+hESCs <- LaMannoBrainData('human-es')
+hESCs <- hESCs[,1:100]
+
+# Restrict to common genes between test and reference data:
+library(scater)
+common <- intersect(rownames(hESCs), rownames(hpca.se))
+hpca.se <- hpca.se[common,]
+hESCs <- hESCs[common,]
+hESCs <- logNormCounts(hESCs)
+
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.main)
+pred.hpca
+```
+
+Each row of the output `DataFrame` contains prediction results for a single cell.
+Labels are shown before fine-tuning (`first.labels`), after fine-tuning (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
+We summarize the distribution of labels across our subset of cells:
+[6~
+```{r}
+table(pred.hpca$labels)
+```
+
+At this point, it is worth noting that `r Biocpkg("SingleR")` is workflow/package agnostic.
+The above example uses `SummarizedExperiment` objects, but the same functions will accept any (log-)normalized expression matrix.
+
+# Using single-cell references
+
+## Setting up the data
+
+Here, we will use two human pancreas datasets from the `r Biocpkg("scRNAseq")` package.
 The aim is to use one pre-labelled dataset to annotate the other unlabelled dataset.
+First, we set up the @muraro2016singlecell dataset to be our reference.
 
 ```{r}
 library(scRNAseq)
 sceM <- MuraroPancreasData()
-sceG <- GrunPancreasData()
+
+# One should normally do cell-based quality control at this point, but for
+# brevity's sake, we will just remove the unlabelled libraries here.
+sceM <- sceM[,!is.na(sceM$label)]
+table(sceM$label)
+
+sceM <- logNormCounts(sceM)
 ```
 
-We restrict our analysis to the common genes between the two datasets.
+We then set up our test dataset from @grun2016denovo.
+To speed up this demonstration, we will subset to the first 100 cells.
+
+```{r}
+sceG <- GrunPancreasData()
+sceG <- sceG[,colSums(counts(sceG)) > 0]
+
+# Some of the cells have no spike-in counts, so we
+# set use_altexps=FALSE to avoid normalization errors.
+# This is fine as we don't use the spike-ins anyway.
+sceG <- logNormCounts(sceG, use_altexps=FALSE)
+
+sceG <- sceG[,1:100]
+```
+
+We then restrict to common genes:
 
 ```{r}
 common <- intersect(rownames(sceM), rownames(sceG))
@@ -61,91 +126,26 @@ sceM <- sceM[common,]
 sceG <- sceG[common,]
 ```
 
-One should normally do cell-based quality control at this point, but for brevity's sake, 
-we will just remove the empty or unlabelled libraries here.
+## Defining custom markers
 
-```{r}
-sceM <- sceM[,!is.na(sceM$label)]
-sceG <- sceG[,colSums(counts(sceG)) > 0]
-```
-
-We then compute the log-normalized expression values that will be used by `SingleR()` for annotation.
-
-```{r}
-library(scater)
-sceM <- logNormCounts(sceM)
-
-# Some of the cells have no spike-in counts, so we 
-# set use_altexps=FALSE to avoid normalization errors.
-# This is fine as we don't use the spike-ins anyway.
-sceG <- logNormCounts(sceG, use_altexps=FALSE)
-```
-
-The @muraro2016singlecell dataset contains labels so we will use this as our reference dataset.
-
-```{r}
-table(sceM$label)
-```
-
-To speed up this demonstration, we will subset the @grun2016denovo dataset to the first 100 cells.
-
-```{r}
-sceG <- sceG[,1:100]
-```
-
-## Using default marker detection
-
-The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels.
-It returns a `DataFrame` containing the predicted label for each cell and the per-label scores associated with each prediction.
-
-```{r}
-library(SingleR)
-pred <- SingleR(test=sceG, ref=sceM, labels=sceM$label)
-table(pred$labels)
-```
-
-By default, the `genes="de"` setting will identify markers based on pairwise comparisons between labels.
-Specifically, `SingleR()` will compute the difference in the median log-expression between each pair of labels.
-Markers are defined from the top set of genes with the largest positive differences in each pairwise comparison.
-Correlations are then computed using only these informative genes.
-Another strategy is to set `genes="sd"`, which will define markers based on the standard deviation of the median expression across labels.
-
-## Using custom markers
-
-Users can achieve more control of the annotation procedure by defining their own marker list.
-This requires a series of pairwise comparisons between labels to define markers that distinguish each label from another.
-For example, we can perform pairwise $t$-tests using `r Biocpkg("scran")` to obtain a list of lists of character vectors.
-Each character vector contains the top 10 marker genes from a comparison between a pair of labels.
+The default marker definition in `SingleR()` is intended for references derived from bulk RNA-seq data.
+When using single-cell data as a reference, we suggest building your own marker list.
+This involves a series of pairwise comparisons between labels to define markers that distinguish each label from another,
+and is easy to perform with functions from `r Biocpkg("scran")`.
+For example, we can perform pairwise $t$-tests and obtain the top 10 marker genes from each pairwise comparison.
 
 ```{r}
 library(scran)
 out <- pairwiseTTests(logcounts(sceM), sceM$label, direction="up")
-
-# To be moved into scran::topPairwiseMarkers().
-markers <- list()
-for (first in unique(sceM$label)) {
-    cur.markers <- list()
-    for (second in unique(sceM$label)) {
-        chosen <- which(out$pairs$first==first & out$pairs$second==second)
-        if (!length(chosen)) {
-            cur.markers[[second]] <- character(0)
-        } else {
-            cur.stats <- out$statistics[[chosen]]
-            cur.stats <- cur.stats[order(cur.stats$p.value),]
-            cur.markers[[second]] <- head(rownames(cur.stats), 10)
-        }
-    }
-    markers[[first]] <- cur.markers
-}
+markers <- getTopMarkers(out$statistics, out$pairs, n=10)
 ```
 
 We then supply these genes to `SingleR()` directly via the `genes=` argument.
-This changes the results quite a bit, reflecting the importance of feature selection for this annotation method^[And many others.].
 A more focused gene set also allows annotation to be performed more quickly compared to the default approach.
 
 ```{r}
-pred2 <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=markers)
-table(pred$labels, pred2$labels)
+pred <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=markers)
+table(pred$labels)
 ```
 
 In some cases, markers may only be available for specific labels rather than for pairwise comparisons between labels.
@@ -154,90 +154,182 @@ Note that this is likely to be less powerful than the list-of-lists approach as 
 
 ```{r}
 label.markers <- lapply(markers, unlist, recursive=FALSE)
-pred3 <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=label.markers)
-table(pred$labels, pred3$labels)
+pred2 <- SingleR(test=sceG, ref=sceM, labels=sceM$label, genes=label.markers)
+table(pred$labels, pred2$labels)
 ```
 
-# Visualizing annotation statistics
+# Annotation diagnostics
 
 `r Biocpkg("SingleR")` provides a few basic yet powerful visualization tools.
-We can use `plotCellVsReference()` to manually check how an individual cell in our test set compares to a reference cell of the same or different type. 
-This function creates a scatter plot of the chosen cell's expression profile against the specified reference where each point is an individual gene, along with the linear regression fit and Spearman's rank correlation coefficient.
+`plotScoreHeatmap()` displays the scores for all cells across all reference labels,
+which allows users to inspect the confidence of the predicted labels across the dataset.
+We can also display clusters (or other metadata information) for each cell by setting `clusters=` or `annotation_col=`.
+In this case, we display which donor the cells came from and the labels assigned to each cell.
 
 ```{r}
-# Get first cell label from our predictions - "acinar" in this case.
-pred$labels[1]
-
-# Get all cells in reference set with "acinar" label and plot against the first
-# in this list.
-same.type <- grep(pred$labels[1], sceM$label)
-plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = same.type[1])
-
-# And now compare to a cell of a different type than our cell of interest.
-diff.type <- seq_along(pred$labels)[-same.type]
-plotCellVsReference(sceG, test.id = 1, ref = sceM, ref.id = diff.type[1])
+plotScoreHeatmap(pred, show.labels = TRUE,
+    annotation_col=data.frame(donor=sceG$donor,
+        row.names=rownames(pred)))
 ```
 
-Another useful function is `plotScoreHeatmap()`, which visualizes the scores for all cells across all reference labels.
-This allows users to inspect the confidence of the predicted labels across the dataset.
+The `pruneScores()` function will remove potentially poor-quality or ambiguous assignments.
+In particular, ambiguous assignments are identified based on the per-cell delta, i.e., the difference between the score for the assigned label and the median across all labels for each cell.
+Low deltas indicate that the assignment is uncertain, which is especially relevant if the cell's true label does not exist in the reference.
+The exact threshold used for pruning is identified using an outlier-based approach that accounts for differences in the scale of the correlations in various contexts.
 
 ```{r}
-plotScoreHeatmap(pred)
+to.remove <- pruneScores(pred)
+summary(to.remove)
 ```
 
-We can also display clusters (or other metadata information) for each cell by setting the `clusters` argument. 
-In this case, we also display which donor the cells came from.
+By default, `SingleR()` will also report pruned labels where low-quality assignments are replaced with `NA`.
+However, the default pruning thresholds may not be appropriate for every dataset - see `?pruneScores` for a more detailed discussion.
+We also provide the `plotScoreDistribution()` to help determine whether the thresholds are appropriate.
+This displays the per-label distribution of the differences-from-median across cells, from which `pruneScores()` defines an appropriate threshold as 3 median absolute deviations (MADs) below the median.
 
 ```{r}
-plotScoreHeatmap(pred, clusters=sceG$donor)
+plotScoreDistribution(pred, show = "delta.med", ncol = 3, show.nmads = 3)
 ```
 
-`plotScoreHeatmap()` uses `r CRANpkg("pheatmap")` for plotting, so additional arguments can be passed to adjust the heatmap as needed.
-
-# Available reference datasets
-
-`r Biocpkg("SingleR")` also directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-
-There are two data sets from human cells (Human Primary Cell Atlas and Blueprint/ENCODE) and two data sets from mouse cells (e.g. Immunological Genome Project). 
-For more details see the vignette dedicated to the `r Biocpkg("SingleR", vignette = "datasets.html", label="reference datasets")`.
-
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `ImmGenData()`, `MouseRNAseqData()`.
-Here, we show an example with data from HPCA:
+If some tuning parameters must be adjusted, we can simply call `pruneScores()` directly with adjusted parameters.
+Here, we set labels to `NA` if they are to be discarded, which is also how `SingleR()` marks such labels in `pruned.labels`.
 
 ```{r}
-hpca.se <- HumanPrimaryCellAtlasData()
-hpca.se
+new.pruned <- pred$labels
+new.pruned[pruneScores(pred, nmads=5)] <- NA
+table(new.pruned, useNA="always")
 ```
 
-The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
-To illustrate this, we will use a hESC dataset from `r Biocpkg("scRNAseq")` [@lamanno2016molecular].
-Again, we will subset this test dataset to 100 cells for the sake of speed.
+# Available reference data sets
 
-```{r}
-hESCs <- LaMannoBrainData('human-es')
-hESCs <- hESCs[,1:100] # for demo-purposes only!
+The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on bulk RNA-seq, microarray and single-cell RNA-seq data from:
+
+* Blueprint [@blueprintRef] and Encode [@encodeRef],
+* the Human Primary Cell Atlas [@hpcaRef],
+* the murine [ImmGen](http://www.immgen.org/) [@ImmGenRef], and
+* a collection of mouse data sets downloaded from GEO [@Benayoun2019].
+
+The bulk RNA-seq and microarray data sets of the first three reference data sets were obtained from pre-sorted cell populations, i.e., the cell labels of these samples were mostly derived based on the respective sorting/purification strategy, not via *in silico* prediction methods.
+
+Three additional reference datasets from bulk RNA-seq and microarray data for immune cells have also been prepared.
+Each of these datasets were also obtained from pre-sorted cell populations:
+
+* The [Database for Immune Cell Expression(/eQTLs/Epigenomics)](https://dice-database.org) [@diceRef],
+* Novershtern Hematopoietic Cell Data - [GSE24759](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759) - formerly known as Differentiation Map [@dmapRef], and
+* Monaco Immune Cell Data - [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011)  [@monaco_immuneRef].
+
+The characteristics of each dataset are summarized below:
+
+| Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
+|------------------|----------|----------|-------------|----------------------|------------|----------|
+|`HumanPrimaryCellAtlasData()`| human | 713 | microarrays of sorted cell populations  | 37 |  157 | Non-specific |
+|`BlueprintEncodeData()` |  human | 259 | RNA-seq | 24 | 43 | Non-specific |
+|`DatabaseImmuneCellExpressionData()` | human | 1561 | RNA-seq | 5 | 15 | Immune |
+|`NovershternHematopoieticData()` | human | 211 | microarrays of sorted cell populations | 17 | 38 | Hematopoietic & Immune |
+|`MonacoImmuneData()` | human | 114 | RNA-seq | 11 | 29 | Immune |
+|`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 | Hematopoietic & Immune |
+|`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 | Non-specific |
+
+Details for each dataset can be viewed on the corresponding help page (e.g. `?ImmGenData`).
+The available sample types in each set can be viewed in the collapsible sections below.
+
+<details>
+  <summary>`BlueprintEncodeData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- BlueprintEncodeData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
 ```
+</details>
 
-We subset to genes that are present in both the scRNA-seq data to be annotated and the reference data set.
-We then compute log-normalized expression values for the hESC data set.
+<details>
+  <summary>`HumanPrimaryCellAtlasData` Labels</summary>
 
-```{r}
-common <- intersect(rownames(hESCs), rownames(hpca.se))
-hpca.se <- hpca.se[common,]
-hESCs <- hESCs[common,]
-hESCs <- logNormCounts(hESCs)
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- HumanPrimaryCellAtlasData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
 ```
+</details>
 
-The reference data sets all come with two sets of cell labels: `label.main` and `label.fine`. 
-The "main" labels tend to be less fine-grained than the "fine" labels, e.g. instead of specifying different subsets of T cells, the main labels will lump them all together under the broader label "T cells".
-For more details about the individual cell type labels available for the different reference data sets, see the vignette `r Biocpkg("SingleR", vignette = "datasets.html", label="reference datasets")`.
+<details>
+  <summary>`DatabaseImmuneCellExpressionData` Labels</summary>
 
-For our example, we will use the more specific fine-grained cell type labels.
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- DatabaseImmuneCellExpressionData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
 
-```{r}
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.fine)
-table(pred.hpca$labels)
+kable(unique(samples), format = "markdown")
 ```
+</details>
+
+<details>
+  <summary>`NovershternHematopoieticData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- NovershternHematopoieticData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
+```
+</details>
+
+<details>
+  <summary>`MonacoImmuneData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- MonacoImmuneData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
+```
+</details>
+
+<details>
+  <summary>`ImmGenData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- ImmGenData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
+```
+</details>
+
+<details>
+  <summary>`MouseRNAseqData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(SingleR)
+ref <- MouseRNAseqData()
+samples <- cbind(ref$label.main, ref$label.fine)
+colnames(samples) <- c("label.main", "label.fine")
+
+kable(unique(samples), format = "markdown")
+```
+</details>
 
 # Separating training from classification
 
@@ -249,7 +341,7 @@ For example:
 ```{r}
 trained <- trainSingleR(sceM, labels=sceM$label, genes=markers)
 pred2b <- classifySingleR(sceG, trained)
-table(pred2$labels, pred2b$labels)
+table(pred$labels, pred2b$labels)
 ```
 
 Other efficiency improvements are possible through several arguments:
