@@ -54,7 +54,7 @@ These are numeric vectors containing the best and next-best scores at the final 
 Only added if \code{prune=TRUE}.
 }
 
-The \code{\link{metadata}} of the DataFrame contains:
+In both cases, the \code{\link{metadata}} of the DataFrame contains:
 \itemize{
 \item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
 \item \code{de.genes}, a list of list of genes used to distinguish between each pair of labels.
