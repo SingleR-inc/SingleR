@@ -2,6 +2,7 @@
 title: Using SingleR to annotate single-cell RNA-seq data
 author:
 - name: Aaron Lun
+  email: infinite.monkeys.with.keyboards@gmail.com
 - name: Jared M. Andrews
   affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
 - name: Friederike Dündar
@@ -109,12 +110,7 @@ To speed up this demonstration, we will subset to the first 100 cells.
 ```{r}
 sceG <- GrunPancreasData()
 sceG <- sceG[,colSums(counts(sceG)) > 0]
-
-# Some of the cells have no spike-in counts, so we
-# set use_altexps=FALSE to avoid normalization errors.
-# This is fine as we don't use the spike-ins anyway.
-sceG <- logNormCounts(sceG, use_altexps=FALSE)
-
+sceG <- logNormCounts(sceG) 
 sceG <- sceG[,1:100]
 ```
 
@@ -160,6 +156,8 @@ table(pred$labels, pred2$labels)
 
 # Annotation diagnostics
 
+## Based on the scores within cells
+
 `r Biocpkg("SingleR")` provides a few basic yet powerful visualization tools.
 `plotScoreHeatmap()` displays the scores for all cells across all reference labels,
 which allows users to inspect the confidence of the predicted labels across the dataset.
@@ -171,6 +169,12 @@ plotScoreHeatmap(pred, show.labels = TRUE,
     annotation_col=data.frame(donor=sceG$donor,
         row.names=rownames(pred)))
 ```
+
+For this plot, the key point is to examine the spread of scores within each cell.
+Ideally, each cell (i.e., column) should have one score that is obviously larger than the rest, indicating that it is unambiguously assigned to a single label.
+A spread of similar scores for a given cell indicates that the assignment is uncertain.
+
+## Based on the deltas across cells
 
 The `pruneScores()` function will remove potentially poor-quality or ambiguous assignments.
 In particular, ambiguous assignments are identified based on the per-cell delta, i.e., the difference between the score for the assigned label and the median across all labels for each cell.
@@ -200,7 +204,32 @@ new.pruned[pruneScores(pred, nmads=5)] <- NA
 table(new.pruned, useNA="always")
 ```
 
-# Available reference data sets
+## Based on marker gene expression
+
+Another simple yet effective diagnostic is to examine the expression of the marker genes for each label in the test dataset.
+We extract the identity of the markers from the metadata of the `SingleR` results and use them in the  `plotHeatmap()` function from `r Biocpkg("scater")`, as shown below for beta cell markers.
+
+```{r}
+# Beta cell-related markers
+plotHeatmap(sceG, order_columns_by=list(I(pred$labels)),
+    features=unique(unlist(metadata(pred)$de.genes$beta))) 
+```
+
+We can perform this for all labels by wrapping this code in a loop, as shown below: 
+
+```{r, fig.show="hide"}
+for (lab in names(metadata(pred)$de.genes)) {
+    plotHeatmap(sceG, order_columns_by=list(I(pred$labels)), 
+        features=unique(unlist(metadata(pred)$de.genes[[lab]]))) 
+}
+```
+
+If a cell in the test dataset is confidently assigned to a particular label, 
+we would expect it to have strong expression of that label's markers.
+At the very least, it should exhibit upregulation of those markers relative to cells assigned to other labels.
+If this is not the case, some skepticism towards the quality of the assignments is warranted.
+
+# Available references
 
 The [legacy SingleR package](https://github.com/dviraran/SingleR/tree/master/data) provides RDA files that contain normalized expression values and cell types labels based on bulk RNA-seq, microarray and single-cell RNA-seq data from:
 
@@ -331,7 +360,7 @@ kable(unique(samples), format = "markdown")
 ```
 </details>
 
-# Separating training from classification
+# Advanced use
 
 Advanced users can split the `SingleR()` workflow into two separate training and classification steps.
 This means that training (e.g., marker detection, assembling of nearest-neighbor indices) only needs to be performed once.
