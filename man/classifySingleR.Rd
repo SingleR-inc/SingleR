@@ -53,6 +53,13 @@ These are numeric vectors containing the best and next-best scores at the final 
 \item \code{prune.scores}, a character vector of pruned labels as above.
 Only added if \code{prune=TRUE}.
 }
+
+The \code{\link{metadata}} of the DataFrame contains:
+\itemize{
+\item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
+\item \code{de.genes}, a list of list of genes used to distinguish between each pair of labels.
+Only returned if \code{genes="de"} when constructing \code{trained}, see \code{?\link{trainSingleR}} for more details. 
+}
 }
 \description{
 Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.

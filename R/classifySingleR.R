@@ -35,6 +35,13 @@
 #' \item \code{prune.scores}, a character vector of pruned labels as above.
 #' Only added if \code{prune=TRUE}.
 #' }
+#'
+#' In both cases, the \code{\link{metadata}} of the DataFrame contains:
+#' \itemize{
+#' \item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
+#' \item \code{de.genes}, a list of list of genes used to distinguish between each pair of labels.
+#' Only returned if \code{genes="de"} when constructing \code{trained}, see \code{?\link{trainSingleR}} for more details. 
+#' }
 #' 
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #'
@@ -110,7 +117,7 @@
 #'
 #' @export
 #' @importFrom BiocNeighbors KmknnParam bndistance 
-#' @importFrom S4Vectors List DataFrame
+#' @importFrom S4Vectors List DataFrame metadata metadata<-
 #' @importFrom SummarizedExperiment colData<- colData 
 #' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply
 classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE, 
@@ -147,8 +154,8 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
+    search.mode <- trained$search$mode
     if (fine.tune) {
-        search.mode <- trained$search$mode
         if (search.mode=="de") {
             tuned <- .fine_tune_de(exprs=test, scores=scores, references=trained$original.exprs, 
                 quantile=quantile, tune.thresh=tune.thresh, de.info=trained$search$extra,
@@ -180,7 +187,13 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         output$pruned.labels <- output$labels
         output$pruned.labels[pruneScores(output)] <- NA_character_
     }
+
     rownames(output) <- colnames(test)
+    metadata(output)$common.genes <- ref.genes
+    if(search.mode=="de") {
+        metadata(output)$de.genes <- trained$search$extra
+    }
+
     output
 }
 
