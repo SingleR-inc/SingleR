@@ -247,6 +247,16 @@ test_that("fine-tuning handles the edge cases sensibly", {
          quantile=0.5, tune.thresh=0.1, de.info=trained$search$extra)
     expect_true(all(is.na(tuned[[3]])))
     expect_true(all(is.na(tuned[[2]])))
+
+    # Only one cell available for each label.
+    keep <- !duplicated(training$label)
+    trained <- trainSingleR(training[,keep], training$label[keep])
+    pred <- classifySingleR(test, trained, fine.tune=FALSE)
+
+    tuned <- SingleR:::.fine_tune_de(assay(test), pred$scores, trained$original.exprs, 
+         quantile=0.5, tune.thresh=0.1, de.info=trained$search$extra)
+    expect_true(all(!is.na(tuned[[3]])))
+    expect_true(all(!is.na(tuned[[2]])))
 })
 
 ###################################

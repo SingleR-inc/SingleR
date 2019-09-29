@@ -103,7 +103,7 @@ public:
                 all_correlations.push_back(1 - 2*dist);
             }
 
-            if (quantile==1) {
+            if (quantile==1 || ncells==1) {
                 new_scores.push_back(*std::max_element(all_correlations.begin(), all_correlations.end()));
             } else {
                 // See logic in .find_nearest_quantile().
