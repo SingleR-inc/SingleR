@@ -27,6 +27,8 @@ test_that("SingleR works with custom gene selection", {
     
     # We should get, in this case, the same result with a list of vectors.
     out2 <- SingleR(test=test, ref=training, labels=training$label, genes=collected)
+    expect_identical(collected, lapply(metadata(out2)$de.genes, unlist, use.names=FALSE))
+    metadata(out) <- metadata(out2) <- list()
     expect_identical(out, out2)
 })
 
