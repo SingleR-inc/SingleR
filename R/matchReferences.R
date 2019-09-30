@@ -37,7 +37,7 @@
 #' @examples
 #' example(SingleR, echo=FALSE)
 #' test$label <- paste0(test$label, "_X") # modifying the labels.
-#' matchReferences(test, sce, labels1=test$label, labels2=sce$label)
+#' matchReferences(test, ref, labels1=test$label, labels2=ref$label)
 #' @export
 matchReferences <- function(ref1, ref2, labels1, labels2, ...) {
     first <- SingleR(test=ref1, ref=ref2, labels=labels2, ...)
