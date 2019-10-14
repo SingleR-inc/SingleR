@@ -11,6 +11,8 @@
 
 typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
 
+typedef std::vector<beachmat::numeric_matrix*> matrix_list_raw;
+
 typedef std::tuple<int, double, double> tuned_stats;
 
 class fine_tuner {
@@ -19,7 +21,7 @@ public:
 
     template<class PICKER> 
     tuned_stats assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
-        const matrix_list& references, double quantile, double tune_thresh, const PICKER& commonFUN) 
+        const matrix_list_raw& references, double quantile, double tune_thresh, const PICKER& commonFUN) 
     {
         exprs->get_col(i, holder_left.begin());
         auto cur_scores=scores.column(i);
@@ -80,13 +82,13 @@ public:
         return tuned_stats(best_label, max_score, next_score);
     }
 
-    void get_scores(const matrix_list& references, double quantile) {
+    void get_scores(const matrix_list_raw& references, double quantile) {
         scaled_ranks(holder_left.begin(), genes_in_use, collected, scaled_left);
         new_scores.clear();
         new_scores.reserve(labels_in_use.size());
 
         for (auto l : labels_in_use) {
-            auto current=references[l].get();
+            auto current=references[l];
             const size_t ncells=current->get_ncol();
             all_correlations.clear();
             all_correlations.reserve(ncells);
