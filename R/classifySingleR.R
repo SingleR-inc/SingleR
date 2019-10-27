@@ -119,7 +119,8 @@
 #' @importFrom BiocNeighbors KmknnParam bndistance 
 #' @importFrom S4Vectors List DataFrame metadata metadata<-
 #' @importFrom SummarizedExperiment colData<- colData 
-#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply
+#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply MulticoreParam
+#' @importFrom methods is
 classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE, 
     tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, 
     assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) 
@@ -137,7 +138,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     ranked <- .scaled_colranks_safe(test[ref.genes,,drop=FALSE])
     all.indices <- trained$nn.indices
 
-    if (!bpisup(BPPARAM)) {
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
         bpstart(BPPARAM)
         on.exit(bpstop(BPPARAM))
     }
