@@ -51,16 +51,26 @@ Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-
 This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores for each cell (columns) to each reference label (rows).
 Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
 
-If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels given to cells.
-Note that scores shown in the heatmap are initial scores, unaffected by the fine-tuning step, so labels and maximum scores in the heatmap may not always match up. 
+If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels assigned to the cells.
+Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 
 If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
+}
+\section{Normalization of colors}{
 
 If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 This is followed by cubing of the adjusted scores to improve dynamic range near 1.
-Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+
+The adjustment is intended to inflate differences between scores within a given cell for easier visualization.
+This is because the scores are often systematically shifted between cells, making the raw values difficult to directly compare.
+However, it may be somewhat misleading;
+fine-tuning may appear to assign a cell to a label with much lower score whereas the actual scores are much closer.
+I
+
+Also note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 }
+
 \examples{
 # Running the SingleR() example.
 example(SingleR, echo=FALSE)
