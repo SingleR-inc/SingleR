@@ -28,15 +28,24 @@
 #' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores for each cell (columns) to each reference label (rows).
 #' Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
 #'
-#' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels given to cells.
-#' Note that scores shown in the heatmap are initial scores, unaffected by the fine-tuning step, so labels and maximum scores in the heatmap may not always match up. 
+#' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels assigned to the cells.
+#' Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 #' 
 #' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 #' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
 #'
+#' @section Normalization of colors:
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
-#' Note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
+#' Visually, the color scheme is changed to a unidirectional scale and the color bar is no longer shown.
+#'
+#' The adjustment is intended to inflate differences between scores within a given cell for easier visualization.
+#' This is because the scores are often systematically shifted between cells, making the raw values difficult to directly compare.
+#' However, it may be somewhat misleading;
+#' fine-tuning may appear to assign a cell to a label with much lower score whereas the actual scores are much closer.
+#' It is for this reason that the color bar is not shown as the absolute values of the score have little meaning. 
+#' 
+#' Also note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 #' 
 #' @seealso
 #' \code{\link{SingleR}}, to generate \code{scores}.
@@ -79,6 +88,7 @@
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
+#' @importFrom grDevices colorRampPalette
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
@@ -148,6 +158,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
         scores <- scores^3
+        breaks <- seq(0, 1, length.out=101)
+    } else {
+        breaks <- seq(-1, 1, length.out=101)
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
@@ -156,7 +169,12 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = FALSE, clustering_method = 'ward.D2',
-        cluster_cols = cluster_cols, ...)
+        cluster_cols = cluster_cols, breaks=breaks, ...)
+
+    if (normalize) {
+        args$color <- colorRampPalette(c("white", "blue"))(100)
+        args$legend <- FALSE
+    }
 
     if (ncol(annotation_col)>0) {
         args$annotation_col <- annotation_col
