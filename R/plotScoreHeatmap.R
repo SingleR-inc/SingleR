@@ -88,7 +88,6 @@
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
-#' @importFrom grDevices colorRampPalette
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
@@ -172,7 +171,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cluster_cols = cluster_cols, breaks=breaks, ...)
 
     if (normalize) {
-        args$color <- colorRampPalette(c("white", "blue"))(100)
+        args$color <- grDevices::colorRampPalette(c("white", "blue"))(100)
         args$legend <- FALSE
     }
 
