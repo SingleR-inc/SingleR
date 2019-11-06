@@ -9,7 +9,7 @@ author:
   affiliation: Applied Bioinformatics Core, Weill Cornell Medicine
 - name: Daniel Bunis
   affiliation: Bakar Computational Health Sciences Institute, University of California San Francisco, San Francisco, CA
-date: "Revised: September 4th, 2019"
+date: "Revised: November 6th, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
@@ -359,6 +359,48 @@ colnames(samples) <- c("label.main", "label.fine")
 kable(unique(samples), format = "markdown")
 ```
 </details>
+
+# Combining predictions from different references
+
+In many cases, running the test set against multiple reference datasets may be useful to increase granularity among certain cell types or to look for concordance across multiple references. 
+The `combineResults` function will collate multiple predictions together for convenience:
+
+```{r}
+library(SingleR)
+library(scRNAseq)
+
+hpca.se <- HumanPrimaryCellAtlasData()
+bp.se <- BlueprintEncodeData()
+
+hESCs <- LaMannoBrainData('human-es')
+hESCs <- hESCs[,1:100]
+
+# Restrict to common genes between test and reference data:
+library(scater)
+common.hpca <- intersect(rownames(hESCs), rownames(hpca.se))
+hpca.se <- hpca.se[common.hpca,]
+hESCs.hpca <- hESCs[common.hpca,]
+hESCs.hpca <- logNormCounts(hESCs.hpca)
+
+common.bp <- intersect(rownames(hESCs), rownames(bp.se))
+bp.se <- bp.se[common.bp,]
+hESCs.bp <- hESCs[common.bp,]
+hESCs.bp <- logNormCounts(hESCs.bp)
+
+pred.hpca <- SingleR(test = hESCs.hpca, ref = hpca.se, labels = hpca.se$label.main)
+pred.bp <- SingleR(test = hESCs.bp, ref = bp.se, labels = bp.se$label.main)
+
+combined.preds <- combineResults(list(pred.hpca, pred.bp))
+table(combined.preds$labels)
+```
+
+Each row of the output `DataFrame` contains prediction results for a single cell.
+Labels are shown before fine-tuning (`first.labels`), after fine-tuning (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
+We summarize the distribution of labels across our subset of cells:
+[6~
+```{r}
+table(pred.hpca$labels)
+```
 
 # Advanced use
 

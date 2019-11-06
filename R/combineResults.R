@@ -1,15 +1,19 @@
 #' Combine SingleR results
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
-#' The label with the highest score across predictions for each cell is retained.
+#' Labels from each prediction are collated, condensing predictions from different reference or label sets.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} or \code{\link{SingleR}}.
 #' 
-#' @details
-#' Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
-#' 
-#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
-#' This is identical to the output of \code{\link{classifySingleR}}.
+#' @return A \linkS4class{DataFrame}, similar to that returned by \code{\link{classifySingleR}}, where each row corresponds to a cell or cluster.
+#'
+#' Fields are:
+#' \itemize{
+#' \item \code{labels}, a character vector containing the collated predicted labels from each prediction in \code{results}.
+#' \item \code{pruned.labels}, a character vector containing the collated pruned labels from each prediction in \code{results}. 
+#' Only added if \code{pruned.labels} are present in at least one prediction in \code{results}. 
+#' \code{NA}s are ignored, though if all \code{pruned.labels} are \code{NA} for a cell, \code{NA} will be returned.
+#' }
 #' 
 #' @author Jared Andrews
 #'
@@ -53,8 +57,11 @@
 #'
 #' N <- 100
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
+#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
+#' means[1:900] <- 0
+#' colnames(means) <- LETTERS[1:5]
 #' test <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means1[,g]), ncol=N)),
+#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
 #'     colData=DataFrame(label=g)
 #' )
 #' 
@@ -68,30 +75,62 @@
 #' pred1 <- SingleR(test, ref1, labels=ref1$label)
 #' pred2 <- SingleR(test, ref2, labels=ref2$label)
 #'
+#' pred3 <- SingleR(test, ref1, labels=ref1$label, 
+#'     method="cluster", clusters=test$label) 
+#' pred4 <- SingleR(test, ref2, labels=ref2$label, 
+#'     method="cluster", clusters=test$label) 
+#'
 #' ###############################
 #' ##     Combining results     ##
 #' ###############################
 #'
-#' pred <- combineResults(list(pred1, pred2))
+#' pred.single <- combineResults(list(pred1, pred2))
+#' pred.clust <- combineResults(list(pred3, pred4))
 #'
 #' @seealso
-#' \code{\link{matchReference}}, to harmonize labels between reference datasets.
+#' \code{\link{matchReferences}}, to harmonize labels between reference datasets.
 #' \code{\link{SingleR}}, for generating predictions.
 #'
+#' @importFrom S4Vectors DataFrame
 #'
 #' @export
 combineResults <- function(results) {
-    pred.scores <- list()
+    labels <- list()
+    pruned.labels <- list()
 
-    for (p in results) {
-        pred.scores[[p]] <- p$scores
+    for (i in seq_along(results)) {
+        res <- results[[i]]
+        labels[[i]] <- res$first.labels
+
+        if (!is.null(res$pruned.labels)) {
+            pruned.labels[[i]] <- res$pruned.labels
+        }
     }
 
-    all.scores <- do.call(cbind, pred.scores)
-    best.labels <- colnames(all.scores)[max.col(all.scores)]
+    collated.labels <- do.call(paste, c(labels, sep = ", "))
 
-    output <- DataFrame(scores=I(all.scores), first.labels=best.labels, labels=best.labels)
+    output <- DataFrame(labels=collated.labels)
+
+    if (length(pruned.labels)) {
+        pruned.mat <- do.call(cbind, pruned.labels)
+        output$pruned.labels <- unlist(apply(pruned.mat, 1, .combine_pruned))
+    }
+
+    if (!is.null(rownames(res))) {
+        rownames(output) <- rownames(res)
+    }
 
     output
 }
 
+.combine_pruned <- function(labs) {
+    cat.pruned <- labs[!is.na(labs)]
+
+    if (length(cat.pruned)) {
+        out <- paste(cat.pruned, collapse = ", ")
+    } else {
+        out <- NA_character_
+    }
+
+    out
+}
