@@ -95,6 +95,11 @@
 #'
 #' @export
 combineResults <- function(results) {
+    num.features <- sapply(results)
+    if (abs(max(num.features) - min(num.features)) != 0) {
+        stop("Results objects contain different numbers of cells or clusters.")
+    }
+
     labels <- list()
     pruned.labels <- list()
 
