@@ -380,6 +380,18 @@ Other efficiency improvements are possible through several arguments:
 
 These arguments can also be specified in the `SingleR()` command.
 
+# FAQs
+
+*How can I use this with my `Seurat`, `SingleCellExperiment`, or `cell_data_set` object?*
+
+`r Biocpkg("SingleR")` is workflow agnostic - all it needs is normalized counts.
+An example showing how to map its results back to common single-cell data objects is available in the [README](https://github.com/LTLA/SingleR/blob/master/README.md).
+
+*Where can I find reference sets appropriate for my data?*
+
+`r Biocpkg("scRNAseq")` contains many single-cell datasets with more continually being added.
+`r Biocpkg("ArrayExpress")` and `r Biocpkg("GEOquery")` can be used to download any of the bulk or single-cell datasets in [ArrayExpress](https://www.ebi.ac.uk/arrayexpress) or [GEO](https://www.ncbi.nlm.nih.gov/geo/), respectively.
+
 # Session information
 
 ```{r}
