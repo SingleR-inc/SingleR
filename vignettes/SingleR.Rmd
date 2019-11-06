@@ -394,14 +394,6 @@ combined.preds <- combineResults(list(pred.hpca, pred.bp))
 table(combined.preds$labels)
 ```
 
-Each row of the output `DataFrame` contains prediction results for a single cell.
-Labels are shown before fine-tuning (`first.labels`), after fine-tuning (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
-We summarize the distribution of labels across our subset of cells:
-[6~
-```{r}
-table(pred.hpca$labels)
-```
-
 # Advanced use
 
 Advanced users can split the `SingleR()` workflow into two separate training and classification steps.
