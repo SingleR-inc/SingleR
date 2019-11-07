@@ -10,6 +10,7 @@
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
 #' @param show.labels Logical indicating whether the final labels of cells should be shown as an annotation bar.
 #' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
+#' @param show.colnames Logical indicating whether to show column names.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
@@ -92,7 +93,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
-    annotation_col = NULL, ...)
+    annotation_col = NULL, show.colnames = FALSE, ...)
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -167,7 +168,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
-        show_colnames = FALSE, clustering_method = 'ward.D2',
+        show_colnames = show.colnames, clustering_method = 'ward.D2',
         cluster_cols = cluster_cols, breaks=breaks, ...)
 
     if (normalize) {
