@@ -95,7 +95,7 @@
 #'
 #' @export
 combineResults <- function(results) {
-    num.features <- sapply(results)
+    num.features <- sapply(results, nrow)
     if (abs(max(num.features) - min(num.features)) != 0) {
         stop("Results objects contain different numbers of cells or clusters.")
     }
