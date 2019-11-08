@@ -19,8 +19,6 @@
 #' If set, turns off clustering of columns based on scoring.
 #' @param annotation_col,show_colnames,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' 
-#' Note for \code{annotation_col}: Use this to add extra annotations. Clustering, pruning, and labels annotations are automatically generated and appended when appropriate.
-#'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
 #' @details
@@ -33,6 +31,13 @@
 #' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 #' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
 #'
+#' Additional inputs can be provided to tweak the heatmap in further ways.  See \code{\link[pheatmap]{pheatmap}} for options.
+#' A few that can be particularly useful are \code{show_colnames} and \code{annotation_col}.
+#' \code{show_colnames} can be used to display cell/cluster names.
+#' \code{annotation_col} can be used to add extra annotations.
+#' Clustering, pruning, and labels annotations are automatically generated and appended when appropriate.
+#' 
+#' 
 #' @section Normalization of colors:
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
