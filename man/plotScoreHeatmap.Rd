@@ -8,7 +8,7 @@ plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
   clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
   max.labels = 40, normalize = TRUE, cells.order = NULL,
   order.by.clusters = FALSE, annotation_col = NULL,
-  show.colnames = FALSE, ...)
+  show_colnames = FALSE, ...)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -36,13 +36,9 @@ If set, turns off clustering of columns based on scoring.}
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
 
-\item{annotation_col}{A data.frame containing data for additional/alternative column annotations 
-(clustering, pruning, and labels annotations are automatically added).
-Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.}
+\item{annotation_col, show_colnames, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 
-\item{show.colnames}{Logical indicating whether to show column names.}
-
-\item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+Note for \code{annotation_col}: Use this to add extra annotations. Clustering, pruning, and labels annotations are automatically generated and appended when appropriate.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
