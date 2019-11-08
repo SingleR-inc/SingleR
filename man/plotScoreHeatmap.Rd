@@ -7,7 +7,8 @@
 plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
   clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
   max.labels = 40, normalize = TRUE, cells.order = NULL,
-  order.by.clusters = FALSE, annotation_col = NULL, ...)
+  order.by.clusters = FALSE, annotation_col = NULL,
+  show_colnames = FALSE, ...)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -35,11 +36,7 @@ If set, turns off clustering of columns based on scoring.}
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
 
-\item{annotation_col}{A data.frame containing data for additional/alternative column annotations 
-(clustering, pruning, and labels annotations are automatically added).
-Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.}
-
-\item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{annotation_col, show_colnames, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -56,17 +53,24 @@ Note that scores shown in the heatmap are initial scores prior to the fine-tunin
 
 If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
+
+Additional inputs can be provided to tweak the heatmap in further ways.  See \code{\link[pheatmap]{pheatmap}} for options.
+A few that can be particularly useful are \code{show_colnames} and \code{annotation_col}.
+\code{show_colnames} can be used to display cell/cluster names.
+\code{annotation_col} can be used to add extra annotations.
+Clustering, pruning, and labels annotations are automatically generated and appended when appropriate.
 }
 \section{Normalization of colors}{
 
 If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 This is followed by cubing of the adjusted scores to improve dynamic range near 1.
+Visually, the color scheme is changed to a unidirectional scale and the color bar is no longer shown.
 
 The adjustment is intended to inflate differences between scores within a given cell for easier visualization.
 This is because the scores are often systematically shifted between cells, making the raw values difficult to directly compare.
 However, it may be somewhat misleading;
 fine-tuning may appear to assign a cell to a label with much lower score whereas the actual scores are much closer.
-I
+It is for this reason that the color bar is not shown as the absolute values of the score have little meaning. 
 
 Also note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 }
