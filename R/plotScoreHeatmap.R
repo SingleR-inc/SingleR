@@ -17,11 +17,8 @@
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
-#' @param annotation_col A data.frame containing data for additional/alternative column annotations 
-#' (clustering, pruning, and labels annotations are automatically added).
-#' Row names should be the names of the cells, and columns should be named with the title to be displayed for each annotation bar.
-#' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
-#'
+#' @param annotation_col,show_colnames,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' 
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
 #' @details
@@ -34,6 +31,11 @@
 #' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 #' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
 #'
+#' Additional arguments can be passed to \code{\link[pheatmap]{pheatmap}} for further tweaking of the heatmap.
+#' Particularly useful parameters are \code{show_colnames}, which can be used to display cell/cluster names;
+#' and \code{annotation_col}, which can be used to add extra annotation layers.
+#' Clustering, pruning and label annotations are automatically generated and appended to \code{annotation_col} when available.
+#' 
 #' @section Normalization of colors:
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
@@ -92,7 +94,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE, 
-    annotation_col = NULL, ...)
+    annotation_col = NULL, show_colnames = FALSE, ...)
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -167,7 +169,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
-        show_colnames = FALSE, clustering_method = 'ward.D2',
+        show_colnames = show_colnames, clustering_method = 'ward.D2',
         cluster_cols = cluster_cols, breaks=breaks, ...)
 
     if (normalize) {
