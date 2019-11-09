@@ -98,7 +98,7 @@ seurat.obj[["SingleR.labels"]] <- singler.results$labels
 
 # Or if `method="cluster"` was used:
 seurat.obj[["SingleR.cluster.labels"]] <- 
-        singler.results$labels[match(seurat.obj[[]][["my.input.clusters"]], singler.results$clusts)]
+        singler.results$labels[match(seurat.obj[[]][["my.input.clusters"]], rownames(singler.results))]
 ```
 
 ## Scalability
