@@ -6,6 +6,7 @@
 #'
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param trained A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+#' Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.
 #' @param quantile A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
@@ -67,6 +68,8 @@
 #' This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 #' However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 #'
+#' If \code{trained} was generated from multiple references, \code{\link{combineResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
+#'
 #' @examples
 #' ##############################
 #' ## Mocking up training data ##
@@ -115,18 +118,38 @@
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
+#' \code{\link{combineResults}}, to combine results from multiple references.
 #' @export
-#' @importFrom BiocNeighbors KmknnParam bndistance 
-#' @importFrom S4Vectors List DataFrame metadata metadata<-
-#' @importFrom SummarizedExperiment colData<- colData 
-#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop bplapply MulticoreParam
+#' @importFrom BiocParallel SerialParam bpstart bpisup bpstop
+#' @importClassesFrom BiocParallel MulticoreParam
 #' @importFrom methods is
 classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE, 
     tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, 
     assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing, msg="test")
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
 
+    if (is.character(trained$common.genes)) {
+        .classify_internals(test=test, trained=trained, quantile=quantile,
+            fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
+            prune=prune, BPPARAM=BPPARAM)
+    } else {
+        results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
+            fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
+            prune=prune, BPPARAM=BPPARAM)
+        do.call(combineResults, results)
+    }
+}
+
+#' @importFrom BiocParallel bplapply
+#' @importFrom S4Vectors DataFrame metadata metadata<-
+.classify_internals <- function(test, trained, quantile, fine.tune,
+    tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, BPPARAM) 
+{
     # Don't globally subset 'x', as fine-tuning requires all genes
     # when search.mode='sd'.
     ref.genes <- trained$common.genes
@@ -137,11 +160,6 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     # Initial search in rank space.
     ranked <- .scaled_colranks_safe(test[ref.genes,,drop=FALSE])
     all.indices <- trained$nn.indices
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
 
     # Parallelizing across labels rather than cells, as we often have few cells but many labels.
     scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
