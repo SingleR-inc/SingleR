@@ -4,20 +4,41 @@
 #' The label with the highest score across predictions for each cell is retained.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} or \code{\link{SingleR}}.
+#'
+#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+#' This is identical to the output of \code{\link{classifySingleR}}, albeit with \code{scores} combined and data from the results DataFrame
+#' with the highest score carried through for each cell.
 #' 
 #' @details
 #' Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
 #' The results provided as input for this function should be generated from training sets that \strong{use a common set of genes}.
-#' 
-#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #'
-#' Fields are:
-#' \itemize{
-#' \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row), 
-#' combined from each object in \code{results}.
-#' \item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores} 
-#' after combining scores from each results object in \code{results}.
-#' }
+#' @section Method rationale:
+#' There are three obvious options for combining reference datasets or classification results stemming from disparate references:
+#'
+#' \strong{Option 1} would be to combine the reference datasets into a single matrix and treat each label as though it's specific to the reference
+#' from which it originated (e.g. Ref1-Bcell vs Ref2-Bcell), which is easily accomplished by \code{paste}ing the reference name onto the
+#' corresponding set of labels. 
+#' This option could be useful if the difference between the reference sets were important, 
+#' and it also avoids the need for label harmonization between references.
+#'
+#' However, this method will be prone to enrichment for genes responsible for uninteresting batch effects between the references. 
+#' This method would likely lead to a loss of precision and additional noise and risks the potential for technical variation to drive classification.
+#'
+#' \strong{Option 2} would also include combining the reference datasets into a single matrix but would utilize label harmonization so that
+#' the same cell type is given the same label across references. 
+#' This would allow feature selection methods to identify robust sets of label-specific markers that are more likely to generalize to other datasets. 
+#' It would also simplify interpretation, as there is no need to worry about the reference from which the labels came.
+#'
+#' The main obstacle to this method is the diffculty and annoyance of harmonization. 
+#' Putting aside trivial differences in naming schemes (e.g. "B cell" vs "B"), additional challenges like differences in label resolution 
+#' across references (e.g., how to harmonize "B cell" to another reference that splits to "naive B cell" and "mature B cell"), 
+#' different sorting strategies, or subtle biological difference that require domain expertise.
+#'
+#' \strong{Option 3} (the method that this function uses) would be to perform classification separately within each reference, then collate
+#' the results to choose the label with the highest score across references. 
+#' This avoids the potential for reference-specific markers (like option 1) and the need for explicit harmonization (like option 2).
+#' This option leaves a mixture of labels in the final results that is up to the user to resolve.
 #' 
 #' @author Jared Andrews
 #'
@@ -92,37 +113,120 @@
 #' \code{\link{matchReferences}}, to harmonize labels between reference datasets.
 #' \code{\link{SingleR}}, for generating predictions.
 #'
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata metadata<-
 #'
 #' @export
 combineResults <- function(results) {
     num.features <- sapply(results, nrow)
     if (abs(max(num.features) - min(num.features)) != 0) {
-        stop("Results objects contain different numbers of cells or clusters.")
+        stop("Results DataFrames contain different numbers of cells or clusters.")
     }
 
     pred.scores <- list()
+    pred.firstlabels <- list()
+    pred.prunedlabels <- list()
+    pred.tuningscores <- list()
     feature.names <- list()
+    de.genes <- list()
+    common.genes <- list()
+
+    # Keep track of which scores belong to which results object.
+    pred.score.indices <- list()
+    ind <- 1
 
     for (i in seq_along(results)) {
         res <- results[[i]]
         pred.scores[[i]] <- res$scores
 
+        if (!is.null(res$first.labels)) {
+            pred.firstlabels[[i]] <- res$first.labels
+        } else {
+            pred.firstlabels[[i]] <- NA_character_
+        }
+
+        if (!is.null(res$pruned.labels)) {
+            pred.prunedlabels[[i]] <- res$pruned.labels
+        } else {
+            pred.prunedlabels[[i]] <- NA_character_
+        }
+
+        if (!is.null(res$tuning.scores)) {
+            pred.tuningscores[[i]] <- res$tuning.scores
+        } else {
+            pred.tuningscores[[i]] <- NA_character_
+        }
+
         feature.names[[i]] <- rownames(res)
+
+        if (!is.null(metadata(res)$de.genes)) {
+            de.genes[[i]] <- metadata(res)$de.genes
+        } else {
+            de.genes[[i]] <- NA_character_
+        }
+
+        common.genes[[i]] <- metadata(res)$common.genes
+        pred.score.indices[[i]] <- seq(ind, (ind + ncol(res$scores) - 1))
+        ind <- ind + ncol(res$scores)
     }
 
     all.scores <- do.call(cbind, pred.scores)
     best.labels <- colnames(all.scores)[max.col(all.scores)]
 
-    output <- DataFrame(scores=I(all.scores), labels=best.labels)
+    # Determine which results DataFrame each score comes from.
+    pred.indices <- sapply(max.col(all.scores), .get_pred_indices, pred.score.indices = pred.score.indices)
+
+    output <- DataFrame(scores = I(all.scores), labels = best.labels)
 
     if (length(feature.names) > 0) {
         if (length(unique(feature.names)) == 1) {
             rownames(output) <- feature.names[[1]]
         } else {
-            warning("Results objects row names do not match, skipping row name assignment.")
+            warning("Results Dataframes row names do not match, skipping row name assignment.")
         }
     }
 
+    if (length(unique(common.genes)) == 1) {
+        metadata(output)$common.genes <- common.genes[[1]]
+    } else {
+        warning("Results Dataframes common genes do not match, skipping common.genes metadata assignment.")
+    }
+
+    if(!all(is.na(de.genes))) {
+        metadata(output)$de.genes <- do.call(cbind, de.genes)
+    }
+
+    if (!all(is.na(pred.firstlabels))) {
+        output$first.labels <- sapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.firstlabels)
+    }
+
+    if (!all(is.na(pred.prunedlabels))) {
+        output$pruned.labels <- sapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.prunedlabels)
+    }
+
+    if (!all(is.na(pred.tuningscores))) {
+        first <- sapply(seq_along(pred.indices), .select_by_index, 
+            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 1)
+        second <- sapply(seq_along(pred.indices), .select_by_index, 
+            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 2)
+        output$tuning.scores <- DataFrame(first = first, second = second)
+    }
+
     return(output)
+}
+
+.get_pred_indices <- function(x, pred.score.indices) {
+    for (i in seq_along(pred.score.indices)) {
+        if(x %in% pred.score.indices[[i]]) {
+            return(i)
+        }
+    }
+}
+
+.select_by_index <- function(x, pred.indices, data, tuning = FALSE, col = 1) {
+    ind <- pred.indices[x]
+    if (!tuning) {
+        data[[ind]][x]
+    } else {
+        data[[ind]][x, col]
+    }
 }

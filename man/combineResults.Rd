@@ -11,14 +11,8 @@ combineResults(results)
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
-
-Fields are:
-\itemize{
-\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row), 
-combined from each object in \code{results}.
-\item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores} 
-after combining scores from each results object in \code{results}.
-}
+This is identical to the output of \code{\link{classifySingleR}}, albeit with \code{scores} combined and data from the results DataFrame
+with the highest score carried through for each cell.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
@@ -28,6 +22,35 @@ The label with the highest score across predictions for each cell is retained.
 Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
 The results provided as input for this function should be generated from training sets that \strong{use a common set of genes}.
 }
+\section{Method rationale}{
+
+There are three obvious options for combining reference datasets or classification results stemming from disparate references:
+
+\strong{Option 1} would be to combine the reference datasets into a single matrix and treat each label as though it's specific to the reference
+from which it originated (e.g. Ref1-Bcell vs Ref2-Bcell), which is easily accomplished by \code{paste}ing the reference name onto the
+corresponding set of labels. 
+This option could be useful if the difference between the reference sets were important, 
+and it also avoids the need for label harmonization between references.
+
+However, this method will be prone to enrichment for genes responsible for uninteresting batch effects between the references. 
+This method would likely lead to a loss of precision and additional noise and risks the potential for technical variation to drive classification.
+
+\strong{Option 2} would also include combining the reference datasets into a single matrix but would utilize label harmonization so that
+the same cell type is given the same label across references. 
+This would allow feature selection methods to identify robust sets of label-specific markers that are more likely to generalize to other datasets. 
+It would also simplify interpretation, as there is no need to worry about the reference from which the labels came.
+
+The main obstacle to this method is the diffculty and annoyance of harmonization. 
+Putting aside trivial differences in naming schemes (e.g. "B cell" vs "B"), additional challenges like differences in label resolution 
+across references (e.g., how to harmonize "B cell" to another reference that splits to "naive B cell" and "mature B cell"), 
+different sorting strategies, or subtle biological difference that require domain expertise.
+
+\strong{Option 3} (the method that this function uses) would be to perform classification separately within each reference, then collate
+the results to choose the label with the highest score across references. 
+This avoids the potential for reference-specific markers (like option 1) and the need for explicit harmonization (like option 2).
+This option leaves a mixture of labels in the final results that is up to the user to resolve.
+}
+
 \examples{
 ##############################
 ## Mocking up training data ##
