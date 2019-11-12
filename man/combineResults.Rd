@@ -12,7 +12,8 @@ combineResults(results)
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 This is identical to the output of \code{\link{classifySingleR}}, albeit with \code{scores} combined and data from the results DataFrame
-with the highest score carried through for each cell.
+with the highest score carried through for each cell. 
+The original results are available in the \code{orig.results} field.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
@@ -115,8 +116,8 @@ pred4 <- SingleR(test, ref2, labels=ref2$label,
 ##     Combining results     ##
 ###############################
 
-pred.single <- combineResults(list(pred1, pred2))
-pred.clust <- combineResults(list(pred3, pred4))
+pred.single <- combineResults(list("pred1" = pred1, "pred2" = pred2))
+pred.clust <- combineResults(list("pred3" = pred3, "pred4" = pred4))
 
 }
 \seealso{

@@ -7,7 +7,8 @@
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This is identical to the output of \code{\link{classifySingleR}}, albeit with \code{scores} combined and data from the results DataFrame
-#' with the highest score carried through for each cell.
+#' with the highest score carried through for each cell. 
+#' The original results are available in the \code{orig.results} field.
 #' 
 #' @details
 #' Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
@@ -106,8 +107,8 @@
 #' ##     Combining results     ##
 #' ###############################
 #'
-#' pred.single <- combineResults(list(pred1, pred2))
-#' pred.clust <- combineResults(list(pred3, pred4))
+#' pred.single <- combineResults(list("pred1" = pred1, "pred2" = pred2))
+#' pred.clust <- combineResults(list("pred3" = pred3, "pred4" = pred4))
 #'
 #' @seealso
 #' \code{\link{matchReferences}}, to harmonize labels between reference datasets.
@@ -117,16 +118,16 @@
 #'
 #' @export
 combineResults <- function(results) {
-    num.features <- sapply(results, nrow)
-    if (abs(max(num.features) - min(num.features)) != 0) {
-        stop("Results DataFrames contain different numbers of cells or clusters.")
+    num.cells <- vapply(results, nrow, 0L)
+    if (abs(max(num.cells) - min(num.cells)) != 0) {
+        stop("results DataFrames contain different numbers of cells or clusters")
     }
 
     pred.scores <- list()
     pred.firstlabels <- list()
     pred.prunedlabels <- list()
     pred.tuningscores <- list()
-    feature.names <- list()
+    cell.names <- list()
     de.genes <- list()
     common.genes <- list()
 
@@ -156,7 +157,7 @@ combineResults <- function(results) {
             pred.tuningscores[[i]] <- NA_character_
         }
 
-        feature.names[[i]] <- rownames(res)
+        cell.names[[i]] <- rownames(res)
 
         if (!is.null(metadata(res)$de.genes)) {
             de.genes[[i]] <- metadata(res)$de.genes
@@ -169,26 +170,26 @@ combineResults <- function(results) {
         ind <- ind + ncol(res$scores)
     }
 
+    if (length(cell.names) > 0) {
+        if (length(unique(cell.names)) == 1) {
+            rownames(output) <- cell.names[[1]]
+        } else {
+            stop("results DataFrames cell/cluster names do not match")
+        }
+    }
+
     all.scores <- do.call(cbind, pred.scores)
     best.labels <- colnames(all.scores)[max.col(all.scores)]
 
     # Determine which results DataFrame each score comes from.
-    pred.indices <- sapply(max.col(all.scores), .get_pred_indices, pred.score.indices = pred.score.indices)
+    pred.indices <- vapply(max.col(all.scores), .get_pred_indices, pred.score.indices = pred.score.indices, 0L)
 
     output <- DataFrame(scores = I(all.scores), labels = best.labels)
-
-    if (length(feature.names) > 0) {
-        if (length(unique(feature.names)) == 1) {
-            rownames(output) <- feature.names[[1]]
-        } else {
-            warning("Results Dataframes row names do not match, skipping row name assignment.")
-        }
-    }
 
     if (length(unique(common.genes)) == 1) {
         metadata(output)$common.genes <- common.genes[[1]]
     } else {
-        warning("Results Dataframes common genes do not match, skipping common.genes metadata assignment.")
+        warning("results DataFrames common genes do not match")
     }
 
     if(!all(is.na(de.genes))) {
@@ -196,20 +197,22 @@ combineResults <- function(results) {
     }
 
     if (!all(is.na(pred.firstlabels))) {
-        output$first.labels <- sapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.firstlabels)
+        output$first.labels <- vapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.firstlabels, character(1))
     }
 
     if (!all(is.na(pred.prunedlabels))) {
-        output$pruned.labels <- sapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.prunedlabels)
+        output$pruned.labels <- vapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.prunedlabels, character(1))
     }
 
     if (!all(is.na(pred.tuningscores))) {
-        first <- sapply(seq_along(pred.indices), .select_by_index, 
-            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 1)
-        second <- sapply(seq_along(pred.indices), .select_by_index, 
-            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 2)
+        first <- vapply(seq_along(pred.indices), .select_by_index, 
+            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 1, double(1))
+        second <- vapply(seq_along(pred.indices), .select_by_index, 
+            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 2, double(1))
         output$tuning.scores <- DataFrame(first = first, second = second)
     }
+
+    output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     return(output)
 }
