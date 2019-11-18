@@ -1,7 +1,7 @@
 #' Combine SingleR results
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
-#' The label with the highest score across predictions for each cell is retained.
+#' The label from the results with the highest score for each cell is retained.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} or \code{\link{SingleR}}.
 #'
@@ -71,8 +71,6 @@
 #'
 #' ref1 <- scater::logNormCounts(ref1)
 #' ref2 <- scater::logNormCounts(ref2)
-#' trained1 <- trainSingleR(ref1, ref1$label)
-#' trained2 <- trainSingleR(ref2, ref2$label)
 #'
 #' ###############################
 #' ## Mocking up some test data ##
@@ -118,118 +116,82 @@
 #'
 #' @export
 combineResults <- function(results) {
-    num.cells <- vapply(results, nrow, 0L)
-    if (abs(max(num.cells) - min(num.cells)) != 0) {
-        stop("results DataFrames contain different numbers of cells or clusters")
+    if (length(unique(lapply(results, rownames))) != 1) {
+        stop("cell/cluster names are not identical")
     }
 
-    pred.scores <- list()
-    pred.firstlabels <- list()
-    pred.prunedlabels <- list()
-    pred.tuningscores <- list()
-    cell.names <- list()
-    de.genes <- list()
-    common.genes <- list()
+    if (length(unique(lapply(results, function (x) sort(metadata(x)$common.genes)))) != 1) {
+        # This should be changed to 'stop' before release/after merge with PR #60.
+        warning("common genes are not identical")
+    }
 
-    # Keep track of which scores belong to which results object.
-    pred.score.indices <- list()
-    ind <- 1
+    has.first <- FALSE
+    has.pruned <- FALSE
+    has.de <- FALSE
+
+    if (!is.null(results[[1]]$first.labels)) {
+        has.first <- TRUE
+    }
+
+    if (!is.null(results[[1]]$pruned.labels)) {
+        has.pruned <- TRUE
+    }
+
+    if (!is.null(metadata(results[[1]])$de.genes)) {
+        has.de <- TRUE
+        de.names <- sapply(results, function(x) names(metadata(x)$de.genes))
+    }
+
+    ncells <- nrow(results[[1]])
+
+    last.best <- rep(-Inf, ncells) 
+    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, ncells)
+    collected.scores <- list()
+    collected.de <- list()
 
     for (i in seq_along(results)) {
         res <- results[[i]]
-        pred.scores[[i]] <- res$scores
+        scores <- res$scores
+        curbest <- scores[cbind(seq_len(ncells), max.col(scores))]
+        collected.scores[[i]] <- scores
+        better <- curbest > last.best
+         
+        chosen.label[better] <- res$labels[better]
 
-        if (!is.null(res$first.labels)) {
-            pred.firstlabels[[i]] <- res$first.labels
-        } else {
-            pred.firstlabels[[i]] <- NA_character_
+        if (has.first) { # either everyone has 'first', or no-one does.
+            chosen.first[better] <- res$first.labels[better]
         }
 
-        if (!is.null(res$pruned.labels)) {
-            pred.prunedlabels[[i]] <- res$pruned.labels
-        } else {
-            pred.prunedlabels[[i]] <- NA_character_
+        if (has.pruned) { # same for pruned.
+            chosen.pruned[better] <- res$pruned.labels[better]
         }
 
-        if (!is.null(res$tuning.scores)) {
-            pred.tuningscores[[i]] <- res$tuning.scores
-        } else {
-            pred.tuningscores[[i]] <- NA_character_
+        if (has.de) {
+            collected.de[[i]] <- metadata(res)$de.genes
         }
 
-        cell.names[[i]] <- rownames(res)
-
-        if (!is.null(metadata(res)$de.genes)) {
-            de.genes[[i]] <- metadata(res)$de.genes
-        } else {
-            de.genes[[i]] <- NA_character_
-        }
-
-        common.genes[[i]] <- metadata(res)$common.genes
-        pred.score.indices[[i]] <- seq(ind, (ind + ncol(res$scores) - 1))
-        ind <- ind + ncol(res$scores)
+        last.best <- curbest
     }
 
-    if (length(cell.names) > 0) {
-        if (length(unique(cell.names)) == 1) {
-            rownames(output) <- cell.names[[1]]
-        } else {
-            stop("results DataFrames cell/cluster names do not match")
-        }
+    all.scores <- do.call(cbind, collected.scores)
+
+    output <- DataFrame(scores = I(all.scores), labels = chosen.label)
+    metadata(output)$common.genes <- metadata(results[[1]])$common.genes
+
+    if (has.de) {
+        metadata(output)$de.genes <- do.call(cbind, collected.de)
+        names(metadata(output)$de.genes) <- de.names
     }
 
-    all.scores <- do.call(cbind, pred.scores)
-    best.labels <- colnames(all.scores)[max.col(all.scores)]
-
-    # Determine which results DataFrame each score comes from.
-    pred.indices <- vapply(max.col(all.scores), .get_pred_indices, pred.score.indices = pred.score.indices, 0L)
-
-    output <- DataFrame(scores = I(all.scores), labels = best.labels)
-
-    if (length(unique(common.genes)) == 1) {
-        metadata(output)$common.genes <- common.genes[[1]]
-    } else {
-        warning("results DataFrames common genes do not match")
+    if (has.first) {
+        output$first.labels <- chosen.first
     }
 
-    if(!all(is.na(de.genes))) {
-        metadata(output)$de.genes <- do.call(cbind, de.genes)
-    }
-
-    if (!all(is.na(pred.firstlabels))) {
-        output$first.labels <- vapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.firstlabels, character(1))
-    }
-
-    if (!all(is.na(pred.prunedlabels))) {
-        output$pruned.labels <- vapply(seq_along(pred.indices), .select_by_index, pred.indices = pred.indices, data = pred.prunedlabels, character(1))
-    }
-
-    if (!all(is.na(pred.tuningscores))) {
-        first <- vapply(seq_along(pred.indices), .select_by_index, 
-            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 1, double(1))
-        second <- vapply(seq_along(pred.indices), .select_by_index, 
-            pred.indices = pred.indices, data = pred.tuningscores, tuning = TRUE, col = 2, double(1))
-        output$tuning.scores <- DataFrame(first = first, second = second)
+    if (has.pruned) {
+        output$first.labels <- chosen.pruned
     }
 
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     return(output)
-}
-
-.get_pred_indices <- function(x, pred.score.indices) {
-    for (i in seq_along(pred.score.indices)) {
-        if(x %in% pred.score.indices[[i]]) {
-            return(i)
-        }
-    }
-}
-
-.select_by_index <- function(x, pred.indices, data, tuning = FALSE, col = 1) {
-    ind <- pred.indices[x]
-    if (!tuning) {
-        data[[ind]][x]
-    } else {
-        data[[ind]][x, col]
-    }
 }

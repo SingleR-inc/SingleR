@@ -17,7 +17,7 @@ The original results are available in the \code{orig.results} field.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
-The label with the highest score across predictions for each cell is retained.
+The label from the results with the highest score for each cell is retained.
 }
 \details{
 Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
@@ -80,8 +80,6 @@ rownames(ref2) <- sprintf("GENE_\%s", seq_len(nrow(ref2)))
 
 ref1 <- scater::logNormCounts(ref1)
 ref2 <- scater::logNormCounts(ref2)
-trained1 <- trainSingleR(ref1, ref1$label)
-trained2 <- trainSingleR(ref2, ref2$label)
 
 ###############################
 ## Mocking up some test data ##

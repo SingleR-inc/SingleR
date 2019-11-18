@@ -363,7 +363,7 @@ kable(unique(samples), format = "markdown")
 # Combining predictions from different references
 
 In many cases, running the test set against multiple reference datasets may be useful. 
-The `combineResults` function will pool multiple predictions together and select the label with the highest score between them for each cell/cluster:
+The `combineResults` function will pool multiple predictions together and retain the data from the prediction with the highest score for each cell/cluster:
 
 ```{r}
 hpca.se <- HumanPrimaryCellAtlasData()
@@ -389,7 +389,7 @@ table(pred.hpca$labels)
 pred.bp <- SingleR(test = hESCs, ref = bp.se, labels = bp.se$label.main)
 table(pred.bp$labels)
 
-combined.preds <- combineResults(list(pred.hpca, pred.bp))
+combined.preds <- combineResults(list(hpca = pred.hpca, bp = pred.bp))
 table(combined.preds$labels)
 ```
 
