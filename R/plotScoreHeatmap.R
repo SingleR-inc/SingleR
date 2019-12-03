@@ -161,9 +161,6 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
         scores <- scores^3
-        breaks <- seq(0, 1, length.out=101)
-    } else {
-        breaks <- seq(-1, 1, length.out=101)
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
@@ -172,11 +169,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = show_colnames, clustering_method = 'ward.D2',
-        cluster_cols = cluster_cols, breaks=breaks, ...)
+        cluster_cols = cluster_cols, ...)
 
     if (normalize) {
-        args$color <- grDevices::colorRampPalette(c("white", "blue"))(100)
-        args$legend <- FALSE
+        args$color <- viridis::viridis(100)
     }
 
     if (ncol(annotation_col)>0) {
