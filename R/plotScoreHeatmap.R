@@ -92,7 +92,7 @@
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
-plotScoreHeatmap_new <- function(results, cells.use = NULL, labels.use = NULL,
+plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE,
