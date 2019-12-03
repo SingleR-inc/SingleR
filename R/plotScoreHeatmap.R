@@ -176,8 +176,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
     } else {
-        abs.max <- max(abs(c(min(scores), max(scores))))
-        args$breaks <- seq(-abs.max, abs.max, length.out = 101)
+        args$breaks <- seq(-max(abs(scores)), max(abs(scores)), length.out=101)
     }
 
     if (ncol(annotation_col)>0) {
