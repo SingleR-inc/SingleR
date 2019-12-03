@@ -179,7 +179,7 @@ combineResults <- function(results) {
     metadata(output)$common.genes <- metadata(results[[1]])$common.genes
 
     if (has.de) {
-        metadata(output)$de.genes <- do.call(cbind, collected.de)
+        metadata(output)$de.genes <- do.call(c, collected.de)
         names(metadata(output)$de.genes) <- de.names
     }
 
@@ -188,10 +188,10 @@ combineResults <- function(results) {
     }
 
     if (has.pruned) {
-        output$first.labels <- chosen.pruned
+        output$pruned.labels <- chosen.pruned
     }
 
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
-    return(output)
+    output
 }
