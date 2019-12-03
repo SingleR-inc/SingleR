@@ -40,7 +40,8 @@ Suggests:
     BiocGenerics,
     ggplot2,
     pheatmap,
-    grDevices
+    grDevices,
+    viridis
 biocViews: 
     Software,
     SingleCell, 
