@@ -161,6 +161,9 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
         if (length(unique(gns))!=1L) {
             stop("row names are not identical across references")
         }
+        if (length(labels)!=length(ref)) {
+            stop("lists in 'labels' and 'ref' should be of the same length")
+        }
 
         gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, 
             MoreArgs=list(genes=genes, sd.thresh=sd.thresh, de.n=de.n),
@@ -170,8 +173,10 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
         all.common <- Reduce(union, lapply(gene.info, function(x) x$common))
 
         output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, 
-            MoreArgs=list(common=all.common, genes=gene.info$genes,
-                args=gene.info$args, extra=gene.info$extra, BNPARAM=BNPARAM),
+            args=lapply(gene.info, "[[", i="args"),
+            genes=lapply(gene.info, "[[", i="genes"),
+            extra=lapply(gene.info, "[[", i="extra"),
+            MoreArgs=list(common=all.common, BNPARAM=BNPARAM),
             SIMPLIFY=FALSE)
         List(output)
     }
