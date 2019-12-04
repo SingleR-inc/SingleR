@@ -4,9 +4,16 @@
 \alias{trainSingleR}
 \title{Train the SingleR classifier}
 \usage{
-trainSingleR(ref, labels, genes = "de", sd.thresh = 1, de.n = NULL,
-  assay.type = "logcounts", check.missing = TRUE,
-  BNPARAM = KmknnParam())
+trainSingleR(
+  ref,
+  labels,
+  genes = "de",
+  sd.thresh = 1,
+  de.n = NULL,
+  assay.type = "logcounts",
+  check.missing = TRUE,
+  BNPARAM = KmknnParam()
+)
 }
 \arguments{
 \item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).

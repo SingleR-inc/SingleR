@@ -120,7 +120,8 @@ pred.clust <- combineResults(list("pred3" = pred3, "pred4" = pred4))
 }
 \seealso{
 \code{\link{matchReferences}}, to harmonize labels between reference datasets.
-\code{\link{SingleR}}, for generating predictions.
+
+\code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
 }
 \author{
 Jared Andrews

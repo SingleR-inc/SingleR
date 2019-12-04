@@ -4,10 +4,18 @@
 \alias{classifySingleR}
 \title{Classify cells with SingleR}
 \usage{
-classifySingleR(test, trained, quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = NULL, prune = TRUE,
-  assay.type = "logcounts", check.missing = TRUE,
-  BPPARAM = SerialParam())
+classifySingleR(
+  test,
+  trained,
+  quantile = 0.8,
+  fine.tune = TRUE,
+  tune.thresh = 0.05,
+  sd.thresh = NULL,
+  prune = TRUE,
+  assay.type = "logcounts",
+  check.missing = TRUE,
+  BPPARAM = SerialParam()
+)
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.

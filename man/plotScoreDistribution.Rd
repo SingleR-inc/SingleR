@@ -4,11 +4,19 @@
 \alias{plotScoreDistribution}
 \title{Plot score distributions of labels.}
 \usage{
-plotScoreDistribution(results, show = c("delta.med", "delta.next",
-  "scores"), labels = colnames(results$scores), size = 0.5, ncol = 5,
-  dots.on.top = TRUE, this.color = "#F0E442",
-  pruned.color = "#E69F00", other.color = "gray60",
-  show.nmads = NULL, show.min.diff = NULL)
+plotScoreDistribution(
+  results,
+  show = c("delta.med", "delta.next", "scores"),
+  labels = colnames(results$scores),
+  size = 0.5,
+  ncol = 5,
+  dots.on.top = TRUE,
+  this.color = "#F0E442",
+  pruned.color = "#E69F00",
+  other.color = "gray60",
+  show.nmads = NULL,
+  show.min.diff = NULL
+)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
