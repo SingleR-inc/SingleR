@@ -40,7 +40,8 @@ Suggests:
     BiocGenerics,
     ggplot2,
     pheatmap,
-    grDevices
+    grDevices,
+    viridis
 biocViews: 
     Software,
     SingleCell, 
@@ -52,4 +53,4 @@ biocViews:
 SystemRequirements: C++11
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2

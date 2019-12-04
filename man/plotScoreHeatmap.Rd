@@ -4,11 +4,21 @@
 \alias{plotScoreHeatmap}
 \title{Plot a score heatmap}
 \usage{
-plotScoreHeatmap(results, cells.use = NULL, labels.use = NULL,
-  clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
-  max.labels = 40, normalize = TRUE, cells.order = NULL,
-  order.by.clusters = FALSE, annotation_col = NULL,
-  show_colnames = FALSE, ...)
+plotScoreHeatmap(
+  results,
+  cells.use = NULL,
+  labels.use = NULL,
+  clusters = NULL,
+  show.labels = FALSE,
+  show.pruned = FALSE,
+  max.labels = 40,
+  normalize = TRUE,
+  cells.order = NULL,
+  order.by.clusters = FALSE,
+  annotation_col = NULL,
+  show_colnames = FALSE,
+  ...
+)
 }
 \arguments{
 \item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.}
@@ -29,7 +39,7 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{normalize}{Logical specifying whether correlations should be normalized to lie in [0, 1].}
 
-\item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap. 
+\item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap.
 Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 If set, turns off clustering of columns based on scoring.}
 
@@ -63,13 +73,13 @@ Clustering, pruning and label annotations are automatically generated and append
 
 If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 This is followed by cubing of the adjusted scores to improve dynamic range near 1.
-Visually, the color scheme is changed to a unidirectional scale and the color bar is no longer shown.
+Visually, the color scheme is changed to a blue-green-yellow scale.
 
 The adjustment is intended to inflate differences between scores within a given cell for easier visualization.
 This is because the scores are often systematically shifted between cells, making the raw values difficult to directly compare.
 However, it may be somewhat misleading;
 fine-tuning may appear to assign a cell to a label with much lower score whereas the actual scores are much closer.
-It is for this reason that the color bar is not shown as the absolute values of the score have little meaning. 
+It is for this reason that the color bar values are not shown as the absolute values of the score have little meaning.
 
 Also note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
 }

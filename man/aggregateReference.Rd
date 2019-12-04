@@ -4,8 +4,13 @@
 \alias{aggregateReference}
 \title{Aggregate reference samples}
 \usage{
-aggregateReference(ref, labels, power = 0.5, assay.type = "logcounts",
-  check.missing = TRUE)
+aggregateReference(
+  ref,
+  labels,
+  power = 0.5,
+  assay.type = "logcounts",
+  check.missing = TRUE
+)
 }
 \arguments{
 \item{ref}{A numeric matrix of reference expression values, usually containing log-expression values.

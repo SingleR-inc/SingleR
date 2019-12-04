@@ -4,12 +4,24 @@
 \alias{SingleR}
 \title{Annotate scRNA-seq data}
 \usage{
-SingleR(test, ref, labels, method = c("single", "cluster"),
-  clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE,
-  tune.thresh = 0.05, sd.thresh = 1, prune = TRUE,
-  assay.type.test = "logcounts", assay.type.ref = "logcounts",
-  check.missing = TRUE, BNPARAM = KmknnParam(),
-  BPPARAM = SerialParam())
+SingleR(
+  test,
+  ref,
+  labels,
+  method = c("single", "cluster"),
+  clusters = NULL,
+  genes = "de",
+  quantile = 0.8,
+  fine.tune = TRUE,
+  tune.thresh = 0.05,
+  sd.thresh = 1,
+  prune = TRUE,
+  assay.type.test = "logcounts",
+  assay.type.ref = "logcounts",
+  check.missing = TRUE,
+  BNPARAM = KmknnParam(),
+  BPPARAM = SerialParam()
+)
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.

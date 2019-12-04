@@ -14,11 +14,11 @@
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
 #' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 #' If set, this takes precedence over \code{cells.order} input.
-#' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap. 
+#' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
 #' @param annotation_col,show_colnames,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
-#' 
+#'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
 #' @details
@@ -27,7 +27,7 @@
 #'
 #' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating final labels assigned to the cells.
 #' Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, so the reported labels may not match up to the visual maximum for each cell in the heatmap.
-#' 
+#'
 #' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores in \code{results} are shown in the plot.
 #' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
 #'
@@ -35,25 +35,25 @@
 #' Particularly useful parameters are \code{show_colnames}, which can be used to display cell/cluster names;
 #' and \code{annotation_col}, which can be used to add extra annotation layers.
 #' Clustering, pruning and label annotations are automatically generated and appended to \code{annotation_col} when available.
-#' 
+#'
 #' @section Normalization of colors:
 #' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
-#' Visually, the color scheme is changed to a unidirectional scale and the color bar is no longer shown.
+#' Visually, the color scheme is changed to a blue-green-yellow scale.
 #'
 #' The adjustment is intended to inflate differences between scores within a given cell for easier visualization.
 #' This is because the scores are often systematically shifted between cells, making the raw values difficult to directly compare.
 #' However, it may be somewhat misleading;
 #' fine-tuning may appear to assign a cell to a label with much lower score whereas the actual scores are much closer.
-#' It is for this reason that the color bar is not shown as the absolute values of the score have little meaning. 
-#' 
+#' It is for this reason that the color bar values are not shown as the absolute values of the score have little meaning.
+#'
 #' Also note that this transformation is done \emph{after} the choice of the top \code{max.labels} labels.
-#' 
+#'
 #' @seealso
 #' \code{\link{SingleR}}, to generate \code{scores}.
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
-#' 
+#'
 #' \code{\link[pheatmap]{pheatmap}}, for additional tweaks to the heatmap.
 #'
 #' @author Daniel Bunis, based on code by Dvir Aran.
@@ -69,31 +69,31 @@
 #'
 #' # Creating a heatmap with clusters displayed.
 #' plotScoreHeatmap(pred, clusters=clusts)
-#' 
+#'
 #' # Creating a heatmap with labels displayed.
 #' plotScoreHeatmap(pred, show.labels = TRUE)
-#' 
+#'
 #' # Creating a heatmap with whether cells were pruned displayed.
 #' plotScoreHeatmap(pred, show.pruned = TRUE)
 #'
 #' # We can also turn off the normalization with Normalize = FALSE
 #' plotScoreHeatmap(pred, clusters=clusts, normalize = FALSE)
-#' 
+#'
 #' # To only show certain labels, you can use labels.use or max.labels
 #' plotScoreHeatmap(pred, clusters=clusts, labels.use = c("A","B","D"))
 #' plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
-#' 
+#'
 #' # We can pass extra tweaks the heatmap as well
 #' plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
 #' plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
-#' 
+#'
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    clusters = NULL, show.labels = FALSE, show.pruned = FALSE, 
+    clusters = NULL, show.labels = FALSE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
-    cells.order=NULL, order.by.clusters=FALSE, 
+    cells.order=NULL, order.by.clusters=FALSE,
     annotation_col = NULL, show_colnames = FALSE, ...)
 {
     if (is.null(rownames(results))) {
@@ -124,7 +124,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     scores <- results$scores
     rownames(scores) <- rownames(results)
-    
+
     # Trim the scores by requested cells or labels
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
@@ -134,8 +134,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (!is.null(labels.use)) {
         scores <- scores[,labels.use,drop=FALSE]
     }
-    
-    # Determining how to order the cells. 
+
+    # Determining how to order the cells.
     cluster_cols <- FALSE
     if (order.by.clusters) {
         order <- order(clusters)
@@ -146,7 +146,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         order <- seq_len(nrow(scores))
         cluster_cols <- TRUE
     }
-    
+
     # Determine labels to show based on 'max.labels' with the highest
     # pre-normalized scores (not removed until later, as we still need these
     # values when normalizing the scores).
@@ -159,22 +159,23 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         mmin <- rowMins(scores)
         scores <- (scores-mmin)/(mmax-mmin)
         scores <- scores^3
-        breaks <- seq(0, 1, length.out=101)
-    } else {
-        breaks <- seq(-1, 1, length.out=101)
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
     scores <- t(scores)
-    
+
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = show_colnames, clustering_method = 'ward.D2',
-        cluster_cols = cluster_cols, breaks=breaks, ...)
+        cluster_cols = cluster_cols, ...)
 
     if (normalize) {
-        args$color <- grDevices::colorRampPalette(c("white", "blue"))(100)
-        args$legend <- FALSE
+        args$color <- viridis::viridis(100)
+        args$legend_breaks <- c(0,1)
+        args$legend_labels <- c("Lower", "Higher")
+    } else {
+        abs.max <- max(abs(range(scores)))
+        args$breaks <- seq(-abs.max, abs.max, length.out=101)
     }
 
     if (ncol(annotation_col)>0) {
@@ -183,7 +184,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (is.null(args$annotation_colors)) {
         args <- .make_heatmap_annotation_colors(args, show.pruned)
     }
-    
+
     do.call(pheatmap::pheatmap, args)
 }
 
@@ -191,18 +192,18 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Create pheatmap annotations_colors dataframe
         # list of character vectors, all named.
             # vector names = annotation titles
-            # vector members' (colors') names = annotation identities 
-    
+            # vector members' (colors') names = annotation identities
+
     # Extract a default color-set
     annotation.colors.d <- .make_heatmap_colors_discrete(show.pruned)
     annotation.colors.n <- .make_heatmap_colors_numeric()
-    
+
     # Initiate variables
     next.color.index.discrete <- 1
     next.color.index.numeric <- 1
     col_colors <- NULL
     row_colors <- NULL
-    
+
     # Columns First (if there)
     if (!is.null(args$annotation_col)) {
         dfcolors_out <- .pick_colors_for_df(
@@ -213,18 +214,16 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         next.color.index.discrete <- dfcolors_out$next.color.index.discrete
         next.color.index.numeric <- dfcolors_out$next.color.index.numeric
     }
-    
+
     # Rows Second (if there)
-    if (!is.null(args$annotation_col)) {
+    if (!is.null(args$annotation_row)) {
         dfcolors_out <- .pick_colors_for_df(
-            args$annotation_col,
+            args$annotation_row,
             next.color.index.discrete, next.color.index.numeric,
             annotation.colors.d, annotation.colors.n)
         row_colors <- dfcolors_out$df_colors
-        next.color.index.discrete <- dfcolors_out$next.color.index.discrete
-        next.color.index.numeric <- dfcolors_out$next.color.index.numeric
     }
-    
+
     args$annotation_colors <- c(col_colors, row_colors)
     args
 }
@@ -249,7 +248,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Creates a default vector of colors with 8*3 (overkill) options.
         # These represent max.colors for discrete color scales.
     rep(
-        c(  # DittoSeq-v0.2.10 Colors, distinct order 
+        c(  # DittoSeq-v0.2.10 Colors, distinct order
             "#B14380", "#A04700", "#005685", "#D5C711", "#007756",
             "#1C91D4", "#AD7700", "#4D4D4D", "#CC79A7", "#D55E00",
             "#0072B2", "#F0E442", "#009E73", "#56B4E9", "#E69F00",
@@ -266,10 +265,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     ) {
     df_colors <- NULL
     for (i in seq_len(ncol(annotation_df))){
-        
+
         # Determine the distinct contents of the first annotation
         in.this.annot <- levels(as.factor(annotation_df[,i]))
-        
+
         # Make new colors
         if(!is.numeric(annotation_df[,i])){
             # Take colors for each, and name them.
@@ -277,7 +276,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
                 seq_along(in.this.annot) + next.color.index.discrete - 1
                 ]
             names(new.colors) <- in.this.annot
-            
+
             next.color.index.discrete <-
                 next.color.index.discrete + length(in.this.annot)
         } else {
@@ -289,7 +288,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             this.ramp <- annotation.colors.n[next.color.index.numeric]
             new.colors <-
                 grDevices::colorRampPalette(c("white",this.ramp))(100)[a]
-            
+
             next.color.index.numeric <- next.color.index.numeric + 1
         }
         # Add the new colors as the list
