@@ -9,7 +9,7 @@ author:
   affiliation: Applied Bioinformatics Core, Weill Cornell Medicine
 - name: Daniel Bunis
   affiliation: Bakar Computational Health Sciences Institute, University of California San Francisco, San Francisco, CA
-date: "Revised: September 4th, 2019"
+date: "Revised: November 9th, 2019"
 output:
   BiocStyle::html_document:
     toc_float: true
@@ -360,6 +360,39 @@ kable(unique(samples), format = "markdown")
 ```
 </details>
 
+# Combining predictions from different references
+
+In many cases, running the test set against multiple reference datasets may be useful. 
+The `combineResults` function will pool multiple predictions together and retain the data from the prediction with the highest score for each cell/cluster:
+
+```{r}
+hpca.se <- HumanPrimaryCellAtlasData()
+bp.se <- BlueprintEncodeData()
+
+hESCs <- LaMannoBrainData('human-es')
+hESCs <- hESCs[,1:100]
+
+# Restrict to common genes between reference datasets:
+common.refs <- intersect(rownames(bp.se), rownames(hpca.se))
+hpca.se <- hpca.se[common.refs,]
+bp.se <- bp.se[common.refs,]
+
+# Restrict to common genes between test and reference data:
+common <- intersect(rownames(hESCs), rownames(hpca.se))
+hpca.se <- hpca.se[common,]
+bp.se <- bp.se[common,]
+hESCs <- hESCs[common,]
+hESCs <- logNormCounts(hESCs)
+
+pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.main)
+table(pred.hpca$labels)
+pred.bp <- SingleR(test = hESCs, ref = bp.se, labels = bp.se$label.main)
+table(pred.bp$labels)
+
+combined.preds <- combineResults(list(hpca = pred.hpca, bp = pred.bp))
+table(combined.preds$labels)
+```
+
 # Advanced use
 
 Advanced users can split the `SingleR()` workflow into two separate training and classification steps.
@@ -379,6 +412,19 @@ Other efficiency improvements are possible through several arguments:
 - Parallelizing the fine-tuning step in `classifySingleR()` with the `BPPARAM=` argument from the `r Biocpkg("BiocParallel")` package.
 
 These arguments can also be specified in the `SingleR()` command.
+
+# FAQs
+
+*How can I use this with my `Seurat`, `SingleCellExperiment`, or `cell_data_set` object?*
+
+`r Biocpkg("SingleR")` is workflow agnostic - all it needs is normalized counts.
+An example showing how to map its results back to common single-cell data objects is available in the [README](https://github.com/LTLA/SingleR/blob/master/README.md).
+
+*Where can I find reference sets appropriate for my data?*
+
+`r Biocpkg("scRNAseq")` contains many single-cell datasets with more continually being added.
+`r Biocpkg("ArrayExpress")` and `r Biocpkg("GEOquery")` can be used to download any of the bulk or single-cell datasets in [ArrayExpress](https://www.ebi.ac.uk/arrayexpress) or [GEO](https://www.ncbi.nlm.nih.gov/geo/), respectively.
+
 
 # Session information
 

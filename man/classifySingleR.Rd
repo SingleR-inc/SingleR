@@ -39,7 +39,7 @@ If \code{fine.tune=FALSE}, fields are:
 \itemize{
 \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
 \item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
-\item \code{prune.scores}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
+\item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
 Only added if \code{prune=TRUE}.
 }
 
@@ -50,7 +50,7 @@ If \code{fine.tune=TRUE}, fields are:
 \item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
 These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
 \item \code{labels}, a character vector containing the predicted label after fine-tuning.
-\item \code{prune.scores}, a character vector of pruned labels as above.
+\item \code{pruned.labels}, a character vector of pruned labels as above.
 Only added if \code{prune=TRUE}.
 }
 
