@@ -12,7 +12,7 @@ test_that("combineResults works as expected", {
     colnames(scores) <- LETTERS[1:5]
     
     labs <- colnames(scores)[max.col(scores)]
-    results <- DataFrame(scores=I(scores), labels=labs, pruned.labels=labs)
+    results <- DataFrame(scores=I(scores), labels=labs, pruned.labels=tolower(labs))
     rownames(results) <- sprintf("GENE_%s", seq_len(nrow(results)))
 
     scores2 <- rbind(
@@ -25,15 +25,19 @@ test_that("combineResults works as expected", {
     colnames(scores2) <- LETTERS[6:10]
     
     labs2 <- colnames(scores2)[max.col(scores2)]
-    results2 <- DataFrame(scores=I(scores2), labels=labs2, pruned.labels=labs2)
+    results2 <- DataFrame(scores=I(scores2), labels=labs2, pruned.labels=tolower(labs2))
     rownames(results2) <- sprintf("GENE_%s", seq_len(nrow(results2)))
 
     combined <- combineResults(list(res1=results, res2=results2))
     expect_identical(combined$scores, cbind(scores, scores2))
     expect_identical(combined$labels, c("J", "D", "H", "B", "F"))
-    expect_identical(combined$pruned.labels, c("J", "D", "H", "B", "F"))
+    expect_identical(combined$pruned.labels, c("j", "d", "h", "b", "f"))
     expect_equivalent(combined$orig.results$res1, results)
     expect_equivalent(combined$orig.results$res2, results2)
+
+    combined <- combineResults(list(res1=results, res2=results))
+    expect_identical(combined$labels, c("E", "D", "C", "B", "A"))
+    expect_identical(combined$pruned.labels, c("e", "d", "c", "b", "a"))
 })
 
 test_that("combineResults handles non-matching cells", {
