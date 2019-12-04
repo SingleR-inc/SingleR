@@ -110,11 +110,11 @@
 #'
 #' @seealso
 #' \code{\link{matchReferences}}, to harmonize labels between reference datasets.
-#' \code{\link{SingleR}}, for generating predictions.
 #'
-#' @importFrom S4Vectors DataFrame metadata metadata<-
+#' \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
 #'
 #' @export
+#' @importFrom S4Vectors DataFrame metadata metadata<-
 combineResults <- function(results) {
     if (length(unique(lapply(results, rownames))) != 1) {
         stop("cell/cluster names are not identical")
@@ -175,7 +175,7 @@ combineResults <- function(results) {
 
     all.scores <- do.call(cbind, collected.scores)
 
-    output <- DataFrame(scores = I(all.scores), labels = chosen.label)
+    output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
     metadata(output)$common.genes <- metadata(results[[1]])$common.genes
 
     if (has.de) {
@@ -186,6 +186,8 @@ combineResults <- function(results) {
     if (has.first) {
         output$first.labels <- chosen.first
     }
+
+    output$labels <- chosen.label
 
     if (has.pruned) {
         output$pruned.labels <- chosen.pruned
