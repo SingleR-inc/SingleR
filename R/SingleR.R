@@ -5,11 +5,7 @@
 #'
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param ref A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}).
-#' This should have the same rows as or a subset of the rows in \code{test}.
-#'
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param labels A character vector or factor of known labels for all samples in \code{ref}.
+#' @inheritParams trainSingleR
 #' @param method String specifying whether annotation should be performed on single cells in \code{test},
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
@@ -73,7 +69,7 @@
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
 #' test <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
+#'     colData=DataFrame(cluster=g)
 #' )
 #' 
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
@@ -87,7 +83,7 @@
 #' table(predicted=pred$labels, truth=g)
 #'
 #' pred2 <- SingleR(test, ref, labels=ref$label, 
-#'     method="cluster", clusters=test$label) 
+#'     method="cluster", clusters=test$cluster) 
 #' table(predicted=pred2$labels, truth=rownames(pred2))
 #'
 #' @export
@@ -104,17 +100,32 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
-    ref <- .to_clean_matrix(ref, assay.type.ref, check.missing, msg="ref")
 
-    keep <- intersect(rownames(test), rownames(ref))
+    # Converting to a common list format for ease of data munging.
+    if (single.ref <- !.is_list(ref)) {
+        ref <- list(ref)
+    }
+
+    ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type.ref, 
+        check.missing=check.missing, msg="ref")
+    refnames <- Reduce(intersect, lapply(ref, rownames))
+
+    keep <- intersect(rownames(test), refnames)
     if (length(keep) == 0) {
         stop("no common genes between 'test' and 'ref'")
     }
     if (!identical(keep, rownames(test))) {
         test <- test[keep,]
-    } 
-    if (!identical(keep, rownames(ref))) {
-        ref <- ref[keep,]
+    }
+    for (i in seq_along(ref)) {
+        if (!identical(keep, rownames(ref[[i]]))) {
+            ref[[i]] <- ref[[i]][keep,,drop=FALSE]
+        }
+    }
+
+    # Converting back.
+    if (single.ref) {
+        ref <- ref[[1]]
     }
 
     trained <- trainSingleR(ref, labels, genes = genes, sd.thresh=sd.thresh, 
