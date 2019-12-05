@@ -27,12 +27,19 @@ SingleR(
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{ref}{A numeric matrix of reference expression values (usually log-transformed, see \code{\link{trainSingleR}}).
-This should have the same rows as or a subset of the rows in \code{test}.
+\item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
+Each row should be named with the gene name.
+In general, the expression values are expected to be log-transformed, see Details.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 
-\item{labels}{A character vector or factor of known labels for all samples in \code{ref}.}
+Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
+in which case the row names are expected to be the same across all objects.}
+
+\item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
+
+Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
+Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
 
 \item{method}{String specifying whether annotation should be performed on single cells in \code{test},
 or whether they should be aggregated into cluster-level profiles prior to annotation.}
@@ -104,7 +111,7 @@ N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
 test <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-    colData=DataFrame(label=g)
+    colData=DataFrame(cluster=g)
 )
 
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
@@ -118,7 +125,7 @@ pred <- SingleR(test, ref, labels=ref$label)
 table(predicted=pred$labels, truth=g)
 
 pred2 <- SingleR(test, ref, labels=ref$label, 
-    method="cluster", clusters=test$label) 
+    method="cluster", clusters=test$cluster) 
 table(predicted=pred2$labels, truth=rownames(pred2))
 
 }

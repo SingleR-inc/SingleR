@@ -17,11 +17,18 @@ trainSingleR(
 }
 \arguments{
 \item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
-These expression values are expected to be log-transformed, see Details.
+Each row should be named with the gene name.
+In general, the expression values are expected to be log-transformed, see Details.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 
-\item{labels}{A character vector or factor of known labels for all samples in \code{ref}.}
+Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
+in which case the row names are expected to be the same across all objects.}
+
+\item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
+
+Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
+Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
 
 \item{genes}{A string specifying the feature selection method to be used, see Details.
 
@@ -43,7 +50,7 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
 }
 \value{
-A \linkS4class{List} containing:
+For a single reference, a \linkS4class{List} is returned containing:
 \describe{
 \item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
 \item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
@@ -51,9 +58,11 @@ A \linkS4class{List} containing:
 \item{\code{extra}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
 This includes the selection method in \code{genes} and method-specific structures that can be re-used during classification.}
 }
+
+For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
 }
 \description{
-Train the SingleR classifier on a reference dataset with known labels.
+Train the SingleR classifier on one or more reference datasets with known labels.
 }
 \details{
 This function uses a training data set to select interesting features and construct nearest neighbor indices in rank space.
@@ -72,8 +81,12 @@ The set of all features is defined as those genes with standard deviations above
 \item \code{genes="all"} will not perform any feature selection.
 }
 If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
+}
+\section{Custom feature specification}{
 
-Alternatively, \code{genes} can be a named list of named lists of character vectors:
+Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.
+The function expects a named list of named lists of character vectors, with each vector containing the DE genes between a pair of labels.
+For example:
 \preformatted{genes <- list(
    A = list(A = character(0), B = "GENE_1", C = c("GENE_2", "GENE_3")),
    B = list(A = "GENE_100", B = character(0), C = "GENE_200"),
@@ -85,7 +98,8 @@ That is, these genes are upregulated in \code{"A"} compared to \code{"B"}.
 The outer list should have one list per label, and each inner list should have one character vector per label.
 (Obviously, a label cannot have markers against itself, so this is just set to \code{character(0)}.)
 
-Alternatively, \code{genes} can be a named list of character vectors:
+Alternatively, \code{genes} can be a named list of character vectors containing per-label markers.
+For example:
 \preformatted{genes <- list(
      A = c("GENE_1", "GENE_2", "GENE_3"),
      B = c("GENE_100", "GENE_200"),
@@ -98,6 +112,15 @@ However, it obviously captures less information than marker sets for the pairwis
 
 If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 }
+
+\section{Dealing with multiple references}{
+
+The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineResults}} for an explanation).
+To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
+This is almost equivalent to running \code{trainSingleR} on each reference separately, except that the final \code{common} set of genes consists of the union of common genes across all references.
+We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
+}
+
 \section{Note on single-cell references}{
 
 The default marker selection is based on log-fold changes in medians, and is very much designed with bulk references in mind.
@@ -146,6 +169,8 @@ length(trained$common.genes)
 }
 \seealso{
 \code{\link{classifySingleR}}, where the output of this function gets used.
+
+\code{\link{combineResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
