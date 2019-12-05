@@ -100,7 +100,7 @@
 #' g <- sample(LETTERS[1:5], N, replace=TRUE)
 #' test <- SummarizedExperiment(
 #'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
+#'     colData=DataFrame(cluster=g)
 #' )
 #' 
 #' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
@@ -141,7 +141,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
             fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
             prune=prune, BPPARAM=BPPARAM)
-        do.call(combineResults, results)
+        combineResults(results)
     }
 }
 
