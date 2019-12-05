@@ -189,6 +189,10 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
 }
 
 .identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL) {
+    if (length(labels)!=ncol(ref)) {
+        stop("number of labels must be equal to number of cells")
+    }
+
     # Choosing the gene sets of interest. 
     args <- list()
     if (.is_list(genes)) {
