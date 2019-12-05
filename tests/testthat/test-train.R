@@ -46,6 +46,8 @@ test_that("trainSingleR works correctly for genes='all'", {
     out <- trainSingleR(training, training$label, genes='all')
     expect_identical(out$common.genes, rownames(training))
 
+    # Because the search is equivalent to doing a fixed 'SD' search,
+    # there's no DE information for fine-tuning later.
     ref <- trainSingleR(training, training$label, genes='sd')
     expect_identical(ref$search, out$search)
 })
@@ -173,6 +175,39 @@ test_that("trainSingleR behaves with NAs", {
     ref <- trainSingleR(sce[-1,], sce$label)
 
     expect_identical(out, ref)
+})
+
+test_that("trainSingleR behaves with multiple references", {
+    set.seed(1000)
+    ref1 <- trainSingleR(training, training$label)
+    ref2 <- trainSingleR(training, training$label)
+    set.seed(1000)
+    out <- trainSingleR(list(training, training), list(training$label, training$label))
+
+    expect_identical(ref1, out[[1]])
+    expect_identical(ref2, out[[2]])
+
+    # Checking that the union of common genes are taken correctly 
+    # by scrambling the genes and makeing sure that we get the union.
+    training1 <- training2 <- training
+    training1 <- training1[sample(nrow(training1)),]
+    rownames(training1) <- rownames(training)
+
+    set.seed(2000)
+    ref1 <- trainSingleR(training1, training1$label)
+    ref2 <- trainSingleR(training2, training2$label)
+    set.seed(2000)
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
+
+    expect_identical(out[[1]]$search, ref1$search)
+    expect_identical(out[[2]]$search, ref2$search)
+    expect_false(identical(sort(ref1$common.genes), sort(ref2$common.genes)))
+    expect_identical(out[[1]]$common.genes, union(ref1$common.genes, ref2$common.genes))
+    expect_identical(out[[1]]$common.genes, out[[2]]$common.genes)
+
+    # Throws errors correctly.
+    expect_error(trainSingleR(list(training1, training2), list(training1$label)), "same length")
+    expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label)), "not identical")
 })
 
 test_that("trainSingleR behaves with silly inputs", {
