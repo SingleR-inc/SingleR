@@ -90,6 +90,19 @@ test_that("classifySingleR behaves with missing values", {
     expect_identical(out, ref)
 })
 
+test_that("classifySingleR works with multiple references", {
+    training1 <- training2 <- training
+    training1 <- training1[sample(nrow(training1)),]
+    rownames(training1) <- rownames(training)
+
+    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
+    out <- classifySingleR(test, mtrain)
+
+    ref1 <- classifySingleR(test, mtrain[[1]])
+    ref2 <- classifySingleR(test, mtrain[[2]])
+    expect_identical(out, combineResults(list(ref1, ref2)))
+})
+
 test_that("classifySingleR behaves with silly inputs", {
     out <- classifySingleR(test[,0], trained, fine.tune=FALSE)
     expect_identical(nrow(out$scores), 0L)

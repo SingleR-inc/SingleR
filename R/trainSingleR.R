@@ -1,12 +1,19 @@
 #' Train the SingleR classifier 
 #'
-#' Train the SingleR classifier on a reference dataset with known labels.
+#' Train the SingleR classifier on one or more reference datasets with known labels.
 #' 
 #' @param ref A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
-#' These expression values are expected to be log-transformed, see Details.
+#' Each row should be named with the gene name.
+#' In general, the expression values are expected to be log-transformed, see Details.
 #' 
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+#'
+#' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
+#' in which case the row names are expected to be the same across all objects.
 #' @param labels A character vector or factor of known labels for all samples in \code{ref}.
+#' 
+#' Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
+#' Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
 #' @param genes A string specifying the feature selection method to be used, see Details.
 #' 
 #' Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
@@ -21,7 +28,8 @@
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #'
-#' @return A \linkS4class{List} containing:
+#' @return 
+#' For a single reference, a \linkS4class{List} is returned containing:
 #' \describe{
 #' \item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
 #' \item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
@@ -29,6 +37,8 @@
 #' \item{\code{extra}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
 #' This includes the selection method in \code{genes} and method-specific structures that can be re-used during classification.}
 #' }
+#'
+#' For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
 #'
 #' @details
 #' This function uses a training data set to select interesting features and construct nearest neighbor indices in rank space.
@@ -48,7 +58,10 @@
 #' }
 #' If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
 #'
-#' Alternatively, \code{genes} can be a named list of named lists of character vectors:
+#' @section Custom feature specification:
+#' Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.
+#' The function expects a named list of named lists of character vectors, with each vector containing the DE genes between a pair of labels.
+#' For example:
 #' \preformatted{genes <- list(
 #'    A = list(A = character(0), B = "GENE_1", C = c("GENE_2", "GENE_3")),
 #'    B = list(A = "GENE_100", B = character(0), C = "GENE_200"),
@@ -60,7 +73,8 @@
 #' The outer list should have one list per label, and each inner list should have one character vector per label.
 #' (Obviously, a label cannot have markers against itself, so this is just set to \code{character(0)}.)
 #'
-#' Alternatively, \code{genes} can be a named list of character vectors:
+#' Alternatively, \code{genes} can be a named list of character vectors containing per-label markers.
+#' For example:
 #' \preformatted{genes <- list(
 #'      A = c("GENE_1", "GENE_2", "GENE_3"),
 #'      B = c("GENE_100", "GENE_200"),
@@ -73,6 +87,12 @@
 #'
 #' If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 #'
+#' @section Dealing with multiple references:
+#' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineResults}} for an explanation).
+#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
+#' This is almost equivalent to running \code{trainSingleR} on each reference separately, except that the final \code{common} set of genes consists of the union of common genes across all references.
+#' We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
+#' 
 #' @section Note on single-cell references:
 #' The default marker selection is based on log-fold changes in medians, and is very much designed with bulk references in mind.
 #' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts.
@@ -84,6 +104,7 @@
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
+#' \code{\link{combineResults}}, to combine results from multiple references.
 #' @examples
 #' ##############################
 #' ## Mocking up training data ##
@@ -122,17 +143,59 @@
 #' length(trained$common.genes)
 #' 
 #' @export
-#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex KmknnParam
+#' @importFrom BiocNeighbors KmknnParam 
 #' @importFrom S4Vectors List
-#' @importClassesFrom S4Vectors List
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL, 
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
-    ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+    if (!.is_list(ref)) {
+        ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+        gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, de.n=de.n)
+        .build_trained_index(ref, labels, common=gene.info$common, genes=gene.info$genes, 
+            args=gene.info$args, extra=gene.info$extra, BNPARAM=BNPARAM)
+    } else {
+        ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
+            check.missing=check.missing, msg="ref")
+
+        gns <- lapply(ref, rownames)
+        if (length(unique(gns))!=1L) {
+            stop("row names are not identical across references")
+        }
+        if (length(labels)!=length(ref)) {
+            stop("lists in 'labels' and 'ref' should be of the same length")
+        }
+
+        gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, 
+            MoreArgs=list(genes=genes, sd.thresh=sd.thresh, de.n=de.n),
+            SIMPLIFY=FALSE)
+
+        # Setting the common set across all references to the union of all genes.
+        all.common <- Reduce(union, lapply(gene.info, function(x) x$common))
+
+        output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, 
+            args=lapply(gene.info, "[[", i="args"),
+            genes=lapply(gene.info, "[[", i="genes"),
+            extra=lapply(gene.info, "[[", i="extra"),
+            MoreArgs=list(common=all.common, BNPARAM=BNPARAM),
+            SIMPLIFY=FALSE)
+        List(output)
+    }
+}
+
+#' @importFrom methods is
+#' @importClassesFrom S4Vectors List
+.is_list <- function(val) {
+    is.list(val) || is(val, "List")
+}
+
+.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL) {
+    if (length(labels)!=ncol(ref)) {
+        stop("number of labels must be equal to number of cells")
+    }
 
     # Choosing the gene sets of interest. 
     args <- list()
-    if (is.list(genes) || is(genes, "List")) {
+    if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
             genes <- .convert_per_label_set(genes)
@@ -164,9 +227,16 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
         }
     }
 
+    list(genes=genes, common=common, extra=extra, args=args)
+}
+
+#' @importFrom S4Vectors List
+#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
+.build_trained_index <- function(ref, labels, genes, common, extra, args, BNPARAM=KmknnParam()) {
     if (bndistance(BNPARAM)!="Euclidean") {
         stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
     }
+
     indices <- original <- List()
     for (u in unique(labels)) {
         # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.

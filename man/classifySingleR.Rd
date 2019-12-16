@@ -22,7 +22,8 @@ classifySingleR(
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{trained}{A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.}
+\item{trained}{A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.}
 
 \item{quantile}{A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.}
 
@@ -93,6 +94,8 @@ Any monotonic transformation will have no effect the calculation of the correlat
 If \code{prune=TRUE}, label pruning is performed as described in \code{\link{pruneScores}} with default arguments.
 This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
+
+If \code{trained} was generated from multiple references, \code{\link{combineResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
 }
 \examples{
 ##############################
@@ -124,7 +127,7 @@ N <- 100
 g <- sample(LETTERS[1:5], N, replace=TRUE)
 test <- SummarizedExperiment(
     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-    colData=DataFrame(label=g)
+    colData=DataFrame(cluster=g)
 )
 
 rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
@@ -142,6 +145,8 @@ table(predicted=pred$labels, truth=g)
 \code{\link{trainSingleR}}, to prepare the training set for classification.
 
 \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
+
+\code{\link{combineResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
