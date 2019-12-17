@@ -41,7 +41,9 @@ Suggests:
     ggplot2,
     pheatmap,
     grDevices,
-    viridis
+    viridis,
+    AnnotationHub,
+    AnnotationDbi
 biocViews: 
     Software,
     SingleCell, 

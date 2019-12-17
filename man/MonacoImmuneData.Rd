@@ -4,7 +4,11 @@
 \alias{MonacoImmuneData}
 \title{Obtain bulk RNA-seq data of sorted human immune cells}
 \usage{
-MonacoImmuneData()
+MonacoImmuneData(ensembl = FALSE)
+}
+\arguments{
+\item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
+Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
