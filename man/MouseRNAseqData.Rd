@@ -4,7 +4,11 @@
 \alias{MouseRNAseqData}
 \title{Obtain mouse bulk expression data of sorted cell populations (RNA-seq)}
 \usage{
-MouseRNAseqData()
+MouseRNAseqData(ensembl = FALSE)
+}
+\arguments{
+\item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
+Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
