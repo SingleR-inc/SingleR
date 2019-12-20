@@ -343,38 +343,31 @@ kable(unique(samples), format = "markdown")
 ```
 </details>
 
-# Combining predictions from different references
+# Combining multiple references
 
-In many cases, running the test set against multiple reference datasets may be useful. 
-The `combineResults` function will pool multiple predictions together and retain the data from the prediction with the highest score for each cell/cluster:
+In some cases, we may wish to use multiple references for annotation of a test dataset.
+This yield a more comprehensive set of cell types that are not covered by any individual reference, especially when differences in resolution are also considered.
+Use of multiple references is supported by simply passing multiple objects to the `ref=` and `label=` argument in `SingleR()`.
+We demonstrate below by including another reference (from Blueprint-Encode) in our annotation of the @lamanno2016molecular dataset:
 
 ```{r}
-hpca.se <- HumanPrimaryCellAtlasData()
 bp.se <- BlueprintEncodeData()
 
-hESCs <- LaMannoBrainData('human-es')
-hESCs <- hESCs[,1:100]
-
-# Restrict to common genes between reference datasets:
-common.refs <- intersect(rownames(bp.se), rownames(hpca.se))
-hpca.se <- hpca.se[common.refs,]
-bp.se <- bp.se[common.refs,]
-
-# Restrict to common genes between test and reference data:
-common <- intersect(rownames(hESCs), rownames(hpca.se))
-hpca.se <- hpca.se[common,]
-bp.se <- bp.se[common,]
-hESCs <- hESCs[common,]
-hESCs <- logNormCounts(hESCs)
-
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, labels = hpca.se$label.main)
-table(pred.hpca$labels)
-pred.bp <- SingleR(test = hESCs, ref = bp.se, labels = bp.se$label.main)
-table(pred.bp$labels)
-
-combined.preds <- combineResults(list(hpca = pred.hpca, bp = pred.bp))
-table(combined.preds$labels)
+pred.combined <- SingleR(test = hESCs, 
+    ref = list(BP=bp.se, HPCA=hpca.se), 
+    labels = list(bp.se$label.main, hpca.se$label.main))
 ```
+
+The output is the same form as previously described, and we can easily gain access to the combined set of labels:
+
+```{r}
+table(pred.combined$labels)
+```
+
+Oru strategy is to perform annotation on each reference separately and then take the highest-scoring label across references.
+This provides a light-weight approach to combining information from multiple references while avoiding batch effects and the need for up-front harmonization.
+(Of course, the main practical difficulty of this approach is that the same cell type may have different labels across references, which will require some implicit harmonization at least during interpretation.)
+Further comments on the justification behind the choice of this method can be found at `?combineResults`.
 
 # Advanced use
 
@@ -388,8 +381,8 @@ For example:
 ```{r}
 common <- intersect(rownames(hESCs), rownames(hpca.se))
 trained <- trainSingleR(hpca.se[common,], labels=hpca.se$label.main)
-pred.hpca2 <- classifySingleR(hESCs[common,], trained)
-table(pred.hpca$labels, pred.hpca2$labels)
+pred.hesc2 <- classifySingleR(hESCs[common,], trained)
+table(pred.hesc$labels, pred.hesc2$labels)
 ```
 
 Other efficiency improvements are possible through several arguments:
