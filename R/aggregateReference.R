@@ -54,7 +54,7 @@
 #' (aggr <- aggregateReference(sce, labels, power=1))
 #' @export
 #' @importFrom stats kmeans
-#' @importFrom Matrix rowSums
+#' @importFrom Matrix rowSums t
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
 #' @importFrom DelayedArray sweep colsum DelayedArray

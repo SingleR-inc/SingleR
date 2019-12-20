@@ -9,7 +9,7 @@ plotScoreHeatmap(
   cells.use = NULL,
   labels.use = NULL,
   clusters = NULL,
-  show.labels = FALSE,
+  show.labels = TRUE,
   show.pruned = FALSE,
   max.labels = 40,
   normalize = TRUE,
@@ -90,14 +90,11 @@ example(SingleR, echo=FALSE)
 # Grab the original identities of the cells as mock clusters
 clusts <- g
 
-# Creating a heatmap that shows cells showed.
+# Creating a heatmap with just the labels.
 plotScoreHeatmap(pred)
 
-# Creating a heatmap with clusters displayed.
+# Creating a heatmap with clusters also displayed.
 plotScoreHeatmap(pred, clusters=clusts)
-
-# Creating a heatmap with labels displayed.
-plotScoreHeatmap(pred, show.labels = TRUE)
 
 # Creating a heatmap with whether cells were pruned displayed.
 plotScoreHeatmap(pred, show.pruned = TRUE)

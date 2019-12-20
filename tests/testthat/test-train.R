@@ -107,6 +107,42 @@ test_that("trainSingleR works correctly for a list of lists of genes", {
     expect_error(trainSingleR(training, training$label, genes=empty), "between each pair of labels")
 })
 
+test_that("trainSingleR works correctly for other DE testing methods", {
+    # For Wilcox.
+    by.t <- scran::pairwiseWilcox(logcounts(training), training$label, direction="up") # do NOT move below set.seed(); some BiocParallel setup changes the seed.
+    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
+
+    set.seed(92) 
+    ref <- trainSingleR(training, training$label, genes='de', de.method="wilcox")
+    
+    set.seed(92) 
+    trained <- trainSingleR(training, training$label, genes=markers)
+
+    expect_identical(ref, trained)
+
+    # For t-tests.
+    set.seed(102) 
+    ref <- trainSingleR(training, training$label, genes='de', de.method="t")
+
+    set.seed(102) 
+    by.t <- scran::pairwiseTTests(logcounts(training), training$label, direction="up")
+    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
+    trained <- trainSingleR(training, training$label, genes=markers)
+
+    expect_identical(ref, trained)
+
+    # Responds to the requested number of genes.
+    set.seed(102) 
+    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=20, de.args=list(lfc=1))
+
+    set.seed(102) 
+    by.t <- scran::pairwiseTTests(logcounts(training), training$label, direction="up", lfc=1)
+    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=20)
+    trained <- trainSingleR(training, training$label, genes=markers)
+
+    expect_identical(ref, trained)
+})
+
 test_that("trainSingleR is robust to no-variance cells", {
     sce <- training
     logcounts(sce)[,1:10] <- 0
