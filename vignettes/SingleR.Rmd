@@ -343,7 +343,36 @@ kable(unique(samples), format = "markdown")
 ```
 </details>
 
-# Combining multiple references
+# Reference options
+
+## Pseudo-bulk aggregation
+
+Single-cell reference datasets provide a like-for-like comparison to our test datasets, yielding a more accurate classification of the cells in the latter (hopefully).
+However, there are frequently many more samples in single-cell references compared to bulk references, increasing the computational work involved in classification.
+We avoid this by aggregating cells into one "pseudo-bulk" sample per label (e.g., by averaging across log-expression values) and using those as the reference, which allows us to achieve the same efficiency as the use of bulk references.
+
+The obvious cost of this approach is that we discard potentially useful information about the distribution of cells within each label.
+Cells that belong to a heterogeneous population may not be correctly assigned if they are far from the population center.
+We attempt to preserve some of this information by using $k$-means clustering within each cell to create pseudo-bulk samples that are representative of a particular region of the expression space (i.e., vector quantization).
+We create $\sqrt{N}$ clusters given a label with $N$ cells, which provides a reasonable compromise between reducing computational work and preserving the label's internal distribution.
+
+This aggregation approach is implemented in the `aggregateReferences` function, which is shown in action below for the @muraro2016singlecell dataset.
+The function returns a `SummarizedExperiment` object containing the pseudo-bulk expression profiles and the corresponding labels.
+
+```{r}
+set.seed(100) # for the k-means step.
+aggr <- aggregateReference(sceM, labels=sceM$label)
+aggr
+```
+
+The resulting `SummarizedExperiment` can then be used as a reference in `SingleR()`.
+
+```{r}
+pred.aggr <- SingleR(sceG, aggr, labels=aggr$label)
+table(pred.aggr$labels)
+```
+
+## Using multiple references
 
 In some cases, we may wish to use multiple references for annotation of a test dataset.
 This yield a more comprehensive set of cell types that are not covered by any individual reference, especially when differences in resolution are also considered.
