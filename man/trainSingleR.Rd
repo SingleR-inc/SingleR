@@ -9,7 +9,9 @@ trainSingleR(
   labels,
   genes = "de",
   sd.thresh = 1,
+  de.method = c("classic", "wilcox", "t"),
   de.n = NULL,
+  de.args = list(),
   assay.type = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam()
@@ -39,8 +41,16 @@ Alternatively, a list of character vectors containing marker genes for each labe
 \item{sd.thresh}{A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 Only used when \code{genes="sd"}.}
 
+\item{de.method}{String specifying how DE genes should be detected between pairs of labels.
+Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
+Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
+and take the top \code{de.n} upregulated genes per comparison.}
+
 \item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
-Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.}
+If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
+Otherwise, defaults to 10.}
+
+\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
@@ -123,10 +133,9 @@ We take the union to ensure that correlations are computed from the same set of 
 
 \section{Note on single-cell references}{
 
-The default marker selection is based on log-fold changes in medians, and is very much designed with bulk references in mind.
-It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts.
-Users are recommended to either aggregate their single-cell references to create pseudo-bulk samples, 
-or detect markers externally and pass a list of markers to \code{genes} (see Examples).
+The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
+It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
+Users are recommended to either set \code{de.method} to another DE ranking method, or detect markers externally and pass a list of markers to \code{genes} (see Examples).
 }
 
 \examples{
@@ -161,7 +170,7 @@ trained$nn.indices
 length(trained$common.genes)
 
 # Alternatively, computing and supplying a set of label-specific markers.
-by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label)
+by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
 markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
 trained <- trainSingleR(ref, ref$label, genes=markers)
 length(trained$common.genes)

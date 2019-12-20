@@ -21,8 +21,14 @@
 #' Alternatively, a list of character vectors containing marker genes for each label.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
+#' @param de.method String specifying how DE genes should be detected between pairs of labels.
+#' Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
+#' Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
+#' and take the top \code{de.n} upregulated genes per comparison.
 #' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
-#' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
+#' If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
+#' Otherwise, defaults to 10.
+#' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
@@ -94,10 +100,9 @@
 #' We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
 #' 
 #' @section Note on single-cell references:
-#' The default marker selection is based on log-fold changes in medians, and is very much designed with bulk references in mind.
-#' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts.
-#' Users are recommended to either aggregate their single-cell references to create pseudo-bulk samples, 
-#' or detect markers externally and pass a list of markers to \code{genes} (see Examples).
+#' The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
+#' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
+#' Users are recommended to either set \code{de.method} to another DE ranking method, or detect markers externally and pass a list of markers to \code{genes} (see Examples).
 #'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
@@ -137,7 +142,7 @@
 #' length(trained$common.genes)
 #'
 #' # Alternatively, computing and supplying a set of label-specific markers.
-#' by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label)
+#' by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
 #' markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
 #' trained <- trainSingleR(ref, ref$label, genes=markers)
 #' length(trained$common.genes)
@@ -145,14 +150,19 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam 
 #' @importFrom S4Vectors List
-trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL, 
+trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
+    de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
+    de.method <- match.arg(de.method)
+
     if (!.is_list(ref)) {
         ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
-        gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, de.n=de.n)
+        gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, 
+            de.method=de.method, de.n=de.n, de.args=de.args)
         .build_trained_index(ref, labels, common=gene.info$common, genes=gene.info$genes, 
             args=gene.info$args, extra=gene.info$extra, BNPARAM=BNPARAM)
+
     } else {
         ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
             check.missing=check.missing, msg="ref")
@@ -166,7 +176,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
         }
 
         gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, 
-            MoreArgs=list(genes=genes, sd.thresh=sd.thresh, de.n=de.n),
+            MoreArgs=list(genes=genes, sd.thresh=sd.thresh, 
+                de.method=de.method, de.n=de.n, de.args=de.args),
             SIMPLIFY=FALSE)
 
         # Setting the common set across all references to the union of all genes.
@@ -178,6 +189,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
             extra=lapply(gene.info, "[[", i="extra"),
             MoreArgs=list(common=all.common, BNPARAM=BNPARAM),
             SIMPLIFY=FALSE)
+
         List(output)
     }
 }
@@ -188,7 +200,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
     is.list(val) || is(val, "List")
 }
 
-.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL) {
+.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.method="classic", de.n=NULL, de.args=list()) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")
     }
@@ -212,7 +224,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n)
+            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
             common <- unique(unlist(extra))
         } else if (genes=="sd") {
             sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh)
@@ -261,24 +273,41 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, de.n=NULL,
 }
 
 #' @importFrom utils head
-.get_genes_by_de <- function(ref, labels, de.n=NULL) {
-    ulabels <- unique(labels)
-    mat <- .median_by_label(ref, labels)
-    if (is.null(de.n)) {
-        de.n <- round(500*(2/3)^log2(ncol(mat)))
-    }
-
-    collected <- list()
-    for (i in ulabels) {
-        subcollected <- list()
-        for (j in ulabels) {
-            s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
-            s <- s[s>0]
-            subcollected[[j]] <- as.character(head(names(s), de.n))
+.get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list()) {
+    if (de.method=="classic") {
+        ulabels <- unique(labels)
+        mat <- .median_by_label(ref, labels)
+        if (is.null(de.n)) {
+            de.n <- round(500*(2/3)^log2(ncol(mat)))
         }
-        collected[[i]] <- subcollected
+
+        collected <- list()
+        for (i in ulabels) {
+            subcollected <- list()
+            for (j in ulabels) {
+                s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
+                s <- s[s>0]
+                subcollected[[j]] <- as.character(head(names(s), de.n))
+            }
+            collected[[i]] <- subcollected
+        }
+
+        collected
+    } else {
+        if (de.method=="t") {
+            FUN <- scran::pairwiseTTests
+        } else {
+            FUN <- scran::pairwiseWilcox
+        }
+
+        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up"), de.args))
+        if (is.null(de.n)) {
+            de.n <- 10
+        }
+
+        collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n)
+        lapply(collected, as.list)
     }
-    collected
 }
 
 #' @importFrom DelayedMatrixStats rowSds

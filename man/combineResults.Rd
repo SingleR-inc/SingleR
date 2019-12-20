@@ -7,49 +7,53 @@
 combineResults(results)
 }
 \arguments{
-\item{results}{A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} or \code{\link{SingleR}}.}
+\item{results}{A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
-This is identical to the output of \code{\link{classifySingleR}}, albeit with \code{scores} combined and data from the results DataFrame
-with the highest score carried through for each cell. 
+This has the same fields as the output of \code{\link{classifySingleR}}, where the \code{scores} are combined across all \code{results}.
+The set of labels for each cell are those from the DataFrame with the largest maximum score.
 The original results are available in the \code{orig.results} field.
 }
 \description{
-Combine results from multiple runs of \code{\link{classifySingleR}} into a single \linkS4class{DataFrame}.
+Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
 The label from the results with the highest score for each cell is retained.
 }
 \details{
-Given the importance of closely-related reference profiles for proper labeling, use of multiple reference sets can be helpful.
-The results provided as input for this function should be generated from training sets that \strong{use a common set of genes}.
+Labels are combined across \code{results} based on the highest score in each reference.
+Each result should be generated from training sets that use a common set of genes during classification, i.e., \code{common.genes} should be the same in the \code{trained} argument to each \code{\link{classifySingleR}} call.
+This is because the scores are not comparable across results if they were generated from different sets of genes.
+
+It is unlikely that this method will be called directly by the end-user.
+Users are advised to use the multi-reference mode of \code{\link{SingleR}}, \code{\link{trainSingleR}} and/or \code{\link{classifySingleR}}, which will take care of the use of a common set of genes before calling this function to combine results across references.
+
+If this function must be called manually, users should ensure that \code{common.genes} is the same for all calls used to generate \code{results}.
+This is most easily achieved by calling \code{\link{trainSingleR}} on each reference; replacing each \code{common.genes} with the union of all \code{common.genes}; and then calling \code{\link{classifySingleR}} on the test with the modified training objects.
+The resulting DataFrames can then be passed as \code{results} above.
 }
 \section{Method rationale}{
 
 There are three obvious options for combining reference datasets or classification results stemming from disparate references:
 
-\strong{Option 1} would be to combine the reference datasets into a single matrix and treat each label as though it's specific to the reference
-from which it originated (e.g. Ref1-Bcell vs Ref2-Bcell), which is easily accomplished by \code{paste}ing the reference name onto the
-corresponding set of labels. 
-This option could be useful if the difference between the reference sets were important, 
-and it also avoids the need for label harmonization between references.
+\strong{Option 1} would be to combine the reference datasets into a single matrix and treat each label as though it is specific to the reference from which it originated (e.g. Ref1-Bcell vs Ref2-Bcell), which is easily accomplished by \code{paste}ing the reference name onto the corresponding set of labels. 
+This option avoids the need for time-consuming label harmonization between references, and may be the best approach if the differences between the reference sets are important (e.g., different experimental conditions).
 
-However, this method will be prone to enrichment for genes responsible for uninteresting batch effects between the references. 
-This method would likely lead to a loss of precision and additional noise and risks the potential for technical variation to drive classification.
+That said, the fact that we are comparing across references means that the marker set is likely to contain genes responsible for uninteresting batch effects. 
+This will increase noise during the calculation of the score in each reference, possibly leading to a loss of precision and a greater risk of technical variation dominating the classification results.
 
-\strong{Option 2} would also include combining the reference datasets into a single matrix but would utilize label harmonization so that
-the same cell type is given the same label across references. 
+\strong{Option 2} would also involve combining the reference datasets into a single matrix but would harmonize the labels so that the same cell type is given the same label across references. 
 This would allow feature selection methods to identify robust sets of label-specific markers that are more likely to generalize to other datasets. 
 It would also simplify interpretation, as there is no need to worry about the reference from which the labels came.
 
-The main obstacle to this method is the diffculty and annoyance of harmonization. 
-Putting aside trivial differences in naming schemes (e.g. "B cell" vs "B"), additional challenges like differences in label resolution 
-across references (e.g., how to harmonize "B cell" to another reference that splits to "naive B cell" and "mature B cell"), 
-different sorting strategies, or subtle biological difference that require domain expertise.
+The main obstacle to this method is the diffculty of harmonization. 
+Putting aside trivial differences in naming schemes (e.g. \code{"B cell"} vs \code{"B"}), we must resolve additional challenges like differences in label resolution across references (e.g., how to harmonize \code{"B cell"} to another reference that splits to \code{"naive B cell"} and \code{"mature B cell"}), different sorting strategies for obtaining pure cell types, or other subtle biological differences that require domain expertise.
 
-\strong{Option 3} (the method that this function uses) would be to perform classification separately within each reference, then collate
-the results to choose the label with the highest score across references. 
-This avoids the potential for reference-specific markers (like option 1) and the need for explicit harmonization (like option 2).
-This option leaves a mixture of labels in the final results that is up to the user to resolve.
+\strong{Option 3} is the method that is implemented in this function.
+It involves performing classification separately within each reference, then collating the results to choose the label with the highest score across references. 
+This is a relatively expedient approach that avoids the need for explicit harmonization while also reduces the potential for reference-specific markers.
+
+It leaves a mixture of labels in the final results that is up to the user to resolve, though perhaps this may be considered a feature as it smoothly handles differences in resolution between references, e.g., a cell that cannot be resolved as a CD4+ or CD8+ T cell may simply fall back to \code{"T cell"}.
+It will also be somewhat suboptimal if there are many reference-specific labels, as markers are not identified with the aim of distinguishing a label in one reference from another label in another reference.
 }
 
 \examples{

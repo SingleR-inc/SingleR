@@ -93,9 +93,10 @@
 #' @importFrom methods is
 #' @importFrom DelayedArray colsum DelayedArray
 #' @importFrom BiocParallel SerialParam
-SingleR <- function(test, ref, labels, method = c("single", "cluster"),
-    clusters = NULL, genes = "de", quantile = 0.8, fine.tune = TRUE, 
-    tune.thresh = 0.05, sd.thresh = 1, prune=TRUE, 
+SingleR <- function(test, ref, 
+    labels, method = c("single", "cluster"), clusters = NULL, 
+    genes = "de", de.method ="classic", de.n = NULL, de.args = list(),
+    quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, sd.thresh = 1, prune=TRUE, 
     assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
@@ -128,7 +129,8 @@ SingleR <- function(test, ref, labels, method = c("single", "cluster"),
         ref <- ref[[1]]
     }
 
-    trained <- trainSingleR(ref, labels, genes = genes, sd.thresh=sd.thresh, 
+    trained <- trainSingleR(ref, labels, genes = genes, sd.thresh = sd.thresh, 
+        de.method = de.method, de.n = de.n, de.args = de.args,
         check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)

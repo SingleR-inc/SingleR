@@ -11,6 +11,9 @@ SingleR(
   method = c("single", "cluster"),
   clusters = NULL,
   genes = "de",
+  de.method = "classic",
+  de.n = NULL,
+  de.args = list(),
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
@@ -48,6 +51,17 @@ or whether they should be aggregated into cluster-level profiles prior to annota
 Only used if \code{method="cluster"}.}
 
 \item{genes, sd.thresh}{Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.}
+
+\item{de.method}{String specifying how DE genes should be detected between pairs of labels.
+Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
+Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
+and take the top \code{de.n} upregulated genes per comparison.}
+
+\item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
+If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
+Otherwise, defaults to 10.}
+
+\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.}
 
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
