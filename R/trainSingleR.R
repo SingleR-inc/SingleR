@@ -158,8 +158,11 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
     if (!.is_list(ref)) {
         ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+        labels <- as.character(labels)
+
         gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, 
             de.method=de.method, de.n=de.n, de.args=de.args)
+
         .build_trained_index(ref, labels, common=gene.info$common, genes=gene.info$genes, 
             args=gene.info$args, extra=gene.info$extra, BNPARAM=BNPARAM)
 
@@ -171,6 +174,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         if (length(unique(gns))!=1L) {
             stop("row names are not identical across references")
         }
+
+        labels <- lapply(labels, as.character)
         if (length(labels)!=length(ref)) {
             stop("lists in 'labels' and 'ref' should be of the same length")
         }
