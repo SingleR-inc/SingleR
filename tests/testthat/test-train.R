@@ -156,6 +156,18 @@ test_that("trainSingleR is robust to no-variance cells", {
     }
 })
 
+test_that("trainSingleR is robust to non-character labels", {
+    ids <- sample(1:5, ncol(training), replace=TRUE)
+
+    set.seed(999)
+    out <- trainSingleR(training, ids)
+
+    set.seed(999)
+    ref <- trainSingleR(training, as.character(ids))
+
+    expect_equal(out, ref)
+})
+
 test_that("trainSingleR works on raw expression matrices", {
     set.seed(102)
     out <- trainSingleR(training, training$label)
