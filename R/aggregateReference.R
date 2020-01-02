@@ -57,10 +57,14 @@
 #' @importFrom Matrix rowSums t
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
-#' @importFrom DelayedArray sweep colsum DelayedArray
+#' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", check.missing=TRUE) {
     output.vals <- output.labs <- list()
     ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+
+    oldp <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(oldp), add=TRUE)
 
     for (u in unique(labels)) {
         chosen <- u==labels
