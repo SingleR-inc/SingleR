@@ -34,3 +34,19 @@ test <- SingleCellExperiment(
 
 rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 test <- scater::logNormCounts(test)
+
+##################################################
+## Setting up flush tests for inadvertent DA BP ##
+##################################################
+
+library(BiocParallel)
+failgen <- setRefClass("FailParam",
+    contains="BiocParallelParam",
+    fields=list(),
+    methods=list())
+
+FAIL <- failgen()
+register(FAIL)
+
+library(DelayedArray)
+setAutoBPPARAM(FAIL)
