@@ -91,7 +91,7 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
-#' @importFrom DelayedArray colsum DelayedArray
+#' @importFrom DelayedArray colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, ref, 
     labels, method = c("single", "cluster"), clusters = NULL, 
@@ -138,6 +138,10 @@ SingleR <- function(test, ref,
         if (is.null(clusters)) {
             stop("'clusters' must be specified when 'method=\"cluster\"'")
         }
+
+        oldp <- getAutoBPPARAM()
+        setAutoBPPARAM(BPPARAM)
+        on.exit(setAutoBPPARAM(oldp), add=TRUE)
         test <- colsum(DelayedArray(test), clusters)
     }
 
