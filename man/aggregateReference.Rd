@@ -9,7 +9,8 @@ aggregateReference(
   labels,
   power = 0.5,
   assay.type = "logcounts",
-  check.missing = TRUE
+  check.missing = TRUE,
+  BPPARAM = SerialParam()
 )
 }
 \arguments{
@@ -24,6 +25,9 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
+Only used if \code{ref} is or contains a \linkS4class{DelayedMatrix}.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,

@@ -10,6 +10,8 @@
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
+#' Only used if \code{ref} is or contains a \linkS4class{DelayedMatrix}.
 #' 
 #' @details
 #' With single-cell reference datasets, it is often useful to aggregate individual cells into pseudo-bulk samples to serve as a reference.
@@ -57,10 +59,15 @@
 #' @importFrom Matrix rowSums t
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
-#' @importFrom DelayedArray sweep colsum DelayedArray
-aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", check.missing=TRUE) {
+#' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
+#' @importFrom BiocParallel SerialParam
+aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) {
     output.vals <- output.labs <- list()
     ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+
+    oldp <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(oldp), add=TRUE)
 
     for (u in unique(labels)) {
         chosen <- u==labels
