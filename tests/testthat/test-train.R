@@ -279,3 +279,17 @@ test_that("trainSingleR behaves with silly inputs", {
     unnamed <- unname(training)
     expect_error(trainSingleR(unnamed, unnamed$label), "must have row names")
 })
+
+
+test_that("trainSingleR works when more genes than ref", {
+    
+    train.sub <- head(training, 90)
+    collected <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
+    genes <- unique(unlist(collected))
+    
+    # make sure more genes than ref
+    expect_false(all(genes %in% row.names(train.sub)))
+    
+    expect_error(SingleR::trainSingleR(train.sub, training$label, genes = collected), NA)
+})
+

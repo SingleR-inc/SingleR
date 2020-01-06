@@ -222,9 +222,10 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
         .validate_de_gene_set(genes, labels)
-
-        extra <- genes
-        common <- intersect(unlist(extra), row.names(ref))
+        
+        .intersect_ref <- function(l) lapply(l, intersect, row.names(ref)) 
+        extra <- lapply(genes, .intersect_ref)
+        common <- unique(unlist(extra))
         genes <- "de"
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
