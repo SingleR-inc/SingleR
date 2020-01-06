@@ -224,7 +224,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         .validate_de_gene_set(genes, labels)
 
         extra <- genes
-        common <- unique(unlist(extra))
+        common <- intersect(unlist(extra), row.names(ref))
         genes <- "de"
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
