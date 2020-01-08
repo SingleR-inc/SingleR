@@ -222,11 +222,18 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
         .validate_de_gene_set(genes, labels)
+        common <- unique(unlist(genes))
 
-        .intersect_ref <- function(l) lapply(l, intersect, row.names(ref)) 
-        extra <- lapply(genes, .intersect_ref)
-        common <- unique(unlist(extra))
+        # Ensure that the user hasn't supplied genes that aren't available.
+        rn <- rownames(ref)
+        if (!all(common %in% rn)) {
+            genes <- lapply(genes, function(l) lapply(l, intersect, rn))
+            common <- intersect(common, rn)
+        }
+
+        extra <- genes
         genes <- "de"
+
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="de") {
