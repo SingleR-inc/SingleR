@@ -1,0 +1,43 @@
+Adipocytes	CL:0000136
+Astrocytes	CL:0000127
+CD4+ T-cells	CL:0000624
+CD4+ Tcm	CL:0000904
+CD4+ Tem	CL:0000905
+CD8+ T-cells	CL:0000625
+CD8+ Tcm	CL:0000907
+CD8+ Tem	CL:0000913
+Chondrocytes	CL:0000138
+Class-switched memory B-cells	CL:0000972
+CLP	CL:0000051
+CMP	CL:0000049
+DC	CL:0000451
+Endothelial cells	CL:0000115
+Eosinophils	CL:0000771
+Epithelial cells	CL:0000066
+Erythrocytes	CL:0000232
+Fibroblasts	CL:0000057
+GMP	CL:0000557
+HSC	CL:0000037
+Keratinocytes	CL:0000312
+Macrophages	CL:0000235
+Macrophages M1	CL:0000863
+Macrophages M2	CL:0000890
+Megakaryocytes	CL:0000556
+Melanocytes	CL:0000148
+Memory B-cells	CL:0000787
+MEP	CL:0000050
+Mesangial cells	CL:0000650
+Monocytes	CL:0000576
+MPP	CL:0000837
+mv Endothelial cells	CL:2000008
+Myocytes	CL:0000187
+naive B-cells	CL:0000788
+Neurons	CL:0000540
+Neutrophils	CL:0000775
+NK cells	CL:0000623
+Pericytes	CL:0000669
+Plasma cells	CL:0000786
+Preadipocytes	
+Skeletal muscle	CL:0000188
+Smooth muscle	CL:0000192
+Tregs	CL:0000815
