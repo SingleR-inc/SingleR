@@ -4,7 +4,7 @@ Monocytes, CD16+	CL:0002396
 NK cells	CL:0000623
 T cells, CD4+, memory TREG	CL:0000792
 T cells, CD4+, naive	CL:0000895
-T cells, CD4+, naive, stimulated	CL:0000895
+T cells, CD4+, naive, stimulated	CL:0000896
 T cells, CD4+, naive TREG	CL:0001045
 T cells, CD4+, TFH	CL:0002038
 T cells, CD4+, Th1	CL:0000545
@@ -12,4 +12,4 @@ T cells, CD4+, Th1_17	CL:0000492
 T cells, CD4+, Th17	CL:0000899
 T cells, CD4+, Th2	CL:0000546
 T cells, CD8+, naive	CL:0000900
-T cells, CD8+, naive, stimulated	CL:0000900
+T cells, CD8+, naive, stimulated	CL:0000906
