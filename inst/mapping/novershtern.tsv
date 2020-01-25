@@ -1,0 +1,38 @@
+Basophils	CL:0000767
+Naïve B cells	CL:0000788
+Mature B cells class able to switch	CL:0000970
+Mature B cells	CL:0000785
+Mature B cells class switched	CL:0000972
+Common myeloid progenitors	CL:0000049
+Plasmacytoid Dendritic Cells	CL:0000784
+Myeloid Dendritic Cells	CL:0000782
+Eosinophils	CL:0000771
+Erythroid_CD34+ CD71+ GlyA-	CL:0002003
+Erythroid_CD34- CD71+ GlyA-	CL:0002004
+Erythroid_CD34- CD71+ GlyA+	CL:0002021
+Erythroid_CD34- CD71lo GlyA+	CL:0002016
+Erythroid_CD34- CD71- GlyA+	CL:0002018
+Granulocyte/monocyte progenitors	CL:0000557
+Colony Forming Unit-Granulocytes	CL:0000094
+Granulocytes (Neutrophilic Metamyelocytes)	CL:0000582
+Granulocytes (Neutrophils)	CL:0000776
+Hematopoietic stem cells_CD133+ CD34dim	CL:0000037
+Hematopoietic stem cells_CD38- CD34+	CL:0001024
+Colony Forming Unit-Megakaryocytic	CL:0000556
+Megakaryocytes	CL:0000556
+Megakaryocyte/erythroid progenitors	CL:0000050
+Colony Forming Unit-Monocytes	CL:0000576
+Monocytes	CL:0000576
+Mature NK cells_CD56- CD16+ CD3-	CL:0000623
+Mature NK cells_CD56+ CD16+ CD3-	CL:0000623
+Mature NK cells_CD56- CD16- CD3-	CL:0000623
+NK T cells	CL:0000814
+Early B cells	CL:0002046
+Pro B cells	CL:0000826
+CD8+ Effector Memory RA	CL:0001062
+Naive CD8+ T cells	CL:0000900
+CD8+ Effector Memory	CL:0000913
+CD8+ Central Memory	CL:0000907
+Naive CD4+ T cells	CL:0000895
+CD4+ Effector Memory	CL:0000905
+CD4+ Central Memory	CL:0000904
