@@ -1,7 +1,7 @@
 Macrophages (MF.11C-11B+)	CL:0000235
 Macrophages (MF.ALV)	CL:0000583
 Monocytes (MO.6+I-)	CL:0000576
-Monocytes (MO.6+2+) 	CL:0000576
+Monocytes (MO.6+2+)	CL:0000576
 B cells (B.MEM)	CL:0000787
 B cells (B1A)	CL:0000820
 DC (DC.11B+)	CL:0002465
@@ -137,7 +137,7 @@ B cells (proB.CLP)	CL:0000051
 Stem cells (proB.CLP)	CL:0000051
 B cells (proB.FrA)	CL:0002045
 B cells (proB.FRA)	CL:0002045
-B cells,B cells, pro (proB.FrA)	CL:0002045
+B cells, pro (proB.FrA)	CL:0002045
 T cells (T.4MEM)	CL:0000897
 T cells (T.4Mem)	CL:0000897
 T cells (T.4MEM44H62L)	CL:0000897
