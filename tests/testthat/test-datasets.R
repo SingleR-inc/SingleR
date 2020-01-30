@@ -16,3 +16,19 @@ test_that("Ensembl coercion works for all datasets", {
 
     expect_error(X <- NovershternHematopoieticData(ensembl=TRUE), NA)
 })
+
+test_that("ontology mapping works for all datasets", {
+    expect_error(X <- BlueprintEncodeData(cell.ont="nonna"), NA)
+
+    expect_error(X <- DatabaseImmuneCellExpressionData(cell.ont="nonna"), NA)
+
+    expect_error(X <- HumanPrimaryCellAtlasData(cell.ont="nonna"), NA)
+
+    expect_error(X <- ImmGenData(cell.ont="nonna"), NA)
+
+    expect_error(X <- MonacoImmuneData(cell.ont="nonna"), NA)
+
+    expect_error(X <- MouseRNAseqData(cell.ont="nonna"), NA)
+
+    expect_error(X <- NovershternHematopoieticData(cell.ont="nonna"), NA)
+})
