@@ -4,11 +4,16 @@
 \alias{MouseRNAseqData}
 \title{Obtain mouse bulk expression data of sorted cell populations (RNA-seq)}
 \usage{
-MouseRNAseqData(ensembl = FALSE)
+MouseRNAseqData(ensembl = FALSE, cell.ont = c("all", "nonna", "none"))
 }
 \arguments{
 \item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
 Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
+
+\item{cell.ont}{String specifying whether Cell Ontology terms should be included in the \code{\link{colData}}.
+If \code{"nonna"}, all samples without a valid term are discarded;
+if \code{"all"}, all samples are returned with (possibly \code{NA}) terms;
+if \code{"none"}, terms are not added.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
@@ -24,7 +29,7 @@ This dataset was contributed by the Benayoun Lab that identified,
 downloaded and processed data sets on GEO that corresponded to sorted cell
 types (Benayoun et al., 2019).
 
-The dataset contains 358 mouse RNA-seq samples annotated to 18 main cell types: 
+The dataset contains 358 mouse RNA-seq samples annotated to 18 main cell types (\code{"label.main"}):
 \itemize{
     \item Adipocytes
     \item Astrocytes
@@ -44,7 +49,11 @@ The dataset contains 358 mouse RNA-seq samples annotated to 18 main cell types:
     \item NK cells
     \item Oligodendrocytes
     \item T cells
-}
+} 
+These are split further into 28 subtypes (\code{"label.fine"}).
+The subtypes have also been mapped to the Cell Ontology (\code{"label.ont"},
+if \code{cell.ont} is not \code{"none"}), which can be used for further programmatic
+queries.
 }
 \examples{
 ref.se <- MouseRNAseqData()

@@ -4,11 +4,16 @@
 \alias{MonacoImmuneData}
 \title{Obtain bulk RNA-seq data of sorted human immune cells}
 \usage{
-MonacoImmuneData(ensembl = FALSE)
+MonacoImmuneData(ensembl = FALSE, cell.ont = c("all", "nonna", "none"))
 }
 \arguments{
 \item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
 Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
+
+\item{cell.ont}{String specifying whether Cell Ontology terms should be included in the \code{\link{colData}}.
+If \code{"nonna"}, all samples without a valid term are discarded;
+if \code{"all"}, all samples are returned with (possibly \code{NA}) terms;
+if \code{"none"}, terms are not added.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
@@ -21,7 +26,7 @@ of sorted immune cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011}{GSE107011}.
 }
 \details{
-The dataset contains 114 human RNA-seq samples annotated to 10 main cell types: 
+The dataset contains 114 human RNA-seq samples annotated to 10 main cell types (\code{"label.main"}):
 \itemize{
     \item CD8+ T cells
     \item T cells
@@ -35,7 +40,7 @@ The dataset contains 114 human RNA-seq samples annotated to 10 main cell types:
     \item Basophils
 }
 
-Samples were additionally annotated to 29 fine cell types:
+Samples were additionally annotated to 29 fine cell types (\code{"label.fine"}):
 \itemize{
     \item Naive CD8 T cells
     \item Central memory CD8 T cells
@@ -67,6 +72,9 @@ Samples were additionally annotated to 29 fine cell types:
     \item Low-density neutrophils
     \item Low-density basophils
 }
+The subtypes have also been mapped to the Cell Ontology (\code{"label.ont"},
+if \code{cell.ont} is not \code{"none"}), which can be used for further programmatic
+queries.
 }
 \examples{
 ref.se <- MonacoImmuneData()

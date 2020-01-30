@@ -4,11 +4,19 @@
 \alias{HumanPrimaryCellAtlasData}
 \title{Obtain the HPCA data}
 \usage{
-HumanPrimaryCellAtlasData(ensembl = FALSE)
+HumanPrimaryCellAtlasData(
+  ensembl = FALSE,
+  cell.ont = c("all", "nonna", "none")
+)
 }
 \arguments{
 \item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
 Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
+
+\item{cell.ont}{String specifying whether Cell Ontology terms should be included in the \code{\link{colData}}.
+If \code{"nonna"}, all samples without a valid term are discarded;
+if \code{"all"}, all samples are returned with (possibly \code{NA}) terms;
+if \code{"none"}, terms are not added.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
@@ -21,11 +29,16 @@ the Human Primary Cell Atlas. The data will be downloaded from ExperimentHub,
 returning a \linkS4class{SummarizedExperiment} object for further use.
 }
 \details{
-This function provides normalized expression values 713 microarray samples of 
+This function provides normalized expression values for 713 microarray samples from
 the Human Primary Cell Atlas (HPCA) (Mabbott et al., 2013).
 These 713 samples were processed and normalized as described in Aran, Looney and 
-Liu et al. (2019) and each sample has been assigned to one of 37 main cell types
-and 157 subtypes.
+Liu et al. (2019).
+
+Each sample has been assigned to one of 37 main cell types (\code{"label.main"}) 
+and 157 subtypes (\code{"label.fine"}).
+The subtypes have also been mapped to the Cell Ontology (\code{"label.ont"}, 
+if \code{cell.ont} is not \code{"none"}), which can be used for further programmatic
+queries.
 }
 \examples{
 ref.se <- HumanPrimaryCellAtlasData()

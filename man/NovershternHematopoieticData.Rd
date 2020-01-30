@@ -4,11 +4,19 @@
 \alias{NovershternHematopoieticData}
 \title{Obtain bulk microarray expression for sorted hematopoietic cells}
 \usage{
-NovershternHematopoieticData(ensembl = FALSE)
+NovershternHematopoieticData(
+  ensembl = FALSE,
+  cell.ont = c("all", "nonna", "none")
+)
 }
 \arguments{
 \item{ensembl}{Logical scalar indicating whether to convert row names to Ensembl IDs.
 Genes without a mapping to a non-duplicated Ensembl ID are discarded.}
+
+\item{cell.ont}{String specifying whether Cell Ontology terms should be included in the \code{\link{colData}}.
+If \code{"nonna"}, all samples without a valid term are discarded;
+if \code{"all"}, all samples are returned with (possibly \code{NA}) terms;
+if \code{"none"}, terms are not added.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay
@@ -21,7 +29,7 @@ of sorted hematopoietic cell populations that can be found in
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759}{GSE24759}.
 }
 \details{
-The dataset contains 211 human microarray samples annotated to 16 main cell types: 
+The dataset contains 211 human microarray samples annotated to 16 main cell types (\code{"label.main"}):
 \itemize{
     \item Basophils
     \item B cells
@@ -41,7 +49,7 @@ The dataset contains 211 human microarray samples annotated to 16 main cell type
     \item CD4+ T cells
 }
 
-Samples were additionally annotated to 38 fine cell types:
+Samples were additionally annotated to 38 fine cell types (\code{"label.fine"}):
 \itemize{
     \item Basophils
     \item Naive B cells
@@ -82,6 +90,9 @@ Samples were additionally annotated to 38 fine cell types:
     \item CD4+ Effector Memory
     \item CD4+ Central Memory
 }
+The subtypes have also been mapped to the Cell Ontology (\code{"label.ont"},
+if \code{cell.ont} is not \code{"none"}), which can be used for further programmatic
+queries.
 }
 \examples{
 ref.se <- NovershternHematopoieticData()
