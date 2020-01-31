@@ -167,7 +167,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cluster_cols = cluster_cols, ...)
 
     if (normalize) {
-        args$color <- viridis::viridis(100)
+        if (is.null(args$color)) {
+            args$color <- viridis::viridis(100)
+        }
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
     } else {
