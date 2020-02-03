@@ -17,7 +17,7 @@
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' If set, turns off clustering of columns based on scoring.
-#' @param annotation_col,show_colnames,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' @param annotation_col,show_colnames,color,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
@@ -91,7 +91,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
     cells.order=NULL, order.by.clusters=FALSE,
-    annotation_col = NULL, show_colnames = FALSE, ...)
+    annotation_col = NULL, show_colnames = FALSE, color = NULL, ...)
 {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -167,7 +167,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cluster_cols = cluster_cols, ...)
 
     if (normalize) {
-        if (is.null(args$color)) {
+        if (is.null(color)) {
             args$color <- viridis::viridis(100)
         }
         args$legend_breaks <- c(0,1)
