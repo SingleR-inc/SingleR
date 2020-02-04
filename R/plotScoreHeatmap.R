@@ -167,9 +167,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cluster_cols = cluster_cols, ...)
 
     if (normalize) {
-        if (is.null(color)) {
-            args$color <- viridis::viridis(100)
-        }
+        args$color <- viridis::viridis(100)
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
     } else {
@@ -182,6 +180,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
     if (is.null(args$annotation_colors)) {
         args <- .make_heatmap_annotation_colors(args, show.pruned)
+    }
+
+    if (!is.null(color)) {
+        args$color <- color
     }
 
     do.call(pheatmap::pheatmap, args)
