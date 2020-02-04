@@ -172,7 +172,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         args$legend_labels <- c("Lower", "Higher")
     } else {
         abs.max <- max(abs(range(scores)))
-        breaks.len <- ifelse(is.null(color), 101, length(color))
+        breaks.len <- ifelse(is.null(color), 101, length(color)+1)
         args$breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
     }
 
