@@ -16,9 +16,14 @@
 #' Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
 #' @param genes A string specifying the feature selection method to be used, see Details.
 #' 
-#' Alternatively, a list of lists of character vectors containing DE genes between pairs of labels.
+#' Alternatively, if \code{ref} is \emph{not} a list, \code{genes} can be either:
+#' \itemize{
+#' \item A list of lists of character vectors containing DE genes between pairs of labels.
+#' \item A list of character vectors containing marker genes for each label.
+#' }
 #' 
-#' Alternatively, a list of character vectors containing marker genes for each label.
+#' If \code{ref} is a list, then it can be a list of either of the two above choices,
+#' where each element contains markers for labels in the corresponding entry of \code{ref}.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
 #' @param de.method String specifying how DE genes should be detected between pairs of labels.
@@ -149,7 +154,7 @@
 #' 
 #' @export
 #' @importFrom BiocNeighbors KmknnParam 
-#' @importFrom S4Vectors List
+#' @importFrom S4Vectors List isSingleString
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
@@ -180,9 +185,16 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
             stop("lists in 'labels' and 'ref' should be of the same length")
         }
 
-        gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, 
-            MoreArgs=list(genes=genes, sd.thresh=sd.thresh, 
-                de.method=de.method, de.n=de.n, de.args=de.args),
+        if (length(genes)!=length(ref)) {
+            if (isSingleString(genes)) {
+                genes <- rep(genes, length(ref))
+            } else {
+                stop("list-like 'genes' should be the same length as 'ref'")
+            }
+        }
+
+        gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
+            MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args),
             SIMPLIFY=FALSE)
 
         # Setting the common set across all references to the union of all genes.

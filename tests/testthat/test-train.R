@@ -177,7 +177,7 @@ test_that("trainSingleR works on raw expression matrices", {
     expect_identical(out, alt)
 
     blah <- training
-    assays(blah) <- list(stuff=matrix(0, nrow(blah), ncol(blah)), whee=logcounts(training))
+    assays(blah, withDimnames=FALSE) <- list(stuff=matrix(0, nrow(blah), ncol(blah)), whee=logcounts(training))
 
     set.seed(102)
     re.alt <- trainSingleR(blah, blah$label, assay.type="whee")
@@ -253,8 +253,26 @@ test_that("trainSingleR behaves with multiple references", {
     expect_identical(out[[1]]$common.genes, union(ref1$common.genes, ref2$common.genes))
     expect_identical(out[[1]]$common.genes, out[[2]]$common.genes)
 
+    # Works with pre-specified marker lists.
+    markers <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
+    markers2 <- SingleR:::.get_genes_by_de(logcounts(training), training$label, de.method="t")
+    markers2 <- lapply(markers2, unlist, use.names=FALSE)
+
+    set.seed(2000)
+    ref1 <- trainSingleR(training1, training1$label, genes=markers)
+    ref2 <- trainSingleR(training2, training2$label, genes=markers2)
+    set.seed(2000)
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), genes=list(markers, markers2))
+
+    expect_identical(out[[1]]$search, ref1$search)
+    expect_identical(out[[2]]$search, ref2$search)
+    expect_false(identical(sort(ref1$common.genes), sort(ref2$common.genes)))
+    expect_identical(out[[1]]$common.genes, union(ref1$common.genes, ref2$common.genes))
+    expect_identical(out[[1]]$common.genes, out[[2]]$common.genes)
+
     # Throws errors correctly.
     expect_error(trainSingleR(list(training1, training2), list(training1$label)), "same length")
+    expect_error(trainSingleR(list(training1, training2), list(training1$label, training2$label), genes=list(training1$label)), "same length")
     expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label)), "not identical")
 })
 
