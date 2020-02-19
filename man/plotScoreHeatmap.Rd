@@ -17,6 +17,7 @@ plotScoreHeatmap(
   order.by.clusters = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
+  color = NULL,
   ...
 )
 }
@@ -46,7 +47,7 @@ If set, turns off clustering of columns based on scoring.}
 \item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
 If set, this takes precedence over \code{cells.order} input.}
 
-\item{annotation_col, show_colnames, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{annotation_col, show_colnames, color, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
