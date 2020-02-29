@@ -3,7 +3,7 @@ title: "Obtaining reference data from Differentiation Map (GSE24759)"
 author: 
 - name: Jared M. Andrews
   affiliation: Washington University in St. Louis, School of Medicine, St. Louis, MO, USA
-date: "Revised: September 4th, 2019"
+date: "Revised: February 29, 2020"
 output: 
   BiocStyle::html_document
 ---
@@ -130,12 +130,18 @@ coldata <- DataFrame(row.names = colnames(logcounts),
     label.main = main, label.fine = fine)
 ```
 
+We also purge the umlaut as this causes encoding problems on Windows.
+
+```{r}
+coldata$label.fine <- sub("ï", "i", coldata$label.fine)
+```
+
 # Saving to file
 
 Now the counts and metadata can be saved for upload to `r Biocpkg("ExperimentHub")`.
 
 ```{r save_for_ExpHub}
-path <- file.path("SingleR", "dmap", "1.0.0")
+path <- file.path("SingleR", "dmap", "1.2.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
 saveRDS(coldata, file = file.path(path, "coldata.rds"))
