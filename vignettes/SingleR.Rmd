@@ -232,7 +232,7 @@ Each of these datasets were also obtained from pre-sorted cell populations:
 
 The characteristics of each dataset are summarized below:
 
-| Data retrieval |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
+| Retrieval function |  Organism  | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
 |------------------|----------|----------|-------------|----------------------|------------|----------|
 |`HumanPrimaryCellAtlasData()`| human | 713 | microarrays of sorted cell populations  | 37 |  157 | Non-specific |
 |`BlueprintEncodeData()` |  human | 259 | RNA-seq | 24 | 43 | Non-specific |
@@ -242,8 +242,9 @@ The characteristics of each dataset are summarized below:
 |`ImmGenData()`|  mouse | 830  | microarrays of sorted cell populations | 20 | 253 | Hematopoietic & Immune |
 |`MouseRNAseqData()`| mouse |358  |RNA-seq| 18  | 28 | Non-specific |
 
-Details for each dataset can be viewed on the corresponding help page (e.g. `?ImmGenData`).
+Details for each dataset can be viewed on the corresponding help page for its retrieval function (e.g., `?ImmGenData`).
 The available sample types in each set can be viewed in the collapsible sections below.
+The cell types in each dataset have also been manually mapped to the [Cell Ontology](https://www.ebi.ac.uk/ols/ontologies/cl), which provides a standardized vocabulary for comparison of labels across studies.
 
 <details>
   <summary>`BlueprintEncodeData` Labels</summary>
@@ -252,9 +253,8 @@ The available sample types in each set can be viewed in the collapsible sections
 library(knitr)
 library(SingleR)
 ref <- BlueprintEncodeData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -266,9 +266,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- HumanPrimaryCellAtlasData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -280,9 +279,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- DatabaseImmuneCellExpressionData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -294,9 +292,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- NovershternHematopoieticData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -308,9 +305,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- MonacoImmuneData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -322,9 +318,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- ImmGenData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
@@ -336,9 +331,8 @@ kable(unique(samples), format = "markdown")
 library(knitr)
 library(SingleR)
 ref <- MouseRNAseqData()
-samples <- cbind(ref$label.main, ref$label.fine)
-colnames(samples) <- c("label.main", "label.fine")
-
+samples <- colData(ref)[,c("label.main", "label.fine","label.ont")]
+samples <- as.data.frame(samples)
 kable(unique(samples), format = "markdown")
 ```
 </details>
