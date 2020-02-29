@@ -61,6 +61,15 @@ colnames(logcounts)[chosen] <- "hematopoietic.multipotent.progenitor.cell.3"
 table(duplicated(colnames(logcounts)))
 ```
 
+Fixing a reference to adipocytes, which should actually be astrocytes (see https://github.com/LTLA/SingleR/issues/96):
+
+```{r}
+offenders <- ref.set$types == "Astrocytes"
+colnames(logcounts)[offenders]
+ref.set$main_types[offenders]
+ref.set$main_types[offenders] <- "Astrocytes"
+```
+
 Extract cell labels, which represent the metadata:
 
 ```{r get_coldata}
@@ -75,7 +84,7 @@ coldata <- DataFrame(row.names = colnames(logcounts),
 Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
 
 ```{r save_for_ExpHub}
-path <- file.path("SingleR", dataset, "1.0.0")
+path <- file.path("SingleR", dataset, "1.2.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
 ## saving counts
