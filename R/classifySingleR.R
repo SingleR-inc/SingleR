@@ -68,7 +68,7 @@
 #' This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 #' However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 #'
-#' If \code{trained} was generated from multiple references, \code{\link{combineResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
+#' If \code{trained} was generated from multiple references, \code{\link{combineCommonResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
 #'
 #' @examples
 #' ##############################
@@ -118,7 +118,7 @@
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
-#' \code{\link{combineResults}}, to combine results from multiple references.
+#' \code{\link{combineCommonResults}}, to combine results from multiple references.
 #' @export
 #' @importFrom BiocParallel SerialParam bpstart bpisup bpstop
 #' @importClassesFrom BiocParallel MulticoreParam
@@ -141,7 +141,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
             fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
             prune=prune, BPPARAM=BPPARAM)
-        combineResults(results)
+        combineCommonResults(results)
     }
 }
 
