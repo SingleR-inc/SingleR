@@ -30,14 +30,12 @@ SingleR(
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
-Each row should be named with the gene name.
-In general, the expression values are expected to be log-transformed, see Details.
+\item{ref}{A numeric matrix of (usually log-transformed) expression values from a reference dataset,
+or a \linkS4class{SummarizedExperiment} object containing such a matrix;
+see \code{\link{trainSingleR}} for details.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
-in which case the row names are expected to be the same across all objects.}
+Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
+Row names may be different across entries but only the intersection will be used, see Details.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
@@ -69,7 +67,7 @@ Otherwise, defaults to 10.}
 if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{assay.type.ref}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
+if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 

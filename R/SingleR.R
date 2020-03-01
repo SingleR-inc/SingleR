@@ -6,6 +6,12 @@
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @inheritParams trainSingleR
+#' @param ref A numeric matrix of (usually log-transformed) expression values from a reference dataset,
+#' or a \linkS4class{SummarizedExperiment} object containing such a matrix;
+#' see \code{\link{trainSingleR}} for details.
+#'
+#' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
+#' Row names may be different across entries but only the intersection will be used, see Details.
 #' @param method String specifying whether annotation should be performed on single cells in \code{test},
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
@@ -15,7 +21,7 @@
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \linkS4class{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-#' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
+#' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
