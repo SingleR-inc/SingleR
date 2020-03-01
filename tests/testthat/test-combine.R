@@ -139,7 +139,7 @@ test_that("combineRecomputedResults works as expected", {
         keep1 <- ref1$label==lab1
         keep2 <- ref2$label==lab2
         origins <- rep(1:2, c(sum(keep1), sum(keep2)))
-        new.ref <- cbind(ref1[all.markers, keep1], ref2[all.markers, keep2])
+        new.ref <- BiocGenerics::cbind(ref1[all.markers, keep1, drop=FALSE], ref2[all.markers, keep2,drop=FALSE])
         out <- SingleR(test[all.markers,i], new.ref, genes="all", 
             label=origins, fine.tune=FALSE, prune=FALSE)
 

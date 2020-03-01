@@ -100,7 +100,7 @@ test_that("classifySingleR works with multiple references", {
 
     ref1 <- classifySingleR(test, mtrain[[1]])
     ref2 <- classifySingleR(test, mtrain[[2]])
-    expect_identical(out, combineResults(list(ref1, ref2)))
+    expect_identical(out, combineCommonResults(list(ref1, ref2)))
 })
 
 test_that("classifySingleR behaves with silly inputs", {
