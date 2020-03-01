@@ -53,95 +53,58 @@ NULL
 #' Combine SingleR results with common genes
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
-#' The label from the results with the highest score for each cell is retained.
+#' For each cell, the label from the result with the highest score is used as that cell's combined label.
 #' This assumes that each run of \code{\link{classifySingleR}} was performed using a common set of marker genes,
 #' hence the \code{Common} in the function name.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
-#' This has the same fields as the output of \code{\link{classifySingleR}}, where the \code{scores} are combined across all \code{results}.
-#' The set of labels for each cell are those from the DataFrame with the largest maximum score.
-#' The original results are available in the \code{orig.results} field.
+#' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
+#' \itemize{
+#' \item \code{scores}, a numeric matrix of correlations formed by combining the equivalent matrices from \code{results}.
+#' \item \code{labels}, a character vector containing the per-cell combined label across references.
+#' \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
+#' \item \code{orig.results}, a DataFrame containing \code{results}.
+#' }
+#' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
 #' 
 #' @details
-#' Labels are combined across \code{results} based on the highest score in each reference (see comments in \code{?\link{combine-predictions}}).
-#' Each result should be generated from training sets that use a common set of genes during classification, i.e., \code{common.genes} should be the same in the \code{trained} argument to each \code{\link{classifySingleR}} call.
+#' For each cell, we identify the reference with the highest score across all of its labels.
+#' The \dQuote{combined label} is then defined as the label assigned to that cell in the highest-scoring reference.
+#' (The same logic is also applied to the first and pruned labels, if available.)
+#' See comments in \code{?\link{combine-predictions}} for the overall rationale.
+#' 
+#' Each result should be generated from training sets that use a common set of genes during classification, 
+#' i.e., \code{common.genes} should be the same in the \code{trained} argument to each \code{\link{classifySingleR}} call.
 #' This is because the scores are not comparable across results if they were generated from different sets of genes.
+#' It is also for this reason that we use the highest score prior to fine-tuning, 
+#' even if it does not correspond to the score of the fine-tuned label.
 #'
-#' It is unlikely that this method will be called directly by the end-user.
-#' Users are advised to use the multi-reference mode of \code{\link{SingleR}}, \code{\link{trainSingleR}} and/or \code{\link{classifySingleR}}, which will take care of the use of a common set of genes before calling this function to combine results across references.
+#' It is highly unlikely that this function will be called directly by the end-user.
+#' Users are advised to use the multi-reference mode of \code{\link{SingleR}} and related functions,
+#' which will take care of the use of a common set of genes before calling this function to combine results across references.
 #'
-#' If this function must be called manually, users should ensure that \code{common.genes} is the same for all calls used to generate \code{results}.
-#' This is most easily achieved by calling \code{\link{trainSingleR}} on each reference; replacing each \code{common.genes} with the union of all \code{common.genes}; and then calling \code{\link{classifySingleR}} on the test with the modified training objects.
-#' The resulting DataFrames can then be passed as \code{results} above.
-#'
-#' @author Jared Andrews
+#' @author 
+#' Jared Andrews,
+#' Aaron Lun
 #'
 #' @examples
-#' ##############################
-#' ## Mocking up training data ##
-#' ##############################
+#' # Making up data (using one reference to seed another).
+#' ref <- .mockRefData(nreps=8)
+#' ref1 <- ref[,1:2%%2==0]
+#' ref2 <- ref[,1:2%%2==1]
+#' ref2$label <- tolower(ref2$label)
 #'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
+#' test <- .mockTestData(ref1)
 #'
-#' g <- rep(LETTERS[1:5], each=4)
-#' g2 <- rep(LETTERS[6:10], each=4)
-#' ref1 <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g), 
-#'     lambda=10*2^means[,g]), ncol=length(g))),
-#'     colData=DataFrame(label=g)
-#' )
-#' ref2 <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g2), 
-#'     lambda=10*2^means[,g]), ncol=length(g2))),
-#'     colData=DataFrame(label=g2)
-#' )
-#' rownames(ref1) <- sprintf("GENE_%s", seq_len(nrow(ref1)))
-#' rownames(ref2) <- sprintf("GENE_%s", seq_len(nrow(ref2)))
-#'
+#' # Applying classification with SingleR's multi-reference mode.
 #' ref1 <- scater::logNormCounts(ref1)
 #' ref2 <- scater::logNormCounts(ref2)
-#'
-#' ###############################
-#' ## Mocking up some test data ##
-#' ###############################
-#'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#' test <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
-#' )
-#' 
-#' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 #' test <- scater::logNormCounts(test)
-#' 
-#' ###############################
-#' ## Performing classification ##
-#' ###############################
-#' 
-#' pred1 <- SingleR(test, ref1, labels=ref1$label)
-#' pred2 <- SingleR(test, ref2, labels=ref2$label)
 #'
-#' pred3 <- SingleR(test, ref1, labels=ref1$label, 
-#'     method="cluster", clusters=test$label) 
-#' pred4 <- SingleR(test, ref2, labels=ref2$label, 
-#'     method="cluster", clusters=test$label) 
-#'
-#' ###############################
-#' ##     Combining results     ##
-#' ###############################
-#'
-#' pred.single <- combineCommonResults(list("pred1" = pred1, "pred2" = pred2))
-#' pred.clust <- combineCommonResults(list("pred3" = pred3, "pred4" = pred4))
+#' pred <- SingleR(test, list(ref1, ref2), labels=list(ref1$label, ref2$label))
+#' pred[,1:5] # Only viewing the first 5 columns for visibility.
 #'
 #' @seealso
 #' \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
@@ -238,17 +201,20 @@ combineCommonResults <- function(results) {
 #' @param labels A list of the same length as \code{ref},
 #' where each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
 #'
-#' @return A \linkS4class{DataFrame} is returned containing combined annotations for each cell or cluster (row).
-#' This has the following fields:
+#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+#' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
 #' \itemize{
-#' \item \code{labels}, a character vector containing the best label chosen across all references.
-#' \item \code{reference}, an integer vector specifying the reference result from which the best label originates.
-#' \item \code{inter.delta.med}, a numeric vector containing the delta value across references.
-#' \item \code{intra.delta.med}, a numeric vector containing the delta value within the originating reference.
+#' \item \code{scores}, a numeric matrix of correlations containing the \emph{recomputed} scores.
+#' For any given cell, entries of this matrix are only non-\code{NA} for the assigned label in each reference;
+#' scores are not recomputed for the other labels.
+#' \item \code{labels}, a character vector containing the per-cell combined label across references.
+#' \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
+#' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
+#' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
 #'
 #' @details
-#' This function implements a variant of Option 3 described in \code{?\link{combine-predictions}}).
+#' This function implements a variant of Option 3 described in \code{?\link{combine-predictions}}.
 #' For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
 #' We also retrieve the marker genes associated with that label and take the union of markers across all references.
 #' This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};
@@ -261,9 +227,9 @@ combineCommonResults <- function(results) {
 #' (compared to the union of markers across all labels, as required by \code{\link{combineCommonResults}}),
 #' so it is likely that the net compute time should be lower.
 #'
-#' No modification of the output of \code{\link{trainSingleR}} is required as there is no need for a set of common marker genes during the within-reference classifications.
-#' However, it is strongly recommended that the universe of genes be the same across all references.
-#' Differences in the availability of genes between references may lead to unpredictable combining results.
+#' It is strongly recommended that the universe of genes be the same across all references.
+#' The intersection of genes across all \code{ref} and \code{test} is used when recomputing scores,
+#' and differences in the availability of genes between references may have unpredictable effects.
 #' 
 #' @author Aaron Lun
 #'
@@ -273,61 +239,31 @@ combineCommonResults <- function(results) {
 #' \code{\link{combineCommonResults}}, for another approach to combining predictions.
 #'
 #' @examples
-#' ##############################
-#' ## Mocking up training data ##
-#' ##############################
+#' # Making up data.
+#' ref <- .mockRefData(nreps=8)
+#' ref1 <- ref[,1:2%%2==0]
+#' ref2 <- ref[,1:2%%2==1]
+#' ref2$label <- tolower(ref2$label)
 #'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
+#' test <- .mockTestData(ref)
 #'
-#' g <- rep(LETTERS[1:5], each=4)
-#' g2 <- rep(LETTERS[6:10], each=4)
-#' ref1 <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g), 
-#'     lambda=10*2^means[,g]), ncol=length(g))),
-#'     colData=DataFrame(label=g)
-#' )
-#' ref2 <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g2), 
-#'     lambda=10*2^means[,g]), ncol=length(g2))),
-#'     colData=DataFrame(label=g2)
-#' )
-#' rownames(ref1) <- sprintf("GENE_%s", seq_len(nrow(ref1)))
-#' rownames(ref2) <- sprintf("GENE_%s", seq_len(nrow(ref2)))
+#' # Performing classification within each reference.
+#' test <- scater::logNormCounts(test)
 #'
 #' ref1 <- scater::logNormCounts(ref1)
-#' ref2 <- scater::logNormCounts(ref2)
-#'
-#' ###############################
-#' ## Mocking up some test data ##
-#' ###############################
-#'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#' test <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(label=g)
-#' )
-#' 
-#' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
-#' test <- scater::logNormCounts(test)
-#' 
-#' ###############################
-#' ## Performing classification ##
-#' ###############################
-#' 
 #' pred1 <- SingleR(test, ref1, labels=ref1$label)
+#'
+#' ref2 <- scater::logNormCounts(ref2)
 #' pred2 <- SingleR(test, ref2, labels=ref2$label)
 #'
-#' combined <- combineRecomputedResults(list(pred1, pred2), test=test,
-#'     ref=list(ref1, ref2), labels=list(ref1$label, ref2$label))
-#' head(combined)
+#' # Combining results with recomputation of scores.
+#' combined <- combineRecomputedResults(
+#'     results=list(pred1, pred2), 
+#'     test=test,
+#'     ref=list(ref1, ref2), 
+#'     labels=list(ref1$label, ref2$label))
+#' 
+#' combined[,1:5]
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame selfmatch metadata
@@ -441,10 +377,10 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
         }
     }
 
-    all.scores <- do.call(cbind, base.scores)
+    o <- order(unlist(by.group))
+    all.scores <- do.call(cbind, base.scores)[o,,drop=FALSE]
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
 
-    o <- order(unlist(by.group))
     chosen <- unlist(lapply(combined, function(x) x$labels))[o]
     cbind(output, .combine_result_frames(chosen, results))
 }
