@@ -115,7 +115,10 @@ NULL
 #' @importFrom S4Vectors DataFrame metadata metadata<-
 combineCommonResults <- function(results) {
     if (length(unique(lapply(results, rownames))) != 1) {
-        stop("cell/cluster names are not identical")
+        stop("cell/cluster names in 'results' are not identical")
+    }
+    if (length(unique(vapply(results, nrow, 0L)))!=1) {
+        stop("numbers of cells/clusters in 'results' are not identical")
     }
 
     all.common <- lapply(results, function (x) sort(metadata(x)$common.genes))
@@ -166,6 +169,7 @@ combineCommonResults <- function(results) {
 
     if (has.first) {
         output$first.labels <- chosen.first
+        output <- output[,c("first.labels", "labels"),drop=FALSE]
     }
 
     if (has.pruned) {
@@ -275,9 +279,14 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
 {
     all.names <- c(list(colnames(test)), lapply(results, rownames))
     if (length(unique(all.names)) != 1) {
-        stop("cell/cluster names are not identical")
+        stop("cell/cluster names in 'results' are not identical")
+    }
+    all.nrow <- c(ncol(test), vapply(results, nrow, 0L))
+    if (length(unique(all.nrow)) != 1) {
+        stop("numbers of cells/clusters in 'results' are not identical")
     }
 
+    # Finding groups of cells with the same combination of per-reference assigned labels.
     collated <- lapply(results, function(x) x$labels) 
     names(collated) <- make.names(seq_along(collated))
     collated <- DataFrame(collated)
@@ -287,10 +296,11 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test")
     ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type.ref, check.missing=check.missing, msg="ref")
 
-    available <- rownames(test)
-    for (r in ref) { 
-        available <- intersect(available, rownames(r)) 
+    available <- c(list(rownames(test)), lapply(ref, rownames))
+    if (length(unique(available)) != 1) {
+        warning("'test' and 'ref' differ in the universe of available genes")
     }
+    available <- Reduce(intersect, available)
 
     ##############################################
     # Using iterator to avoid having to serialize the entire object to the workers.
@@ -377,10 +387,10 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
         }
     }
 
-    o <- order(unlist(by.group))
-    all.scores <- do.call(cbind, base.scores)[o,,drop=FALSE]
+    all.scores <- do.call(cbind, base.scores)
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
 
+    o <- order(unlist(by.group))
     chosen <- unlist(lapply(combined, function(x) x$labels))[o]
     cbind(output, .combine_result_frames(chosen, results))
 }
