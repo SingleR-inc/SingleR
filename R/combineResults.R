@@ -54,7 +54,7 @@ NULL
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
 #' The label from the results with the highest score for each cell is retained.
-#' This assumes that each run of \code{\link{classifySingleR}} was performed using the same set of common genes,
+#' This assumes that each run of \code{\link{classifySingleR}} was performed using a common set of marker genes,
 #' hence the \code{Common} in the function name.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
@@ -140,11 +140,13 @@ NULL
 #' ##     Combining results     ##
 #' ###############################
 #'
-#' pred.single <- combineResults(list("pred1" = pred1, "pred2" = pred2))
-#' pred.clust <- combineResults(list("pred3" = pred3, "pred4" = pred4))
+#' pred.single <- combineCommonResults(list("pred1" = pred1, "pred2" = pred2))
+#' pred.clust <- combineCommonResults(list("pred3" = pred3, "pred4" = pred4))
 #'
 #' @seealso
 #' \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
+#'
+#' \code{\link{combineRecomputedResults}}, for another approach to combining predictions.
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata metadata<-
@@ -153,79 +155,70 @@ combineCommonResults <- function(results) {
         stop("cell/cluster names are not identical")
     }
 
-    if (length(unique(lapply(results, function (x) sort(metadata(x)$common.genes)))) != 1) {
+    all.common <- lapply(results, function (x) sort(metadata(x)$common.genes))
+    if (length(unique(all.common)) != 1) {
         # This should be changed to 'stop' before release/after merge with PR #60.
         warning("common genes are not identical")
     }
 
-    has.first <- FALSE
-    has.pruned <- FALSE
-    has.de <- FALSE
-
-    if (!is.null(results[[1]]$first.labels)) {
-        has.first <- TRUE
-    }
-
-    if (!is.null(results[[1]]$pruned.labels)) {
-        has.pruned <- TRUE
-    }
-
-    if (!is.null(metadata(results[[1]])$de.genes)) {
-        has.de <- TRUE
-        de.names <- sapply(results, function(x) names(metadata(x)$de.genes))
-    }
-
     ncells <- nrow(results[[1]])
-
-    last.best <- rep(-Inf, ncells) 
-    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, ncells)
-    collected.scores <- list()
-    collected.de <- list()
-
+    collected.scores <- collected.best <- vector("list", length(results))
     for (i in seq_along(results)) {
-        res <- results[[i]]
-        scores <- res$scores
-        curbest <- scores[cbind(seq_len(ncells), max.col(scores))]
+        scores <- results[[i]]$scores
+        collected.best[[i]] <- scores[cbind(seq_len(ncells), max.col(scores))]
         collected.scores[[i]] <- scores
-        better <- curbest > last.best
-         
-        chosen.label[better] <- res$labels[better]
-
-        if (has.first) { # either everyone has 'first', or no-one does.
-            chosen.first[better] <- res$first.labels[better]
-        }
-
-        if (has.pruned) { # same for pruned.
-            chosen.pruned[better] <- res$pruned.labels[better]
-        }
-
-        if (has.de) {
-            collected.de[[i]] <- metadata(res)$de.genes
-        }
-
-        last.best <- curbest
     }
 
     all.scores <- do.call(cbind, collected.scores)
-
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
-    metadata(output)$common.genes <- metadata(results[[1]])$common.genes
+    metadata(output)$common.genes <- all.common[[1]]
 
-    if (has.de) {
-        metadata(output)$de.genes <- do.call(c, collected.de)
-        names(metadata(output)$de.genes) <- de.names
+    chosen <- max.col(do.call(cbind, collected.best))
+    cbind(output, .combine_result_frames(chosen, results))
+}
+
+#' @importFrom S4Vectors DataFrame metadata metadata<-
+.combine_result_frames <- function(chosen, results) {
+    has.first <- !is.null(results[[1]]$first.labels)
+    has.pruned <- !is.null(results[[1]]$pruned.labels)
+
+    # Organizing the statistics based on the chosen results.
+    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, nrow(results[[1]]))
+
+    for (u in unique(chosen)) {
+        current <- chosen==u
+        res <- results[[u]]
+        chosen.label[current] <- res$labels[current]
+
+        if (has.first) { # assume that either everyone has 'first', or no-one does.
+            chosen.first[current] <- res$first.labels[current]
+        }
+
+        if (has.pruned) { # same for pruned.
+            chosen.pruned[current] <- res$pruned.labels[current]
+        }
     }
+
+    output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
 
     if (has.first) {
         output$first.labels <- chosen.first
     }
 
-    output$labels <- chosen.label
-
     if (has.pruned) {
         output$pruned.labels <- chosen.pruned
     }
 
+    # Collating some DE statistics.
+    if (has.de <- !is.null(metadata(results[[1]])$de.genes)) {
+        collected.de <- vector("list", length(results))
+        for (i in seq_along(results)) {
+            collected.de[[i]] <- metadata(results[[i]])$de.genes
+        }
+        metadata(output)$de.genes <- do.call(c, collected.de)
+    }
+
+    output$reference <- chosen
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     output
@@ -268,10 +261,16 @@ combineCommonResults <- function(results) {
 #' (compared to the union of markers across all labels, as required by \code{\link{combineCommonResults}}),
 #' so it is likely that the net compute time should be lower.
 #'
-#' This function is intended for use by end-users and requires inputs similar to those of multi-reference calls to the \code{\link{SingleR}} function.
-#' No modification of the output of \code{\link{trainSingleR}} is required as there is no need for a set of common genes during the within-reference classifications.
+#' No modification of the output of \code{\link{trainSingleR}} is required as there is no need for a set of common marker genes during the within-reference classifications.
+#' However, it is strongly recommended that the universe of genes be the same across all references.
+#' Differences in the availability of genes between references may lead to unpredictable combining results.
 #' 
 #' @author Aaron Lun
+#'
+#' @seealso
+#' \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
+#'
+#' \code{\link{combineCommonResults}}, for another approach to combining predictions.
 #'
 #' @examples
 #' ##############################
@@ -326,7 +325,7 @@ combineCommonResults <- function(results) {
 #' pred1 <- SingleR(test, ref1, labels=ref1$label)
 #' pred2 <- SingleR(test, ref2, labels=ref2$label)
 #'
-#' combined <- combineSeparateResults(list(pred1, pred2), test=test,
+#' combined <- combineRecomputedResults(list(pred1, pred2), test=test,
 #'     ref=list(ref1, ref2), labels=list(ref1$label, ref2$label))
 #' head(combined)
 #'
@@ -338,14 +337,12 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
     assay.type.test="logcounts", assay.type.ref="logcounts", check.missing=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
 {
-    collated <- markers <- commons <- vector("list", length(results))
-    for (x in seq_along(results)) {
-        current <- results[[x]]
-        collated[[x]] <- current$labels
-        markers[[x]] <- metadata(current)$de.genes
-        commons[[x]] <- metadata(current)$common.genes
+    all.names <- c(list(colnames(test)), lapply(results, rownames))
+    if (length(unique(all.names)) != 1) {
+        stop("cell/cluster names are not identical")
     }
 
+    collated <- lapply(results, function(x) x$labels) 
     names(collated) <- make.names(seq_along(collated))
     collated <- DataFrame(collated)
     groups <- selfmatch(collated)
@@ -359,6 +356,7 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
         available <- intersect(available, rownames(r)) 
     }
 
+    ##############################################
     # Using iterator to avoid having to serialize the entire object to the workers.
     # Rather, only the data for the relevant markers for the current labels is serialized.
     envir <- new.env()
@@ -372,12 +370,13 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
         envir$counter <- envir$counter + 1L
 
         curmarkers <- character(0)
-        for (i in seq_along(markers)) {
-            if (is.null(markers[[i]])) {
-                to.add <- commons[[i]]
+        for (i in seq_along(ref)) {
+            M <- metadata(results[[i]])$de.genes
+            if (is.null(M)) {
+                to.add <- metadata(results[[i]])$common.genes
             } else {
                 curlab <- curlabels[[i]]
-                to.add <- markers[[i]][[curlab]]
+                to.add <- M[[curlab]]
                 to.add <- unlist(to.add, use.names=FALSE)
             }
             curmarkers <- union(curmarkers, to.add)
@@ -415,20 +414,37 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
             output <- classifySingleR(test, trained, quantile = quantile, fine.tune = FALSE, 
                 prune = FALSE, check.missing = FALSE)
    
-            ref.idx <- as.integer(output$labels)
-            DataFrame(
-                reference=ref.idx,
-                labels=names[ref.idx],
-                inter.delta.med=getDeltaFromMedian(output)
-            )
+            output$labels <- as.integer(output$labels)
+            metadata(output)$names <- names
+            output
         },
         BPPARAM=BPPARAM,
         quantile=quantile,
         BNPARAM=BNPARAM
     )
 
-    combined <- do.call(rbind, combined)
-    combined <- combined[order(unlist(by.group)),,drop=FALSE]
+    ##############################################
+    # Organizing scores for output.
 
-    combined
+    base.scores <- lapply(results, function(x) {
+        mat <- x$scores   
+        mat[] <- NA_real_
+        mat
+    })
+
+    for (i in seq_along(combined)) {
+        chosen <- by.group[[i]]
+        stats <- combined[[i]]
+        names <- metadata(stats)$names
+        for (r in seq_along(names)) {
+            base.scores[[r]][chosen,names[r]] <- stats$scores[,r]
+        }
+    }
+
+    all.scores <- do.call(cbind, base.scores)
+    output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
+
+    o <- order(unlist(by.group))
+    chosen <- unlist(lapply(combined, function(x) x$labels))[o]
+    cbind(output, .combine_result_frames(chosen, results))
 }
