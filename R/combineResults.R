@@ -44,7 +44,7 @@
 #' @author Aaron Lun
 #' @name combine-predictions
 #' @seealso
-#' \code{\link{combineUnifiedResults}} and \code{\link{combineSeparateResults}},
+#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}},
 #' for the functions that implement variants of Option 3.
 #'
 #' \code{\link{matchReferences}}, to harmonize labels between reference datasets.
@@ -73,7 +73,7 @@ NULL
 #' For each cell, we identify the reference with the highest score across all of its labels.
 #' The \dQuote{combined label} is then defined as the label assigned to that cell in the highest-scoring reference.
 #' (The same logic is also applied to the first and pruned labels, if available.)
-#' See comments in \code{?\link{combine-predictions}} for the overall rationale.
+#' See comments in \code{?"\link{combine-predictions}"} for the overall rationale.
 #' 
 #' Each result should be generated from training sets that use a common set of genes during classification, 
 #' i.e., \code{common.genes} should be the same in the \code{trained} argument to each \code{\link{classifySingleR}} call.
@@ -218,7 +218,7 @@ combineCommonResults <- function(results) {
 #' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
 #'
 #' @details
-#' This function implements a variant of Option 3 described in \code{?\link{combine-predictions}}.
+#' This function implements a variant of Option 3 described in \code{?"\link{combine-predictions}"}.
 #' For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
 #' We also retrieve the marker genes associated with that label and take the union of markers across all references.
 #' This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};

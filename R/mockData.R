@@ -25,6 +25,7 @@
 #' @export
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
+#' @importFrom stats rpois rnorm
 #' @rdname mockData
 .mockRefData <- function(ngroups=5, nreps=4, ngenes=1000, prop=0.5) {
     nmarkers <- ngenes*prop
