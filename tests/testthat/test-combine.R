@@ -1,7 +1,7 @@
-# This tests that combineResults works as expected.
+# This tests that combineCommonResults works as expected.
 # library(testthat); library(SingleR); source("test-combine.R")
 
-test_that("combineResults works as expected", {
+test_that("combineCommonResults works as expected", {
     scores <- rbind(
         c(0,0,0,0,1),
         c(0,0,0,2,0),
@@ -30,7 +30,7 @@ test_that("combineResults works as expected", {
         labels=labs2, pruned.labels=tolower(labs2))
     rownames(results2) <- sprintf("CELL_%s", seq_len(nrow(results2)))
 
-    combined <- combineResults(list(res1=results, res2=results2))
+    combined <- combineCommonResults(list(res1=results, res2=results2))
     expect_identical(combined$scores, cbind(scores, scores2))
     expect_identical(combined$first.labels, c("J1", "D1", "H1", "B1", "F1"))
     expect_identical(combined$labels, c("J", "D", "H", "B", "F"))
@@ -38,11 +38,13 @@ test_that("combineResults works as expected", {
     expect_equivalent(combined$orig.results$res1, results)
     expect_equivalent(combined$orig.results$res2, results2)
 
-    combined <- combineResults(list(res1=results, res2=results))
-    expect_identical(combined[,-c(1, ncol(combined))], results[,-1])
+    combined <- combineCommonResults(list(res1=results, res2=results))
+    standard <- c("first.labels", "labels", "pruned.labels")
+    expect_identical(combined$scores, cbind(results$scores, results$scores))
+    expect_identical(combined[,standard], results[,standard])
 })
 
-test_that("combineResults handles non-matching cells", {
+test_that("combineCommonResults handles non-matching cells", {
     scores <- diag(5)
     colnames(scores) <- LETTERS[1:5]
     
@@ -55,10 +57,10 @@ test_that("combineResults handles non-matching cells", {
     results2 <- DataFrame(scores=I(scores2), labels=colnames(scores2)[max.col(scores2)])
     rownames(results2) <- c("this", "is", "a", "neat", "package")
 
-    expect_error(combined <- combineResults(list(res1=results, res2=results2)), "cell/cluster names are not identical")
+    expect_error(combined <- combineCommonResults(list(res1=results, res2=results2)), "cell/cluster names are not identical")
 })
 
-test_that("combineResults handles non-common genes", {
+test_that("combineCommonResults handles non-common genes", {
     scores <- diag(5)
     colnames(scores) <- LETTERS[1:5]
     
@@ -73,5 +75,5 @@ test_that("combineResults handles non-common genes", {
     metadata(results2)$common.genes <- c("i", "am", "an", "uncommon", "gene")
     rownames(results2) <- sprintf("GENE_%s", seq_len(nrow(results2)))
 
-    expect_warning(combined <- combineResults(list(res1=results, res2=results2)), "common genes are not identical")
+    expect_warning(combined <- combineCommonResults(list(res1=results, res2=results2)), "common genes are not identical")
 })
