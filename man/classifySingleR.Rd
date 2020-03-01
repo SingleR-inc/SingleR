@@ -95,7 +95,7 @@ If \code{prune=TRUE}, label pruning is performed as described in \code{\link{pru
 This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 
-If \code{trained} was generated from multiple references, \code{\link{combineResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
+If \code{trained} was generated from multiple references, \code{\link{combineCommonResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
 }
 \examples{
 ##############################
@@ -146,7 +146,7 @@ table(predicted=pred$labels, truth=g)
 
 \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 
-\code{\link{combineResults}}, to combine results from multiple references.
+\code{\link{combineCommonResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
