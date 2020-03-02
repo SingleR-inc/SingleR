@@ -14,7 +14,7 @@ plotScoreHeatmap(
   max.labels = 40,
   normalize = TRUE,
   cells.order = NULL,
-  order.by = "labels",
+  order.by = c("labels", "clusters"),
   cluster_cols = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
@@ -46,7 +46,7 @@ Regardless of \code{cells.use}, this input should be the the same length as the 
 Subordinate to \code{cluster_cols}.}
 
 \item{order.by}{String providing the annotation to be used for clustering.
-Can be "Labels", "Clusters" (if provided), or the name of any other annotation provided to \code{annotation_col}.
+Can be "labels" (default) or "clusters" (when provided).
 Subordinate to \code{cells.order} and \code{cluster_cols}.}
 
 \item{annotation_col, cluster_cols, show_colnames, color, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
