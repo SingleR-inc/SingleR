@@ -94,7 +94,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     cells.order = NULL, order.by = c("labels","clusters"), cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE, color = NULL, ...)
 {
-    order.by <- match.arg(order.by)
+
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
@@ -142,10 +142,15 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     } else {
         if (!is.null(cells.order)) {
             order <- order(cells.order)
-        } else if (order.by == "labels") {
-            order <- order(results$labels)
         } else {
-            order <- order(clusters)
+            order.stat <- switch(match.arg(order.by),
+                labels=results$labels,
+                clusters=clusters
+            )
+            if (is.null(order.stat)) {
+                stop("Nothing to order by. Did you provide clusters?")
+            }
+            order <- order(order.stat)
         }
     }
 
