@@ -48,7 +48,8 @@ test_that("cells.use can be combined with annotations & annotations can be combi
 test_that("Error is thrown when order.by = `clusters` but no clusters are given.", {
     expect_error(plotScoreHeatmap(
         results = pred, cells.use = 1:50,
-        order.by = "clusters"))
+        order.by = "clusters"),
+        "‘clusters’ input is required when ‘order.by = “clusters”’")
 })
 
 
@@ -143,21 +144,24 @@ test_that("Ordering works (by cells, by labels, by clusters) and can be combined
         results = pred, clusters = g, annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred))), "pheatmap")
+
     # Ordering should follow *annot* because of cells.order
     expect_s3_class(plotScoreHeatmap(
         results = pred, clusters = g, annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
         cells.use = 1:50,
-        cells.order = 1:100), "pheatmap")
+        cells.order = seq_len(nrow(pred))), "pheatmap")
+
     # Ordering should still follow *annot* because cells.order > order.by
     expect_s3_class(plotScoreHeatmap(
         results = pred, clusters = g, annotation_col = data.frame(
             annot = seq_len(nrow(pred)),
             row.names = row.names(pred)),
         cells.use = 1:50,
-        cells.order = 1:100,
+        cells.order = seq_len(nrow(pred)),
         order.by = "labels"), "pheatmap")
+
     # Ordering should follow *labels*
     expect_s3_class(plotScoreHeatmap(
         results = pred, clusters = g, annotation_col = data.frame(
@@ -165,6 +169,7 @@ test_that("Ordering works (by cells, by labels, by clusters) and can be combined
             row.names = row.names(pred)),
         cells.use = 1:50,
         order.by = "labels"), "pheatmap")
+
     # Ordering should follow *clusters*
     expect_s3_class(plotScoreHeatmap(
         results = pred, clusters = g, annotation_col = data.frame(
