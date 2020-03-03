@@ -150,7 +150,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
                 clusters=clusters
             )
             if (is.null(order.stat)) {
-                stop("Nothing to order by. Did you provide clusters?")
+                stop("Nothing to order by. Did you provide clustering to `clusters`?")
             }
             order <- order(order.stat)
         }

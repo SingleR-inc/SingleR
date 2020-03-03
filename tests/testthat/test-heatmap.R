@@ -9,20 +9,20 @@ training.exp <- assay(training,1)
 test_that("We can produce heatmaps of scores with plotScoreHeatmap", {
     expect_s3_class(plotScoreHeatmap(results = pred), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, normalize = FALSE), "pheatmap")
-  
+
     expect_s3_class(plotScoreHeatmap(results = pred, cells.use = 1:50), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, cells.use = rownames(pred)[1:50]), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, cells.order=seq_len(nrow(pred))), "pheatmap")
-  
+
     expect_s3_class(plotScoreHeatmap(results = pred, labels.use = levels(as.factor(pred$labels))[1:3]), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, max.labels = length(levels(as.factor(pred$labels)))-1), "pheatmap")
-  
+
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, clusters = pred$labels, order.by.clusters=TRUE), "pheatmap")
-    
+
     expect_s3_class(plotScoreHeatmap(results = pred, show.pruned = TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred, show.labels = TRUE), "pheatmap")
-  
+
     expect_s3_class(plotScoreHeatmap(results = pred, silent=TRUE), "pheatmap")
     expect_s3_class(plotScoreHeatmap(results = pred,
         annotation_col = data.frame(
@@ -45,23 +45,12 @@ test_that("cells.use can be combined with annotations & annotations can be combi
         show.pruned = TRUE), "pheatmap")
 })
 
-test_that("cells.use can be combined with ordering (by cells or by cluster)", {
-    expect_s3_class(plotScoreHeatmap(
-        results = pred, cells.use = 1:50, clusters = pred$labels,
-        show.pruned = TRUE,
-        annotation_col = data.frame(
-            annot = seq_len(nrow(pred)),
-            row.names = row.names(pred)),
-        cells.order = 1:100), "pheatmap")
-
-    expect_s3_class(plotScoreHeatmap(
-        results = pred, cells.use = 1:50, clusters = pred$labels,
-        show.pruned = TRUE,
-        annotation_col = data.frame(
-            annot = seq_len(nrow(pred)),
-            row.names = row.names(pred)),
-        order.by.clusters = TRUE), "pheatmap")
+test_that("Error is thrown when order.by = `clusters` but no clusters are given.", {
+    expect_error(plotScoreHeatmap(
+        results = pred, cells.use = 1:50,
+        order.by = "clusters"))
 })
+
 
 test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHeatmap.", {
     expect_s3_class(plotScoreHeatmap(results = pred, cutree_col = 3), "pheatmap")
@@ -75,7 +64,7 @@ test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHea
 test_that("Annotations stay linked, even with cells.use, cells.order, or order.by.clusters = TRUE", {
     # Make prune.call TRUE for every 10th value.  (We need known order for testing annotation placement.)
     pred$pruned.labels <- rep(c(rep(FALSE,9),NA),nrow(pred)/10)
-    
+
     #Reference plot: Every tenth cell, pruned = TRUE. Clusters from 100:1. annot from 1:100.
     expect_s3_class(plotScoreHeatmap(
         results = pred,
@@ -132,7 +121,7 @@ test_that("Annotations stay linked, even with cells.use, cells.order, or order.b
 test_that("Row and Column annotation coloring works", {
     # Make prune.call TRUE for every 10th value.
     pred$pruned.labels <- rep(c(rep(FALSE,9),NA),nrow(pred)/10)
-    
+
     #When works:
         # Clusters and Continuous are shades of the same color
         # Pruned and Discrete are many discrete colors
@@ -146,4 +135,41 @@ test_that("Row and Column annotation coloring works", {
             Continuous = as.numeric(seq_len(ncol(pred$scores))),
             row.names = colnames(pred$scores))),
         "pheatmap")
+})
+
+test_that("Ordering works (by cells, by labels, by clusters) and can be combined with cells.use", {
+    # Base Default: ordering by *labels*
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, clusters = g, annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred))), "pheatmap")
+    # Ordering should follow *annot* because of cells.order
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, clusters = g, annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        cells.use = 1:50,
+        cells.order = 1:100), "pheatmap")
+    # Ordering should still follow *annot* because cells.order > order.by
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, clusters = g, annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        cells.use = 1:50,
+        cells.order = 1:100,
+        order.by = "labels"), "pheatmap")
+    # Ordering should follow *labels*
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, clusters = g, annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        cells.use = 1:50,
+        order.by = "labels"), "pheatmap")
+    # Ordering should follow *clusters*
+    expect_s3_class(plotScoreHeatmap(
+        results = pred, clusters = g, annotation_col = data.frame(
+            annot = seq_len(nrow(pred)),
+            row.names = row.names(pred)),
+        cells.use = 1:50,
+        order.by = "clusters"), "pheatmap")
 })
