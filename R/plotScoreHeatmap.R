@@ -124,10 +124,12 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores <- results$scores
     rownames(scores) <- rownames(results)
 
-    # Trim the scores by requested cells or labels
+    # Trim the scores and potential ordering vars by requested cells or labels
+    labels <- results$labels
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
         clusters <- clusters[cells.use]
+        labels <- labels[cells.use]
         cells.order <- cells.order[cells.use]
     }
     if (!is.null(labels.use)) {
@@ -144,7 +146,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             order <- order(cells.order)
         } else {
             order.stat <- switch(match.arg(order.by),
-                labels=results$labels,
+                labels=labels,
                 clusters=clusters
             )
             if (is.null(order.stat)) {
