@@ -49,7 +49,7 @@ test_that("Error is thrown when order.by = `clusters` but no clusters are given.
     expect_error(plotScoreHeatmap(
         results = pred, cells.use = 1:50,
         order.by = "clusters"),
-        "‘clusters’ input is required when ‘order.by = “clusters”’")
+        "'clusters' input is required when 'order.by=\"clusters\"'")
 })
 
 
