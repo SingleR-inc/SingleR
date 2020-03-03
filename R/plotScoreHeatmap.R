@@ -12,12 +12,13 @@
 #' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
-#' @param order.by.clusters Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
-#' If set, this takes precedence over \code{cells.order} input.
+#' @param order.by String providing the annotation to be used for clustering.
+#' Can be "labels" (default) or "clusters" (when provided).
+#' Subordinate to \code{cells.order} and \code{cluster_cols}.
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
-#' If set, turns off clustering of columns based on scoring.
-#' @param annotation_col,show_colnames,color,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' Subordinate to \code{cluster_cols}.
+#' @param annotation_col,cluster_cols,show_colnames,color,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
@@ -90,9 +91,10 @@
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
-    cells.order=NULL, order.by.clusters=FALSE,
+    cells.order = NULL, order.by = c("labels","clusters"), cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE, color = NULL, ...)
 {
+
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
     }
@@ -122,10 +124,12 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores <- results$scores
     rownames(scores) <- rownames(results)
 
-    # Trim the scores by requested cells or labels
+    # Trim the scores and potential ordering vars by requested cells or labels
+    labels <- results$labels
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
         clusters <- clusters[cells.use]
+        labels <- labels[cells.use]
         cells.order <- cells.order[cells.use]
     }
     if (!is.null(labels.use)) {
@@ -133,15 +137,23 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
 
     # Determining how to order the cells.
-    cluster_cols <- FALSE
-    if (order.by.clusters) {
-        order <- order(clusters)
-    } else if (!is.null(cells.order)) {
-        order <- order(cells.order)
-    } else {
-        # no ordering requested
+    #   Simply use current order if clustering turned on.
+    #   Otherwise, by cells.order, if provided, else by order.by(=Labels, default).
+    if (cluster_cols) {
         order <- seq_len(nrow(scores))
-        cluster_cols <- TRUE
+    } else {
+        if (!is.null(cells.order)) {
+            order <- order(cells.order)
+        } else {
+            order.stat <- switch(match.arg(order.by),
+                labels=labels,
+                clusters=clusters
+            )
+            if (is.null(order.stat)) {
+                stop("'clusters' input is required when 'order.by=\"clusters\"'")
+            }
+            order <- order(order.stat)
+        }
     }
 
     # Determine labels to show based on 'max.labels' with the highest

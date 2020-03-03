@@ -14,7 +14,8 @@ plotScoreHeatmap(
   max.labels = 40,
   normalize = TRUE,
   cells.order = NULL,
-  order.by.clusters = FALSE,
+  order.by = c("labels", "clusters"),
+  cluster_cols = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
   color = NULL,
@@ -42,12 +43,13 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap.
 Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
-If set, turns off clustering of columns based on scoring.}
+Subordinate to \code{cluster_cols}.}
 
-\item{order.by.clusters}{Logical scalar specifying if cells should be ordered by \code{clusters} and not by scores.
-If set, this takes precedence over \code{cells.order} input.}
+\item{order.by}{String providing the annotation to be used for clustering.
+Can be "labels" (default) or "clusters" (when provided).
+Subordinate to \code{cells.order} and \code{cluster_cols}.}
 
-\item{annotation_col, show_colnames, color, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{annotation_col, cluster_cols, show_colnames, color, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
