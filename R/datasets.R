@@ -49,7 +49,7 @@
 #' @importFrom SummarizedExperiment rowData
 HumanPrimaryCellAtlasData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("hpca", version),
+    se <- .create_se("hpca", version,
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -115,7 +115,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none"),
 {
     version <- "1.0.0"
     rm.NA <- match.arg(rm.NA)
-    se <- .create_se(file.path("blueprint_encode", version), 
+    se <- .create_se("blueprint_encode", version, 
         assays="logcounts", rm.NA = rm.NA,
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -167,7 +167,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none"),
 #' @export
 ImmGenData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("immgen", version), 
+    se <- .create_se("immgen", version, 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -233,7 +233,7 @@ ImmGenData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
 #' @export
 MouseRNAseqData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("mouse.rnaseq", version), 
+    se <- .create_se("mouse.rnaseq", version, 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -305,7 +305,7 @@ MouseRNAseqData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
 #' @export
 DatabaseImmuneCellExpressionData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("dice", version), 
+    se <- .create_se("dice", version, 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -406,7 +406,7 @@ DatabaseImmuneCellExpressionData <- function(ensembl=FALSE, cell.ont=c("all", "n
 #' @export
 NovershternHematopoieticData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("dmap", version), 
+    se <- .create_se("dmap", version, 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -492,7 +492,7 @@ NovershternHematopoieticData <- function(ensembl=FALSE, cell.ont=c("all", "nonna
 #' @export
 MonacoImmuneData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
     version <- "1.0.0"
-    se <- .create_se(file.path("monaco_immune", version), 
+    se <- .create_se("monaco_immune", version, 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -510,30 +510,42 @@ MonacoImmuneData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) 
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom S4Vectors DataFrame
-.create_se <- function(dataset, hub = ExperimentHub(), assays="logcounts",
+.create_se <- function(dataset, version, hub = ExperimentHub(), assays="logcounts",
     rm.NA = c("rows","cols","both","none"), has.rowdata=FALSE, has.coldata=TRUE) 
 {
     rm.NA <- match.arg(rm.NA)
     host <- file.path("SingleR", dataset)
-    
+
     ## extract normalized values --------
     all.assays <- list()
     for (a in assays) {
-        nrmcnts <- hub[hub$rdatapath==file.path(host, paste0(a, ".rds"))][[1]]
+        ver <- .fetch_version(version, a)
+        nrmcnts <- hub[hub$rdatapath==file.path(host, ver, paste0(a, ".rds"))][[1]]
         all.assays[[a]] <- .rm_NAs(nrmcnts, rm.NA)
     }
     
     ## get metadata ----------------------
     args <- list()
     if (has.coldata) {
-        args$colData <- hub[hub$rdatapath==file.path(host, "coldata.rds")][[1]]
+        ver <- .fetch_version(version, "coldata")
+        args$colData <- hub[hub$rdatapath==file.path(host, ver, "coldata.rds")][[1]]
     }
     if (has.rowdata) {
-        args$rowData <- hub[hub$rdatapath==file.path(host, "rowdata.rds")][[1]]
+        ver <- .fetch_version(version, "rowdata")
+        args$rowData <- hub[hub$rdatapath==file.path(host, ver, "rowdata.rds")][[1]]
     }
     
     ## make the final SE object ----------
     do.call(SummarizedExperiment, c(list(assays=all.assays), args))
+}
+
+.fetch_version <- function(version, field) {
+    opt <- version[field]
+    if (is.na(opt)) {
+        version[1]
+    } else {
+        opt
+    }
 }
 
 #' @importFrom DelayedMatrixStats rowAnyNAs colAnyNAs
