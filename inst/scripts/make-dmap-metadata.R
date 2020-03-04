@@ -20,4 +20,4 @@ df <- data.frame(
 
 ## Only saving the column metadata for 1.2.0,
 ## as logcounts are the same for 1.0.0. 
-write.csv(file="../extdata/metadata-dmap.csv", df[2,], row.names=FALSE)
+write.csv(file="../extdata/1.2.0/metadata-dmap.csv", df[2,], row.names=FALSE)
