@@ -11,10 +11,12 @@
     present <- DataFrame(scores[0,])
     all.labels <- colnames(scores)
 
-    final <- character(nrow(scores))
     survivors <- seq_len(nrow(scores))
     remaining <- exprs
     last.nhits <- integer(nrow(scores))
+
+    final.labels <- character(nrow(scores))
+    final.best <- final.second <- numeric(nrow(scores))
 
     repeat {
         above <- scores >= rowMaxs(scores) - tune.thresh
@@ -22,7 +24,14 @@
         finished <- nhits==1L | nhits==last.nhits[survivors]
         last.nhits[survivors] <- nhits
 
-        final[survivors[finished]] <- "X" # TODO: fix this.
+        # TODO: make this faster?
+        for (i in which(finished)) {        
+            curscores <- sort(scores[i,], decreasing=TRUE)
+            original <- survivors[i]
+            final.labels[original] <- names(curscores)[1]
+            final.best[original] <- curscores[1]
+            final.second[original] <- curscores[2]
+        }
 
         if (all(finished)) {
            break
@@ -40,28 +49,29 @@
 
         ITER <- .fine_tune_iterator(use, present=present, indices=indices, exprs=remaining)
         output <- bpiterate(ITER=ITER, FUN=.fine_tune_searcher, BPPARAM=BPPARAM, quantile=quantile, all.labels=all.labels)
+
         scores <- do.call(rbind, output)
         scores[order(use),] <- scores # need to reorder as iterator splits up by 'use'.
     }
 
-    final
+    list(final.labels, final.best, final.second)
 }
 
 #' @importFrom BiocNeighbors buildIndex KmknnParam
 #' @importFrom S4Vectors DataFrame selfmatch
 #' @importFrom BiocGenerics match
 .build_indices <- function(encoding, present, indices, references, defineFUN, BNPARAM=KmknnParam()) {
-    encoding2 <- DataFrame(encoding)
-    smatched <- selfmatch(encoding2)
+    encoding <- DataFrame(encoding)
+    smatched <- selfmatch(encoding)
     smatched <- as.integer(factor(smatched))
 
-    representatives <- encoding2[!duplicated(smatched),,drop=FALSE]
+    representatives <- encoding[!duplicated(smatched),,drop=FALSE]
     imatched <- match(representatives, present)
     absent <- which(is.na(imatched))
 
     absent.indices <- vector("list", length(absent))
     for (i in seq_along(absent)) {
-        chosen <- encoding[absent[i],]
+        chosen <- unlist(representatives[absent[i],], use.names=FALSE)
         chosen <- colnames(encoding)[chosen]
         common <- defineFUN(chosen)
 

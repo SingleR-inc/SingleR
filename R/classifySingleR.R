@@ -191,7 +191,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         }
 
         if (ncol(scores)) {
-            new.labels <- colnames(scores)[tuned[[1]]+1L]
+            new.labels <- tuned[[1]] 
         } else {
             new.labels <- rep(NA_character_, nrow(scores))
         }
