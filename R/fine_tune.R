@@ -1,6 +1,6 @@
 #' @importFrom BiocGenerics rbind 
 #' @importFrom BiocParallel SerialParam bpiterate
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame selfmatch
 #' @importFrom BiocNeighbors KmknnParam
 #' @importFrom DelayedArray rowMaxs
 .fine_tune_loop <- function(exprs, scores, references, 
@@ -41,14 +41,14 @@
             remaining <- remaining[,!finished,drop=FALSE]
         }
 
-        i.out <- .build_indices(above, present=present, indices=indices, 
-            references=references, defineFUN=defineFUN, BNPARAM=BNPARAM)
-        present <- i.out$present
-        indices <- i.out$indices
-        use <- i.out$use
+        encoding <- DataFrame(above, check.names=FALSE)
+        use <- selfmatch(encoding)
 
-        ITER <- .fine_tune_iterator(use, present=present, indices=indices, exprs=remaining)
-        output <- bpiterate(ITER=ITER, FUN=.fine_tune_searcher, BPPARAM=BPPARAM, quantile=quantile, all.labels=all.labels)
+        ITER <- .fine_tune_iterator(use, encoding=encoding, references=references, 
+            defineFUN=defineFUN, exprs=remaining)
+
+        output <- bpiterate(ITER=ITER, FUN=.fine_tune_searcher, quantile=quantile,
+            all.labels=all.labels, BPPARAM=BPPARAM, BNPARAM=BNPARAM)
 
         scores <- do.call(rbind, output)
         scores[order(use),] <- scores # need to reorder as iterator splits up by 'use'.
@@ -57,43 +57,7 @@
     list(final.labels, final.best, final.second)
 }
 
-#' @importFrom BiocNeighbors buildIndex KmknnParam
-#' @importFrom S4Vectors DataFrame selfmatch
-#' @importFrom BiocGenerics match
-.build_indices <- function(encoding, present, indices, references, defineFUN, BNPARAM=KmknnParam()) {
-    encoding <- DataFrame(encoding)
-    smatched <- selfmatch(encoding)
-    smatched <- as.integer(factor(smatched))
-
-    representatives <- encoding[!duplicated(smatched),,drop=FALSE]
-    imatched <- match(representatives, present)
-    absent <- which(is.na(imatched))
-
-    absent.indices <- vector("list", length(absent))
-    for (i in seq_along(absent)) {
-        chosen <- unlist(representatives[absent[i],], use.names=FALSE)
-        chosen <- colnames(encoding)[chosen]
-        common <- defineFUN(chosen)
-
-        idxs <- lapply(references[chosen], function(x) {
-            rout <- .scaled_colranks_safe(x[common,,drop=FALSE])
-            buildIndex(rout, BNPARAM=BNPARAM)
-        })
-        absent.indices[[i]] <- list(trained=idxs, genes=common)
-    }
-
-    imatched[absent] <- length(indices) + seq_along(absent.indices)
-    indices <- c(indices, absent.indices)
-    present <- rbind(present, representatives[absent,])
-
-    list(
-        present=present,
-        indices=indices,
-        use=imatched[smatched]
-    )
-}
-
-.fine_tune_iterator <- function(use, present, indices, exprs) {
+.fine_tune_iterator <- function(use, encoding, references, defineFUN, exprs) {
     u.use <- sort(unique(use))
     counter <- 1L
 
@@ -104,28 +68,31 @@
 
         in.use <- u.use[counter]
         used <- use==in.use
-        curdex <- indices[[in.use]]
+        
+        chosen <- unlist(encoding[which(used)[1],], use.names=FALSE)
+        chosen <- colnames(encoding)[chosen]
+        common <- defineFUN(chosen)
 
         counter <<- counter + 1L
         list(
-            exprs=exprs[curdex$genes,used,drop=FALSE],
-            trained=curdex$trained
+            exprs=exprs[common,used,drop=FALSE],
+            references=lapply(references[chosen], function(x) x[common,,drop=FALSE])
         )
     }
 }
 
-.fine_tune_searcher <- function(data, quantile, all.labels) {
-    exprs <- data$exprs
-    trained <- data$trained
-    ranked <- .scaled_colranks_safe(exprs)
-    output <- lapply(trained, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile)
+#' @importFrom BiocNeighbors buildIndex
+.fine_tune_searcher <- function(data, quantile, all.labels, BNPARAM) {
+    ranked <- .scaled_colranks_safe(data$exprs)
 
     overlord <- matrix(-Inf, 
         nrow=nrow(ranked), ncol=length(all.labels),
         dimnames=list(rownames(ranked), all.labels))
 
-    for (i in names(output)) {
-        overlord[,i] <- output[[i]]
+    for (i in names(data$references)) {
+        rout <- .scaled_colranks_safe(data$references[[i]])
+        idx <- buildIndex(rout, BNPARAM=BNPARAM)
+        overlord[,i] <- .find_nearest_quantile(ranked, idx, quantile=quantile)
     }
     overlord
 }
