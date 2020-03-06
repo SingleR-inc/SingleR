@@ -34,6 +34,8 @@
 #' If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' Otherwise, defaults to 10.
 #' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
+#' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReferences}}.
+#' @param aggr.args Further arguments to pass to \code{\link{aggregateReferences}} when \code{aggr.ref=TRUE}.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
@@ -109,6 +111,12 @@
 #' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
 #' Users are recommended to either set \code{de.method} to another DE ranking method, or detect markers externally and pass a list of markers to \code{genes} (see Examples).
 #'
+#' In addition, it is generally unnecessary to have single-cell resolution on the reference profiles.
+#' We can instead set \code{aggr.ref=TRUE} to aggregate per-cell references into a set of pseudo-bulk profiles using \code{\link{aggregateReferences}}.
+#' This improves classification speed while using vector quantization to preserve within-label heterogeneity and mitigate the loss of information.
+#' Note that any aggregation is done \emph{after} marker gene detection; this ensures that the relevant tests can appropriately penalize within-label variation.
+#' Users should also be sure to set the seed as the aggregation involves randomization.
+#'
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #' 
 #' @seealso
@@ -157,6 +165,7 @@
 #' @importFrom S4Vectors List isSingleString
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
+    aggr.ref=FALSE, aggr.args=list(),
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
     de.method <- match.arg(de.method)
@@ -168,8 +177,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, 
             de.method=de.method, de.n=de.n, de.args=de.args)
 
-        .build_trained_index(ref, labels, common=gene.info$common, genes=gene.info$genes, 
-            args=gene.info$args, extra=gene.info$extra, BNPARAM=BNPARAM)
+        .build_trained_index(ref, labels, common=gene.info$common, aggr.ref=aggr.ref, 
+            aggr.args=aggr.args, search.info=gene.info, BNPARAM=BNPARAM)
 
     } else {
         ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
@@ -200,11 +209,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         # Setting the common set across all references to the union of all genes.
         all.common <- Reduce(union, lapply(gene.info, function(x) x$common))
 
-        output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, 
-            args=lapply(gene.info, "[[", i="args"),
-            genes=lapply(gene.info, "[[", i="genes"),
-            extra=lapply(gene.info, "[[", i="extra"),
-            MoreArgs=list(common=all.common, BNPARAM=BNPARAM),
+        output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, search.info=gene.info,
+            MoreArgs=list(common=all.common, aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM),
             SIMPLIFY=FALSE)
 
         List(output)
@@ -269,9 +275,16 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
 #' @importFrom S4Vectors List
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
-.build_trained_index <- function(ref, labels, genes, common, extra, args, BNPARAM=KmknnParam()) {
+#' @importFrom SummarizedExperiment assay
+.build_trained_index <- function(ref, labels, common, aggr.ref, aggr.args, search.info, BNPARAM=KmknnParam()) {
     if (bndistance(BNPARAM)!="Euclidean") {
         stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
+    }
+
+    if (aggr.ref) {
+        aggr <- do.call(aggregateReference, c(list(ref=ref, label=labels, check.missing=FALSE), aggr.args))
+        ref <- assay(aggr)
+        labels <- aggr$label
     }
 
     indices <- original <- List()
@@ -293,7 +306,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         common.genes=as.character(common),
         original.exprs=original,
         nn.indices=indices,
-        search=List(mode=genes, args=args, extra=extra)
+        search=List(mode=search.info$genes, args=search.info$args, extra=search.info$extra)
     )
 }
 

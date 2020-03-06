@@ -276,6 +276,18 @@ test_that("trainSingleR behaves with multiple references", {
     expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label)), "not identical")
 })
 
+test_that("trainSingleR behaves with aggregation turned on", {
+    set.seed(10000)
+    out <- trainSingleR(training, training$label, aggr.ref=TRUE)
+    expect_true(sum(vapply(out$nn.indices, nrow, 0L)) <= ncol(training))
+    expect_identical(out$search$mode, "de")
+
+    set.seed(10000)
+    out2 <- trainSingleR(ref=list(training, training), label=list(training$label, training$label), aggr.ref=TRUE)
+    expect_identical(out2[[1]], out)
+    expect_false(identical(out2[[2]], out)) # different k-means initialization.
+})
+
 test_that("trainSingleR behaves with silly inputs", {
     out <- trainSingleR(training[,0], training$label[0])
     expect_identical(out$common.genes, character(0))

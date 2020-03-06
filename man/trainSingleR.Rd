@@ -12,6 +12,8 @@ trainSingleR(
   de.method = c("classic", "wilcox", "t"),
   de.n = NULL,
   de.args = list(),
+  aggr.ref = FALSE,
+  aggr.args = list(),
   assay.type = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam()
@@ -56,6 +58,10 @@ If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \c
 Otherwise, defaults to 10.}
 
 \item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.}
+
+\item{aggr.ref}{Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReferences}}.}
+
+\item{aggr.args}{Further arguments to pass to \code{\link{aggregateReferences}} when \code{aggr.ref=TRUE}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
@@ -141,6 +147,12 @@ We take the union to ensure that correlations are computed from the same set of 
 The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
 It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
 Users are recommended to either set \code{de.method} to another DE ranking method, or detect markers externally and pass a list of markers to \code{genes} (see Examples).
+
+In addition, it is generally unnecessary to have single-cell resolution on the reference profiles.
+We can instead set \code{aggr.ref=TRUE} to aggregate per-cell references into a set of pseudo-bulk profiles using \code{\link{aggregateReferences}}.
+This improves classification speed while using vector quantization to preserve within-label heterogeneity and mitigate the loss of information.
+Note that any aggregation is done \emph{after} marker gene detection; this ensures that the relevant tests can appropriately penalize within-label variation.
+Users should also be sure to set the seed as the aggregation involves randomization.
 }
 
 \examples{
