@@ -6,12 +6,13 @@
 #' @param ref A numeric matrix of reference expression values, usually containing log-expression values.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param labels A character vector or factor of known labels for all cells in \code{ref}.
+#' @param nclusters Integer scalar specifying the maximum number of aggregated profiles to produce for each label.
 #' @param power Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
-#' Only used if \code{ref} is or contains a \linkS4class{DelayedMatrix}.
+#' @param BSPARAM A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.
 #' 
 #' @details
 #' With single-cell reference datasets, it is often useful to aggregate individual cells into pseudo-bulk samples to serve as a reference.
@@ -22,12 +23,21 @@
 #' However, this discards information about the within-label heterogeneity (e.g., the \dQuote{shape} and spread of the population in expression space)
 #' that may be informative for assignment, especially for closely related labels.
 #'
-#' Instead, the default approach in this function is to create a series of pseudo-bulk samples to represent each label.
-#' This is achieved by performing vector quantization using k-means clustering on all cells in a particular label.
+#' Instead, the approach in this function is to create a series of pseudo-bulk samples to represent each label.
+#' This is achieved by performing vector quantization with k-means clustering on all cells in a particular label.
 #' Cells in each cluster are subsequently averaged to create one pseudo-bulk sample.
-#' We set the number of clusters to be \code{ncol(ref)^power} so that labels with more cells have more resolved representatives.
+#' This reduces the number of separate observations while preserving population heterogeneity, thus achieving a compromise between speed and fidelity.
+#' 
+#' The number of pseudo-bulk samples per label is controlled by \code{ncenters}.
+#' By default, we set the number of clusters to \code{X^power} where \code{X} is the number of cells for that label.
+#' This ensures that labels with more cells have more resolved representatives.
+#' If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
 #'
-#' If \code{power=1}, no aggregation is performed.
+#' The k-means clustering is actually performed on the first \code{rank} principal components, as computed using \code{\link{runPCA}}.
+#' The use of PCs compacts the data for more efficient operation of \code{\link{kmeans}};
+#' it also removes some of the high-dimensional noise to highlight major factors of within-label heterogenity.
+#' The PCs are only used for clustering and the full expression profiles are still used for the final averaging.
+#' Nonetheless, users can disable the PCA step by setting \code{rank=Inf}.
 #'
 #' We use the average rather than the sum in order to be compatible with \code{\link{trainSingleR}}'s internal marker detection.
 #' Moreover, unlike counts, the sum of transformed and normalized expression values generally has little meaning.
@@ -61,7 +71,10 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom BiocParallel SerialParam
-aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) {
+#' @importFrom BiocSingular bsparam runPCA
+aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, assay.type="logcounts", 
+    rank=20, check.missing=TRUE, BPPARAM=SerialParam(), BSPARAM=bsparam())
+{
     output.vals <- output.labs <- list()
     ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
 
@@ -73,13 +86,24 @@ aggregateReference <- function(ref, labels, power=0.5, assay.type="logcounts", c
         chosen <- u==labels
         current <- ref[,chosen,drop=FALSE]
 
-        if (power==0) {
+        cur.ncenters <- ncenters
+        if (is.null(cur.ncenters)) {
+            cur.ncenters <- floor(ncol(current)^power)
+        }
+
+        if (cur.ncenters==0) {
             val <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
-        } else if (power==1) {
+        } else if (cur.ncenters >= ncol(current)) {
             val <- current
         } else {
-            ncenters <- ncol(current)^power
-            clustered <- kmeans(as.matrix(t(current)), centers=ncenters)
+            # Identifying the top PCs to avoid realizing the entire matrix.
+            if (rank <= min(dim(current))-1L) {
+                pcs <- runPCA(t(current), rank=rank, get.rotation=FALSE, BSPARAM=BSPARAM, BPPARAM=BPPARAM)$x
+            } else {
+                pcs <- as.matrix(t(current))
+            }
+
+            clustered <- kmeans(pcs, centers=cur.ncenters)
             val <- colsum(DelayedArray(current), clustered$cluster)
             tab <- table(clustered$cluster)[colnames(val)]
             val <- sweep(val, 2, tab, "/")
