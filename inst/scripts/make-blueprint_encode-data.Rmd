@@ -87,8 +87,8 @@ Saving counts and metadata to upload them to `r Biocpkg("ExperimentHub")`.
 path <- file.path("SingleR", dataset, "1.2.0")
 dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-## saving counts
-saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
+## saving counts (disabled, as this is the same as 1.0.0).
+## saveRDS(logcounts, file = file.path(path, "logcounts.rds"))
 
 ## saving metadata
 saveRDS(coldata, file = file.path(path, "coldata.rds"))

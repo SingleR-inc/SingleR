@@ -42,6 +42,14 @@ test_that("aggregateReference works as expected for no aggregation", {
     expect_equivalent(assay(aggr)[,order(aggr$label)], logcounts(sce)[,order(labels)])
 })
 
+test_that("aggregateReference skips PCA when the requested rank is too high", {
+    labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+    ref <- aggregateReference(sce, labels)
+
+    expect_error(out <- aggregateReference(sce, labels, rank=1000, BSPARAM="WHEEE"), NA) # should not even require the BSPARAM.
+    expect_identical(ncol(ref), ncol(out))
+})
+
 test_that("aggregateReference works as expected for empty inputs", {
     labels <- sample(LETTERS, ncol(sce), replace=TRUE)
     aggr <- aggregateReference(sce[,0], labels[0])

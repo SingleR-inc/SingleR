@@ -16,7 +16,8 @@
 #' or whether they should be aggregated into cluster-level profiles prior to annotation.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
 #' Only used if \code{method="cluster"}.
-#' @param genes,sd.thresh Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.
+#' @param genes,sd.thresh,de.method,de.n,de.args Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.
+#' @param aggr.ref,aggr.args Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.
 #' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \linkS4class{SummarizedExperiment} object.
@@ -101,8 +102,9 @@
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, ref, 
     labels, method = c("single", "cluster"), clusters = NULL, 
-    genes = "de", de.method ="classic", de.n = NULL, de.args = list(),
-    quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, sd.thresh = 1, prune=TRUE, 
+    genes = "de", sd.thresh=1, de.method ="classic", de.n = NULL, de.args = list(),
+    aggr.ref = FALSE, aggr.args = list(),
+    quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, prune=TRUE, 
     assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
@@ -137,6 +139,7 @@ SingleR <- function(test, ref,
 
     trained <- trainSingleR(ref, labels, genes = genes, sd.thresh = sd.thresh, 
         de.method = de.method, de.n = de.n, de.args = de.args,
+        aggr.ref = aggr.ref, aggr.args = aggr.args,
         check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)

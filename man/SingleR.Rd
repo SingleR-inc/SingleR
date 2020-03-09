@@ -11,13 +11,15 @@ SingleR(
   method = c("single", "cluster"),
   clusters = NULL,
   genes = "de",
+  sd.thresh = 1,
   de.method = "classic",
   de.n = NULL,
   de.args = list(),
+  aggr.ref = FALSE,
+  aggr.args = list(),
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
-  sd.thresh = 1,
   prune = TRUE,
   assay.type.test = "logcounts",
   assay.type.ref = "logcounts",
@@ -48,18 +50,9 @@ or whether they should be aggregated into cluster-level profiles prior to annota
 \item{clusters}{A character vector or factor of cluster identities for each cell in \code{test}.
 Only used if \code{method="cluster"}.}
 
-\item{genes, sd.thresh}{Arguments controlling the genes that are used for annotation, see \code{\link{trainSingleR}}.}
+\item{genes, sd.thresh, de.method, de.n, de.args}{Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.}
 
-\item{de.method}{String specifying how DE genes should be detected between pairs of labels.
-Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
-Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
-and take the top \code{de.n} upregulated genes per comparison.}
-
-\item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
-If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
-Otherwise, defaults to 10.}
-
-\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.}
+\item{aggr.ref, aggr.args}{Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.}
 
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 

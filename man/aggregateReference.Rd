@@ -7,10 +7,14 @@
 aggregateReference(
   ref,
   labels,
+  ncenters = NULL,
   power = 0.5,
   assay.type = "logcounts",
+  rank = 20,
+  subset.row = NULL,
   check.missing = TRUE,
-  BPPARAM = SerialParam()
+  BPPARAM = SerialParam(),
+  BSPARAM = bsparam()
 )
 }
 \arguments{
@@ -19,15 +23,22 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 
 \item{labels}{A character vector or factor of known labels for all cells in \code{ref}.}
 
+\item{ncenters}{Integer scalar specifying the maximum number of aggregated profiles to produce for each label.}
+
 \item{power}{Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
+\item{rank}{Integer scalar specfiying the number of principal components to use during clustering.}
+
+\item{subset.row}{Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering.}
+
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
-Only used if \code{ref} is or contains a \linkS4class{DelayedMatrix}.}
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.}
+
+\item{BSPARAM}{A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
@@ -39,19 +50,31 @@ This can be done with varying degrees of resolution to preserve the within-label
 }
 \details{
 With single-cell reference datasets, it is often useful to aggregate individual cells into pseudo-bulk samples to serve as a reference.
-This improves speed (and to some extent, reduces noise) in downstream assignment with \code{\link{classifySingleR}} or \code{\link{SingleR}}.
-
+This improves speed in downstream assignment with \code{\link{classifySingleR}} or \code{\link{SingleR}}.
 The most obvious aggregation is to simply average all counts for all cells in a label to obtain a single pseudo-bulk profile.
-This can be achieved by setting \code{power=0}.
 However, this discards information about the within-label heterogeneity (e.g., the \dQuote{shape} and spread of the population in expression space)
 that may be informative for assignment, especially for closely related labels.
 
-Instead, the default approach in this function is to create a series of pseudo-bulk samples to represent each label.
-This is achieved by performing vector quantization using k-means clustering on all cells in a particular label.
-Cells in each cluster are subsequently averaged to create one pseudo-bulk sample.
-We set the number of clusters to be \code{ncol(ref)^power} so that labels with more cells have more resolved representatives.
+The default approach in this function is to create a series of pseudo-bulk samples to represent each label.
+This is achieved by performing vector quantization via k-means clustering on all cells in a particular label.
+Cells in each cluster are subsequently averaged to create one pseudo-bulk sample that serves as a representative for that location in the expression space.
+This reduces the number of separate observations (for speed) while preserving some level of population heterogeneity (for fidelity).
 
-If \code{power=1}, no aggregation is performed.
+The number of pseudo-bulk samples per label is controlled by \code{ncenters}.
+By default, we set the number of clusters to \code{X^power} where \code{X} is the number of cells for that label.
+This ensures that labels with more cells have more resolved representatives.
+If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
+Setting \code{power=0} will aggregate all cells of a label into a single pseudo-bulk profile.
+
+k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link{runPCA}}.
+The use of PCs compacts the data for more efficient operation of \code{\link{kmeans}};
+it also removes some of the high-dimensional noise to highlight major factors of within-label heterogenity.
+Note that the PCs are only used for clustering and the full expression profiles are still used for the final averaging.
+Users can disable the PCA step by setting \code{rank=Inf}.
+
+Setting \code{subset.row} to an appropriate indexing vector will subset the matrix by gene prior to PCA.
+However, again, the aggregation is performed on the full expression profiles.
+This option may be useful for clustering based on known genes of interest but retaining all genes in the aggregated results.
 
 We use the average rather than the sum in order to be compatible with \code{\link{trainSingleR}}'s internal marker detection.
 Moreover, unlike counts, the sum of transformed and normalized expression values generally has little meaning.
