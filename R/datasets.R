@@ -113,9 +113,9 @@ HumanPrimaryCellAtlasData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", 
 BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none"), 
     ensembl=FALSE, cell.ont=c("all", "nonna", "none"))
 {
-    version <- "1.0.0"
     rm.NA <- match.arg(rm.NA)
-    se <- .create_se("blueprint_encode", version, 
+    se <- .create_se("blueprint_encode", 
+        version = list(logcounts="1.0.0", coldata="1.2.0"),
         assays="logcounts", rm.NA = rm.NA,
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -166,8 +166,7 @@ BlueprintEncodeData <- function(rm.NA = c("rows","cols","both","none"),
 #' 
 #' @export
 ImmGenData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
-    version <- "1.0.0"
-    se <- .create_se("immgen", version, 
+    se <- .create_se("immgen", version = "1.0.0",
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
@@ -405,8 +404,8 @@ DatabaseImmuneCellExpressionData <- function(ensembl=FALSE, cell.ont=c("all", "n
 #' 
 #' @export
 NovershternHematopoieticData <- function(ensembl=FALSE, cell.ont=c("all", "nonna", "none")) {
-    version <- "1.0.0"
-    se <- .create_se("dmap", version, 
+    se <- .create_se("dmap", 
+        version = c(logcounts="1.0.0", coldata="1.2.0"), 
         assays="logcounts", rm.NA = "none",
         has.rowdata = FALSE, has.coldata = TRUE)
 
