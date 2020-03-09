@@ -6,8 +6,9 @@
 #' @param ref A numeric matrix of reference expression values, usually containing log-expression values.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param labels A character vector or factor of known labels for all cells in \code{ref}.
-#' @param nclusters Integer scalar specifying the maximum number of aggregated profiles to produce for each label.
+#' @param ncenters Integer scalar specifying the maximum number of aggregated profiles to produce for each label.
 #' @param power Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.
+#' @param rank Integer scalar specfiying the number of principal components to use during clustering.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
 #' @param subset.row Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering. 

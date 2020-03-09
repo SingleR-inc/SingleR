@@ -23,10 +23,14 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 
 \item{labels}{A character vector or factor of known labels for all cells in \code{ref}.}
 
+\item{ncenters}{Integer scalar specifying the maximum number of aggregated profiles to produce for each label.}
+
 \item{power}{Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
+
+\item{rank}{Integer scalar specfiying the number of principal components to use during clustering.}
 
 \item{subset.row}{Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering.}
 
@@ -35,8 +39,6 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.}
 
 \item{BSPARAM}{A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.}
-
-\item{nclusters}{Integer scalar specifying the maximum number of aggregated profiles to produce for each label.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
