@@ -18,5 +18,5 @@ df <- data.frame(
     stringsAsFactors = FALSE
 )
 
-write.csv(file="../extdata/metadata-hpca.csv", df, row.names=FALSE)
+write.csv(file="../extdata/1.0.0/metadata-hpca.csv", df, row.names=FALSE)
 
