@@ -199,11 +199,9 @@ combineCommonResults <- function(results) {
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' @inheritParams SingleR
-#' @param ref A list or \linkS4class{List} of the same length as \code{results}.
-#' Each entry can be a SummarizedExperiment object or numeric matrix containing the reference used to obtain the annotations in the corresponding entry of \code{results}.
-#' See the equivalent argument in \code{\link{trainSingleR}} for details.
-#' @param labels A list of the same length as \code{ref},
-#' where each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
+#' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
+#' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
+#' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
@@ -255,17 +253,18 @@ combineCommonResults <- function(results) {
 #' test <- scater::logNormCounts(test)
 #'
 #' ref1 <- scater::logNormCounts(ref1)
-#' pred1 <- SingleR(test, ref1, labels=ref1$label)
+#' train1 <- trainSingleR(ref1, labels=ref1$label)
+#' pred1 <- classifySingleR(test, train1)
 #'
 #' ref2 <- scater::logNormCounts(ref2)
-#' pred2 <- SingleR(test, ref2, labels=ref2$label)
+#' train2 <- trainSingleR(ref2, labels=ref2$label)
+#' pred2 <- classifySingleR(test, train2)
 #'
 #' # Combining results with recomputation of scores.
 #' combined <- combineRecomputedResults(
 #'     results=list(pred1, pred2), 
 #'     test=test,
-#'     ref=list(ref1, ref2), 
-#'     labels=list(ref1$label, ref2$label))
+#'     trained=list(train1, train2))
 #' 
 #' combined[,1:5]
 #'
@@ -273,8 +272,8 @@ combineCommonResults <- function(results) {
 #' @importFrom S4Vectors DataFrame selfmatch metadata
 #' @importFrom BiocParallel bpiterate SerialParam
 #' @importFrom BiocNeighbors KmknnParam
-combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8, 
-    assay.type.test="logcounts", assay.type.ref="logcounts", check.missing=TRUE,
+combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
+    assay.type.test="logcounts", check.missing=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
 {
     all.names <- c(list(colnames(test)), lapply(results, rownames))
@@ -294,12 +293,13 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
     by.group <- split(seq_along(groups), groups)
 
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test")
-    ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type.ref, check.missing=check.missing, msg="ref")
 
-    available <- c(list(rownames(test)), lapply(ref, rownames))
+    refnames <- lapply(trained, function(x) rownames(x$original.exprs[[1]]))
+    available <- c(list(rownames(test)), refnames)
     if (length(unique(available)) != 1) {
-        warning("'test' and 'ref' differ in the universe of available genes")
+        warning("'test' and 'trained' differ in the universe of available genes")
     }
+
     available <- Reduce(intersect, available)
 
     ##############################################
@@ -316,23 +316,24 @@ combineRecomputedResults <- function(results, test, ref, labels, quantile=0.8,
         envir$counter <- envir$counter + 1L
 
         curmarkers <- character(0)
-        for (i in seq_along(ref)) {
-            M <- metadata(results[[i]])$de.genes
-            if (is.null(M)) {
-                to.add <- metadata(results[[i]])$common.genes
-            } else {
+        for (i in seq_along(trained)) {
+            current <- trained[[i]]
+            if (current$search$mode=="de") {
                 curlab <- curlabels[[i]]
-                to.add <- M[[curlab]]
+                to.add <- current$search$extra[[curlab]]
                 to.add <- unlist(to.add, use.names=FALSE)
+            } else {
+                to.add <- current$common.genes
             }
             curmarkers <- union(curmarkers, to.add)
         }
 
         curmarkers <- intersect(curmarkers, available)
-        all.ref <- vector("list", length(ref))
-        for (i in seq_along(ref)) {
-            keep <- curlabels[[i]]==labels[[i]]
-            all.ref[[i]] <- ref[[i]][curmarkers,keep,drop=FALSE]
+        all.ref <- vector("list", length(trained))
+        for (i in seq_along(trained)) {
+            curlab <- curlabels[[i]]
+            curorig <- trained[[i]]$original.exprs[[curlab]]
+            all.ref[[i]] <- curorig[curmarkers,,drop=FALSE]
         }
 
         list(

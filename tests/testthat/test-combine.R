@@ -97,18 +97,19 @@ test <- .mockTestData(ref)
 test <- scater::logNormCounts(test)
 
 ref1 <- scater::logNormCounts(ref1)
-pred1 <- SingleR(test, ref1, labels=ref1$label)
+train1 <- trainSingleR(ref1, labels=ref1$label)
+pred1 <- classifySingleR(test, train1)
 
 ref2 <- scater::logNormCounts(ref2)
-pred2 <- SingleR(test, ref2, labels=ref2$label)
+train2 <- trainSingleR(ref2, labels=ref2$label)
+pred2 <- classifySingleR(test, train2)
 
 test_that("combineRecomputedResults works as expected", {
     # Combining results with recomputation of scores.
     combined <- combineRecomputedResults(
         results=list(pred1, pred2), 
         test=test,
-        ref=list(ref1, ref2), 
-        labels=list(ref1$label, ref2$label))
+        trained=list(train1, train2))
 
     # Checking the sanity of the output.
     obs <- apply(combined$scores, 1, FUN=function(x) colnames(combined$scores)[!is.na(x)])
@@ -152,30 +153,26 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
     expect_error(combineRecomputedResults(
         results=list(pred1[1:10,], pred2), 
         test=test,
-        ref=list(ref1, ref2), 
-        labels=list(ref1$label, ref2$label)), "not identical")
+        trained=list(train1, train2)), "not identical")
 
     # Responds to differences in the cell names.
     colnames(test) <- seq_len(ncol(test))
     expect_error(combineRecomputedResults(
         results=list(pred1, pred2),
         test=test[,1],
-        ref=list(ref1, ref2),
-        labels=list(ref1$label, ref2$label)), "not identical")
+        trained=list(train1, train2)), "not identical")
     colnames(test) <- NULL
 
     # Correctly intersects the gene universes.
     ref <- combineRecomputedResults(
         results=list(pred1, pred2),
         test=test,
-        ref=list(ref1, ref2),
-        labels=list(ref1$label, ref2$label))
+        trained=list(train1, train2))
 
     s <- sample(nrow(test))
     expect_warning(out <- combineRecomputedResults(
         results=list(pred1, pred2),
         test=test[s,],
-        ref=list(ref1, ref2),
-        labels=list(ref1$label, ref2$label)), "differ in the universe")
+        trained=list(train1, train2)), "differ in the universe")
     expect_identical(ref, out)
 })
