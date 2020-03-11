@@ -68,7 +68,9 @@
 #' This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 #' However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
 #'
-#' If \code{trained} was generated from multiple references, \code{\link{combineCommonResults}} is used to consolidate the per-reference statistics into a single DataFrame of results.
+#' If \code{trained} was generated from multiple references, the per-reference statistics are combined into a single DataFrame of results.
+#' This is done using \code{\link{combineRecomputedResults}} if \code{recompute=TRUE} in \code{\link{trainSingleR}},
+#' otherwise it is done using \code{\link{combineCommonResults}}.
 #'
 #' @examples
 #' ##############################
@@ -133,7 +135,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         on.exit(bpstop(BPPARAM))
     }
 
-    if (is.character(trained$common.genes)) {
+    if (is.character(trained$common.genes)) { # can't test for List, because each trained structure is also a list.
         .classify_internals(test=test, trained=trained, quantile=quantile,
             fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
             prune=prune, BPPARAM=BPPARAM)
@@ -141,7 +143,13 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
             fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
             prune=prune, BPPARAM=BPPARAM)
-        combineCommonResults(results)
+
+        if (isTRUE(metadata(trained)$recompute)) {
+            combineRecomputedResults(results, test=test, trained=trained, 
+                check.missing=FALSE, quantile=quantile, BPPARAM=BPPARAM)
+        } else {
+            combineCommonResults(results)
+        } 
     }
 }
 
