@@ -7,11 +7,9 @@
 combineRecomputedResults(
   results,
   test,
-  ref,
-  labels,
+  trained,
   quantile = 0.8,
   assay.type.test = "logcounts",
-  assay.type.ref = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam(),
   BPPARAM = SerialParam()
@@ -23,20 +21,14 @@ combineRecomputedResults(
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
-\item{ref}{A list or \linkS4class{List} of the same length as \code{results}.
-Each entry can be a SummarizedExperiment object or numeric matrix containing the reference used to obtain the annotations in the corresponding entry of \code{results}.
-See the equivalent argument in \code{\link{trainSingleR}} for details.}
-
-\item{labels}{A list of the same length as \code{ref},
-where each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
+\item{trained}{A list of \linkS4class{List}s containing the trained outputs of multiple references,
+equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
+or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.}
 
 \item{quantile}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 if \code{test} is a \linkS4class{SummarizedExperiment} object.}
-
-\item{assay.type.ref}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
@@ -93,17 +85,18 @@ test <- .mockTestData(ref)
 test <- scater::logNormCounts(test)
 
 ref1 <- scater::logNormCounts(ref1)
-pred1 <- SingleR(test, ref1, labels=ref1$label)
+train1 <- trainSingleR(ref1, labels=ref1$label)
+pred1 <- classifySingleR(test, train1)
 
 ref2 <- scater::logNormCounts(ref2)
-pred2 <- SingleR(test, ref2, labels=ref2$label)
+train2 <- trainSingleR(ref2, labels=ref2$label)
+pred2 <- classifySingleR(test, train2)
 
 # Combining results with recomputation of scores.
 combined <- combineRecomputedResults(
     results=list(pred1, pred2), 
     test=test,
-    ref=list(ref1, ref2), 
-    labels=list(ref1$label, ref2$label))
+    trained=list(train1, train2))
 
 combined[,1:5]
 

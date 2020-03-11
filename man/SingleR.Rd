@@ -17,6 +17,7 @@ SingleR(
   de.args = list(),
   aggr.ref = FALSE,
   aggr.args = list(),
+  recompute = TRUE,
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
@@ -53,6 +54,10 @@ Only used if \code{method="cluster"}.}
 \item{genes, sd.thresh, de.method, de.n, de.args}{Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.}
 
 \item{aggr.ref, aggr.args}{Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.}
+
+\item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
+when \code{ref} contains multiple references from which the individual results are to be combined.
+(See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
 
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 

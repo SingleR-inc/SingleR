@@ -14,6 +14,7 @@ trainSingleR(
   de.args = list(),
   aggr.ref = FALSE,
   aggr.args = list(),
+  recompute = FALSE,
   assay.type = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam()
@@ -63,6 +64,10 @@ Otherwise, defaults to 10.}
 
 \item{aggr.args}{Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.}
 
+\item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
+when \code{ref} contains multiple references from which the individual results are to be combined.
+(See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
+
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
@@ -76,8 +81,10 @@ For a single reference, a \linkS4class{List} is returned containing:
 \item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
 \item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
 \item{\code{original.exprs}:}{A List of numeric matrices where each matrix contains all cells for a particular label.}
-\item{\code{extra}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
-This includes the selection method in \code{genes} and method-specific structures that can be re-used during classification.}
+\item{\code{search}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
+This includes \code{mode}, a string containing the selection method;
+\code{args}, method-specific arguments that can be re-used during classification;
+and \code{extras}, method-specific structures that can be re-used during classification.}
 }
 
 For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
@@ -136,10 +143,10 @@ If \code{genes} explicitly contains gene identities (as character vectors), \cod
 
 \section{Dealing with multiple references}{
 
-The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?"\link{combine-predictions}"} for an explanation).
+The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineResults}} for an explanation).
 To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
 This is almost equivalent to running \code{trainSingleR} on each reference separately, except that the final \code{common} set of genes consists of the union of common genes across all references.
-We take the union to ensure that correlations are computed from the same set of genes across references and are thus reasonably comparable in \code{\link{combineCommonResults}}.
+We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
 }
 
 \section{Note on single-cell references}{
@@ -196,7 +203,7 @@ length(trained$common.genes)
 \seealso{
 \code{\link{classifySingleR}}, where the output of this function gets used.
 
-\code{\link{combineCommonResults}}, to combine results from multiple references.
+\code{\link{combineResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
