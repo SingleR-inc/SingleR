@@ -36,6 +36,9 @@
 #' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
 #' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.
 #' @param aggr.args Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.
+#' @param recompute Logical scalar indicating whether to set up indices for later recomputation of scores,
+#' when \code{ref} contains multiple references from which the individual results are to be combined.
+#' (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
@@ -47,8 +50,10 @@
 #' \item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
 #' \item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
 #' \item{\code{original.exprs}:}{A List of numeric matrices where each matrix contains all cells for a particular label.}
-#' \item{\code{extra}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
-#' This includes the selection method in \code{genes} and method-specific structures that can be re-used during classification.}
+#' \item{\code{search}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
+#' This includes \code{mode}, a string containing the selection method;
+#' \code{args}, method-specific arguments that can be re-used during classification;
+#' and \code{extras}, method-specific structures that can be re-used during classification.}
 #' }
 #'
 #' For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
@@ -101,10 +106,10 @@
 #' If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
 #'
 #' @section Dealing with multiple references:
-#' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?"\link{combine-predictions}"} for an explanation).
+#' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineResults}} for an explanation).
 #' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
 #' This is almost equivalent to running \code{trainSingleR} on each reference separately, except that the final \code{common} set of genes consists of the union of common genes across all references.
-#' We take the union to ensure that correlations are computed from the same set of genes across references and are thus reasonably comparable in \code{\link{combineCommonResults}}.
+#' We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
 #' 
 #' @section Note on single-cell references:
 #' The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
@@ -122,8 +127,7 @@
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
-#' \code{\link{combineCommonResults}}, to combine results from multiple references.
-#'
+#' \code{\link{combineResults}}, to combine results from multiple references.
 #' @examples
 #' ##############################
 #' ## Mocking up training data ##
@@ -163,10 +167,10 @@
 #' 
 #' @export
 #' @importFrom BiocNeighbors KmknnParam 
-#' @importFrom S4Vectors List isSingleString
+#' @importFrom S4Vectors List isSingleString metadata metadata<-
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
-    aggr.ref=FALSE, aggr.args=list(),
+    aggr.ref=FALSE, aggr.args=list(), recompute=FALSE,
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
     de.method <- match.arg(de.method)
@@ -207,14 +211,24 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
             MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args),
             SIMPLIFY=FALSE)
 
-        # Setting the common set across all references to the union of all genes.
-        all.common <- Reduce(union, lapply(gene.info, function(x) x$common))
+        common <- lapply(gene.info, function(x) x$common)
+        args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM)
 
-        output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, search.info=gene.info,
-            MoreArgs=list(common=all.common, aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM),
-            SIMPLIFY=FALSE)
+        if (recompute) {
+            output <- mapply(FUN=.build_trained_index, 
+                ref=ref, labels=labels, common=common, search.info=gene.info,
+                MoreArgs=args, SIMPLIFY=FALSE)
+        } else {
+            # Setting the common set across all references to the union of all genes.
+            all.common <- Reduce(union, common)
+            output <- mapply(FUN=.build_trained_index, 
+                ref=ref, labels=labels, search.info=gene.info,
+                MoreArgs=c(list(common=all.common), args), SIMPLIFY=FALSE)
+        }
 
-        List(output)
+        final <- List(output)
+        metadata(final)$recompute <- recompute
+        final
     }
 }
 

@@ -225,7 +225,7 @@ test_that("trainSingleR behaves with NAs", {
     expect_identical(out, ref)
 })
 
-test_that("trainSingleR behaves with multiple references", {
+test_that("trainSingleR behaves with multiple references, no recomputation", {
     set.seed(1000)
     ref1 <- trainSingleR(training, training$label)
     ref2 <- trainSingleR(training, training$label)
@@ -274,6 +274,23 @@ test_that("trainSingleR behaves with multiple references", {
     expect_error(trainSingleR(list(training1, training2), list(training1$label)), "same length")
     expect_error(trainSingleR(list(training1, training2), list(training1$label, training2$label), genes=list(training1$label)), "same length")
     expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label)), "not identical")
+})
+
+test_that("trainSingleR behaves with multiple references, plus recomputation", {
+    training1 <- training2 <- training
+    training1 <- training1[sample(nrow(training1)),]
+    rownames(training1) <- rownames(training)
+    
+    set.seed(1000)
+    ref1 <- trainSingleR(training1, training1$label)
+    ref2 <- trainSingleR(training2, training2$label)
+
+    set.seed(1000)
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=TRUE)
+
+    expect_identical(ref1, out[[1]])
+    expect_identical(ref2, out[[2]])
+    expect_true(metadata(out)$recompute)
 })
 
 test_that("trainSingleR behaves with aggregation turned on", {
