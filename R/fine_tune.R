@@ -7,11 +7,19 @@
 
 #' @importFrom BiocParallel bplapply bpmapply SerialParam
 .fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info, BPPARAM=SerialParam()) {
+    # Scanning across all references and subsetting to the common genes.
+    # This should reduce the amount of data that gets distributed,
+    # as well as the number of cache misses.
+    universe <- unique(unlist(lapply(de.info, unlist, use.names=FALSE), use.names=FALSE))
+    references <- lapply(references, function(x) x[universe,,drop=FALSE])
+    exprs <- exprs[universe,,drop=FALSE]
+
     # Converting character vectors into integer indices.
-    # We assume that SingleR() has already set up the backend.
+    # Also sorting to reduce cache misses.
+    # We assume that classifySingleR() has already set up the backend.
     de.info <- bplapply(de.info, function(markers, genes, labels) {
         for (j in seq_along(markers)) {
-            markers[[j]] <- match(markers[[j]], genes) - 1L
+            markers[[j]] <- sort(match(markers[[j]], genes) - 1L)
         }
         markers[labels]
     }, genes=rownames(exprs), labels=colnames(scores), BPPARAM=BPPARAM)
