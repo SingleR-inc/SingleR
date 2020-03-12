@@ -3,7 +3,7 @@
 
 struct sd_markers {
     sd_markers(Rcpp::NumericMatrix Mat, double l) : mat(Mat), limit(l*l) {}
-    void operator() (const std::vector<int>& labels, std::set<int>& genes) const {
+    void operator() (const std::vector<int>& labels, std::vector<int>& genes) const {
         genes.clear();
         auto it=mat.begin();
         for (int i=0; i<mat.ncol(); ++i, it+=mat.nrow()) {
@@ -24,7 +24,7 @@ struct sd_markers {
 
             // Limit is already squared.
             if (var > limit) {
-                genes.insert(i);
+                genes.push_back(i);
             }
         }
         return;

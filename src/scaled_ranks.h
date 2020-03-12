@@ -4,7 +4,7 @@
 typedef std::vector<std::pair<double, size_t> > ranked_vector;
 
 template <class IT> 
-void scaled_ranks(IT start, const std::set<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
+void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
     size_t slen=chosen.size();
     collected.reserve(slen);
     collected.clear();

@@ -15,7 +15,8 @@ typedef std::tuple<int, double, double> tuned_stats;
 
 class fine_tuner {
 public:
-    fine_tuner(size_t ngenes) : holder_left(ngenes), holder_right(ngenes), scaled_left(ngenes), scaled_right(ngenes), collected(ngenes) {}
+    fine_tuner(size_t ngenes) : holder_left(ngenes), holder_right(ngenes), 
+        scaled_left(ngenes), scaled_right(ngenes), collected(ngenes) {}
 
     template<class PICKER> 
     tuned_stats assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
@@ -128,8 +129,7 @@ public:
     }
 private:
     Rcpp::NumericVector holder_left, holder_right;
-    std::vector<int> labels_in_use, next_labels;
-    std::set<int> genes_in_use;
+    std::vector<int> labels_in_use, next_labels, genes_in_use;
 
     // Entities used inside 'get_scores'.
     std::vector<double> new_scores;
