@@ -12,14 +12,17 @@ struct de_markers {
         }
         return;
     }
-    void operator() (const std::vector<int>& labels, std::set<int>& genes) const {
-        genes.clear();
+    void operator() (const std::vector<int>& labels, std::vector<int>& genes) const {
+        std::set<int> tmp;
         for (auto l : labels) {
             for (auto l2 : labels) {
                 auto& current=collected[l][l2];
-                genes.insert(current.begin(), current.end());
+                tmp.insert(current.begin(), current.end());
             }
         }
+
+        genes.resize(tmp.size());
+        std::copy(tmp.begin(), tmp.end(), genes.begin());
         return;
     }
 private:

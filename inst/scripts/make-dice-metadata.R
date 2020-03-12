@@ -18,4 +18,4 @@ df <- data.frame(
     stringsAsFactors = FALSE
 )
 
-write.csv(file="../extdata/metadata-dice.csv", df, row.names=FALSE)
+write.csv(file="../extdata/1.0.0/metadata-dice.csv", df, row.names=FALSE)
