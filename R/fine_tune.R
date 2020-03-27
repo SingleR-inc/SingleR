@@ -15,15 +15,11 @@
     exprs <- exprs[universe,,drop=FALSE]
 
     # Converting character vectors into integer indices.
-    # Also sorting to reduce cache misses.
     # We assume that classifySingleR() has already set up the backend.
-    de.info <- bplapply(de.info, function(markers, genes, labels) {
-        for (j in seq_along(markers)) {
-            markers[[j]] <- sort(match(markers[[j]], genes) - 1L)
-        }
-        markers[labels]
-    }, genes=rownames(exprs), labels=colnames(scores), BPPARAM=BPPARAM)
-    de.info <- de.info[colnames(scores)]
+    of.interest <- colnames(scores)
+    de.info <- bplapply(de.info[of.interest], function(markers, genes, labels) {
+        lapply(markers[labels], function(x) match(x, genes) - 1L)
+    }, genes=rownames(exprs), labels=of.interest, BPPARAM=BPPARAM)
 
     M <- .prep_for_parallel(exprs, BPPARAM)
     S <- .prep_for_parallel(t(scores), BPPARAM)
@@ -47,7 +43,7 @@
 
 #' @importFrom BiocParallel bpnworkers
 .prep_for_parallel <- function(mat, BPPARAM) {
-    is.int <- !is.double(mat[0,])
+    is.int <- !is.double(as.matrix(mat[0,0]))
     n_cores <- bpnworkers(BPPARAM)
 
     if (n_cores==1L) {
