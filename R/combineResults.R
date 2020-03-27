@@ -271,7 +271,7 @@ combineCommonResults <- function(results) {
 #' @export
 #' @importFrom S4Vectors DataFrame selfmatch metadata
 #' @importFrom BiocParallel bpiterate SerialParam
-#' @importFrom BiocNeighbors KmknnParam
+#' @importFrom BiocNeighbors KmknnParam buildIndex
 combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
     assay.type.test="logcounts", check.missing=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
@@ -338,8 +338,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
         list(
             test=test[curmarkers,curgroup,drop=FALSE],
-            ref=do.call(cbind, all.ref),
-            label=rep(seq_along(all.ref), vapply(all.ref, ncol, 0L)),
+            ref=all.ref,
             names=unlist(curlabels)
         )
     }
@@ -349,22 +348,20 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
         FUN=function(data, BNPARAM, quantile, ...) {
             test <- data$test
             ref <- data$ref
-            label <- data$label
-            names <- data$names
+            rtest <- .scaled_colranks_safe(test)
 
-            # We have no interest looking for marker genes between references,
-            # as this would leave us susceptible to batch effects. So, don't
-            # bother to detect genes or to fine-tune, we just want the scores
-            # and the identity of the label that delivers the maximum score.
-            trained <- trainSingleR(ref, label, genes = "all", 
-                check.missing = FALSE, BNPARAM = BNPARAM)
-            output <- classifySingleR(test, trained, quantile = quantile, fine.tune = FALSE, 
-                prune = FALSE, check.missing = FALSE)
-   
-            output$labels <- as.integer(output$labels)
-            metadata(output)$names <- names
-            output
+            scores <- matrix(0, nrow=ncol(test), length(ref)) 
+            colnames(scores) <- data$names
+
+            for (r in seq_along(ref)) {
+                sr.out <- .scaled_colranks_safe(ref[[r]])
+                curdex <- buildIndex(sr.out, BNPARAM=BNPARAM)
+                scores[,r] <- .find_nearest_quantile(ranked=rtest, index=curdex, quantile=quantile)
+            }
+
+            list(scores=scores, labels=max.col(scores))
         },
+
         BPPARAM=BPPARAM,
         quantile=quantile,
         BNPARAM=BNPARAM
@@ -381,10 +378,10 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     for (i in seq_along(combined)) {
         chosen <- by.group[[i]]
-        stats <- combined[[i]]
-        names <- metadata(stats)$names
+        stats <- combined[[i]]$scores
+        names <- colnames(stats)
         for (r in seq_along(names)) {
-            base.scores[[r]][chosen,names[r]] <- stats$scores[,r]
+            base.scores[[r]][chosen,names[r]] <- stats[,r]
         }
     }
 
