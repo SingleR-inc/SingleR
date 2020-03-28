@@ -145,8 +145,11 @@ If \code{genes} explicitly contains gene identities (as character vectors), \cod
 
 The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combine-predictions}} for an explanation).
 To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
-This is almost equivalent to running \code{trainSingleR} on each reference separately, except that the final \code{common} set of genes consists of the union of common genes across all references.
-We take the union to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineResults}}.
+Rank calculation and index construction is then performed within each reference separately.
+
+If \code{recompute=TRUE}, the output is exactly equivalent to running \code{trainSingleR} on each reference separately.
+If \code{recompute=FALSE}, \code{trainSingleR} is also run each reference but the difference is that the final \code{common} set of genes consists of the union of common genes across all references.
+This is necessary to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineCommonResults}}.
 }
 
 \section{Note on single-cell references}{
@@ -203,7 +206,7 @@ length(trained$common.genes)
 \seealso{
 \code{\link{classifySingleR}}, where the output of this function gets used.
 
-\code{\link{combineResults}}, to combine results from multiple references.
+\code{\link{combineCommonResults}} and \code{\link{combineRecomputedReuslts}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
