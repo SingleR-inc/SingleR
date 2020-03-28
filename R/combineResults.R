@@ -240,6 +240,11 @@ combineCommonResults <- function(results) {
 #'
 #' \code{\link{combineCommonResults}}, for another approach to combining predictions.
 #'
+#' @references
+#' Lun A, Bunis D, Andrews J (2020).
+#' Thoughts on a more scalable algorithm for multiple references.
+#' \url{https://github.com/LTLA/SingleR/issues/94}
+#'
 #' @examples
 #' # Making up data.
 #' ref <- .mockRefData(nreps=8)
