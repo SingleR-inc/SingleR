@@ -95,7 +95,7 @@ test_that("classifySingleR works with multiple references", {
     training1 <- training1[sample(nrow(training1)),]
     rownames(training1) <- rownames(training)
 
-    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
+    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=FALSE)
     out <- classifySingleR(test, mtrain)
 
     ref1 <- classifySingleR(test, mtrain[[1]])

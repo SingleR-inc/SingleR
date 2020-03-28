@@ -230,7 +230,7 @@ test_that("trainSingleR behaves with multiple references, no recomputation", {
     ref1 <- trainSingleR(training, training$label)
     ref2 <- trainSingleR(training, training$label)
     set.seed(1000)
-    out <- trainSingleR(list(training, training), list(training$label, training$label))
+    out <- trainSingleR(list(training, training), list(training$label, training$label), recompute=FALSE)
 
     expect_identical(ref1, out[[1]])
     expect_identical(ref2, out[[2]])
@@ -245,7 +245,7 @@ test_that("trainSingleR behaves with multiple references, no recomputation", {
     ref1 <- trainSingleR(training1, training1$label)
     ref2 <- trainSingleR(training2, training2$label)
     set.seed(2000)
-    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=FALSE)
 
     expect_identical(out[[1]]$search, ref1$search)
     expect_identical(out[[2]]$search, ref2$search)
@@ -262,7 +262,8 @@ test_that("trainSingleR behaves with multiple references, no recomputation", {
     ref1 <- trainSingleR(training1, training1$label, genes=markers)
     ref2 <- trainSingleR(training2, training2$label, genes=markers2)
     set.seed(2000)
-    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), genes=list(markers, markers2))
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), 
+        genes=list(markers, markers2), recompute=FALSE)
 
     expect_identical(out[[1]]$search, ref1$search)
     expect_identical(out[[2]]$search, ref2$search)
@@ -271,9 +272,10 @@ test_that("trainSingleR behaves with multiple references, no recomputation", {
     expect_identical(out[[1]]$common.genes, out[[2]]$common.genes)
 
     # Throws errors correctly.
-    expect_error(trainSingleR(list(training1, training2), list(training1$label)), "same length")
-    expect_error(trainSingleR(list(training1, training2), list(training1$label, training2$label), genes=list(training1$label)), "same length")
-    expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label)), "not identical")
+    expect_error(trainSingleR(list(training1, training2), list(training1$label), recompute=FALSE), "same length")
+    expect_error(trainSingleR(list(training1, training2), list(training1$label, training2$label), 
+        genes=list(training1$label), recompute=FALSE), "same length")
+    expect_error(trainSingleR(list(training1, training2[1:10,]), list(training1$label), recompute=FALSE), "not identical")
 })
 
 test_that("trainSingleR behaves with multiple references, plus recomputation", {

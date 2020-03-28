@@ -17,7 +17,7 @@ SingleR(
   de.args = list(),
   aggr.ref = FALSE,
   aggr.args = list(),
-  recompute = FALSE,
+  recompute = TRUE,
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,

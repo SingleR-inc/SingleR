@@ -57,7 +57,7 @@ test_that("SingleR works with non-ordinary matrices", {
 })
 
 test_that("SingleR works with multiple references", {
-    out <- SingleR(test, list(training, training), list(training$label, training$label))
+    out <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
     ref <- SingleR(test, training, training$label)
     expect_identical(out$scores, cbind(ref$scores, ref$scores))
 
@@ -66,9 +66,11 @@ test_that("SingleR works with multiple references", {
     chosen1 <- sample(rownames(training), 900)
     chosen2 <- sample(rownames(training), 900)
 
-    out <- SingleR(test[chosen0,], list(training[chosen1,], training[chosen2,]), list(training$label, training$label))
+    out <- SingleR(test[chosen0,], list(training[chosen1,], training[chosen2,]), 
+        list(training$label, training$label), recompute=FALSE)
     inter <- Reduce(intersect, list(chosen0, chosen1, chosen2))
-    ref <- SingleR(test[inter,], list(training[inter,], training[inter,]), list(training$label, training$label))
+    ref <- SingleR(test[inter,], list(training[inter,], training[inter,]), 
+        list(training$label, training$label), recompute=FALSE)
 
     out$reference <- ref$reference <- NULL # basically tied anyway.
     expect_identical(out, ref)

@@ -390,7 +390,7 @@ table(pred.combined$labels)
 Our strategy is to perform annotation on each reference separately and then take the highest-scoring label across references.
 This provides a light-weight approach to combining information from multiple references while avoiding batch effects and the need for up-front harmonization.
 (Of course, the main practical difficulty of this approach is that the same cell type may have different labels across references, which will require some implicit harmonization during interpretation.)
-Further comments on the justification behind the choice of this method can be found at `?combineResults`.
+Further comments on the justification behind the choice of this method can be found at `?"combine-predictions"`.
 
 ## Harmonizing labels 
 

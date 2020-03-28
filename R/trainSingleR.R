@@ -170,7 +170,7 @@
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
-    aggr.ref=FALSE, aggr.args=list(), recompute=FALSE,
+    aggr.ref=FALSE, aggr.args=list(), recompute=TRUE,
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
     de.method <- match.arg(de.method)

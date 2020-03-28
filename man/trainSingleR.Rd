@@ -14,7 +14,7 @@ trainSingleR(
   de.args = list(),
   aggr.ref = FALSE,
   aggr.args = list(),
-  recompute = FALSE,
+  recompute = TRUE,
   assay.type = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam()

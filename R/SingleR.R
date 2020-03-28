@@ -103,7 +103,7 @@
 SingleR <- function(test, ref, 
     labels, method = c("single", "cluster"), clusters = NULL, 
     genes = "de", sd.thresh=1, de.method ="classic", de.n = NULL, de.args = list(),
-    aggr.ref = FALSE, aggr.args = list(), recompute=FALSE,
+    aggr.ref = FALSE, aggr.args = list(), recompute=TRUE,
     quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, prune=TRUE, 
     assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
