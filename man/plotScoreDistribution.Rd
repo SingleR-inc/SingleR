@@ -7,7 +7,10 @@
 plotScoreDistribution(
   results,
   show = c("delta.med", "delta.next", "scores"),
-  labels = colnames(results$scores),
+  labels = colnames(.grab_results(results, scores.use)$scores),
+  scores.use = 0,
+  calls.use = scores.use,
+  pruned.use = calls.use,
   size = 0.5,
   ncol = 5,
   dots.on.top = TRUE,
@@ -25,6 +28,9 @@ plotScoreDistribution(
 
 \item{labels}{String vector indicating one or more labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
+
+\item{scores.use, calls.use, pruned.use}{Integer which sets which scores, final label calls, and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} or \code{\link{classifySingleR}} run.\
+A value of 0 points to the overall results, while any other integer indicates the index of the original \code{ref} that should be targetted.}
 
 \item{size}{Numeric scalar to set the size of the dots.}
 
@@ -53,7 +59,7 @@ Plot score distributions of labels.
 \details{
 This function creates jitter and violin plots showing assignment scores or related values for all cells across one or more labels.
 It is intended for visualizing and adjusting the \code{nmads}, \code{min.diff.med}, and \code{min.diff.next} cutoffs of the \code{\link{pruneScores}} function.
- 
+
 The \code{show} argument determines what values to show on the y-axis.
 Options are:
 \itemize{
@@ -103,6 +109,17 @@ plotScoreDistribution(results = pred, show = "delta.med",
 plotScoreDistribution(results = pred, show = "delta.next")
 # A min.diff.med cutoff can be shown using show.min.diff
 plotScoreDistribution(results = pred, show = "delta.next",
+    show.min.diff = 0.03)
+
+# When SingleR is run with multiple references, investigation of how scores
+# and calls from particular references contributed to the final outcome can
+# be achieved through utilization of calls.use, scores.use, and pruned.use
+example(combineRecomputedResults, echo = FALSE)
+plotScoreDistribution(results = combined, show = "scores", scores.use = 1)
+plotScoreDistribution(results = combined, show = "delta.med", scores.use = 1,
+    show.nmads = 3,
+    show.min.diff = 0.03)
+plotScoreDistribution(results = combined, show = "delta.next", scores.use = 1,
     show.min.diff = 0.03)
 
 }
