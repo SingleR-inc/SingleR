@@ -122,8 +122,9 @@ plotScoreDistribution <- function(
     p <- ggplot2::ggplot(data = df,
             ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
         ggplot2::theme_classic() +
-        ggplot2::scale_fill_manual(name = "Cell Calls",
+        ggplot2::scale_fill_manual(name = .legend_title(calls.use),
             values = c(assigned=this.color, pruned=pruned.color, other=other.color)) +
+        ggplot2::scale_y_continuous(name = .y_title(show, scores.use)) +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
         ggplot2::ylab(show)
 
@@ -136,7 +137,8 @@ plotScoreDistribution <- function(
     # Adding the frills:
     if (!dots.on.top) {
         p <- p + ggplot2::geom_jitter(
-            height = 0, width = 0.3, color = "black", shape = 16,size = size)
+            height = 0, width = 0.3, color = "black", shape = 16,size = size,
+            na.rm = TRUE)
     }
     p <- p + ggplot2::geom_violin(na.rm=TRUE)
 
@@ -148,7 +150,8 @@ plotScoreDistribution <- function(
 
     if (dots.on.top) {
         p <- p + ggplot2::geom_jitter(
-            height = 0, width = 0.3, color = "black", shape = 16,size = size)
+            height = 0, width = 0.3, color = "black", shape = 16,size = size,
+            na.rm = TRUE)
     }
 
     p
@@ -178,7 +181,7 @@ plotScoreDistribution <- function(
 
     values <- score.res$scores
     if (show=="delta.med") {
-        values <- values - DelayedMatrixStats::rowMedians(DelayedArray(values))
+        values <- values - DelayedMatrixStats::rowMedians(DelayedArray(values), na.rm = TRUE)
     }
 
     # Create a dataframe with separate rows for each score in values.
@@ -194,7 +197,7 @@ plotScoreDistribution <- function(
 
     if (!is.null(pruned.res$pruned.labels)) {
         is.pruned <- rep(is.na(pruned.res$pruned.labels), each=ncol(values))
-        df$cell.calls[is.pruned & is.called] <- "pruned"
+        df$cell.calls[is.pruned & is.called] <- .prune_label(pruned.use, calls.use)
     }
 
     df
@@ -220,7 +223,7 @@ plotScoreDistribution <- function(
         stringsAsFactors = FALSE)
 
     if (!is.null(pruned.res$pruned.labels)) {
-        df$cell.calls[is.na(pruned.res$pruned.labels)] <- "pruned"
+        df$cell.calls[is.na(pruned.res$pruned.labels)] <- .prune_label(pruned.use, calls.use)
     }
 
     df
@@ -273,3 +276,31 @@ plotScoreDistribution <- function(
         ggplot2::aes_string(x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff", color = "mad"),
         width = 1, size = 1.1, show.legend = c(color = TRUE, fill = FALSE))
 }
+
+# Sets the Title for the color legend based on which ref's calls are shown
+.legend_title <- function(calls.use){
+    switch(as.character(calls.use==0),
+        "TRUE" = "Final Calls",
+        "FALSE" = paste0("Ref #", calls.use, " Calls"))
+}
+
+# Sets the Title for the scores axis based which ref's scores are shown
+.y_title <- function(show, scores.use){
+    score_bit <- switch(as.character(scores.use==0),
+        "TRUE" = "Final Scores",
+        "FALSE" = paste0("(Ref #", scores.use, ")"))
+    paste(show, score_bit, sep = ", ")
+}
+
+# Sets the Title for the color legend based on which ref's pruning calls are shown
+.prune_label <- function(pruned.use, calls.use){
+    if (pruned.use!=calls.use) {
+        which_pruned <- switch(as.character(pruned.use==0),
+            "TRUE" = "(in Final)",
+            "FALSE" = paste0("(in Ref #", pruned.use, ")"))
+        paste("pruned", which_pruned)
+    } else {
+        "pruned"
+    }
+}
+
