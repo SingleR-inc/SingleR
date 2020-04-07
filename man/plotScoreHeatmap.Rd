@@ -21,6 +21,7 @@ plotScoreHeatmap(
   annotation_col = NULL,
   show_colnames = FALSE,
   color = NULL,
+  main = NA,
   ...
 )
 }
@@ -54,7 +55,7 @@ Subordinate to \code{cluster_cols}.}
 Can be "labels" (default) or "clusters" (when provided).
 Subordinate to \code{cells.order} and \code{cluster_cols}.}
 
-\item{annotation_col, cluster_cols, show_colnames, color, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{annotation_col, cluster_cols, show_colnames, color, main, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
 \value{
 A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -128,14 +129,14 @@ plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
 # each cell, thus heatmaps cannot be made for final scores.
 # Thus, default output shows final Labels, but targets scores of 1st reference
 example(combineRecomputedResults, echo = FALSE)
-plotScoreHeatmap(pred)
+plotScoreHeatmap(combined)
 
 # scores.use sets which run's scores to show
-plotScoreHeatmap(pred,
+plotScoreHeatmap(combined,
     scores.use = 2)
 
 # calls.use sets which run's labels and pruning calls to display
-plotScoreHeatmap(pred,
+plotScoreHeatmap(combined,
     scores.use = 1,
     calls.use = 1)
 

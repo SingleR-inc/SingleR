@@ -20,7 +20,7 @@
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' Subordinate to \code{cluster_cols}.
-#' @param annotation_col,cluster_cols,show_colnames,color,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' @param annotation_col,cluster_cols,show_colnames,color,main,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
@@ -97,14 +97,14 @@
 #' # each cell, thus heatmaps cannot be made for final scores.
 #' # Thus, default output shows final Labels, but targets scores of 1st reference
 #' example(combineRecomputedResults, echo = FALSE)
-#' plotScoreHeatmap(pred)
+#' plotScoreHeatmap(combined)
 #'
 #' # scores.use sets which run's scores to show
-#' plotScoreHeatmap(pred,
+#' plotScoreHeatmap(combined,
 #'     scores.use = 2)
 #'
 #' # calls.use sets which run's labels and pruning calls to display
-#' plotScoreHeatmap(pred,
+#' plotScoreHeatmap(combined,
 #'     scores.use = 1,
 #'     calls.use = 1)
 #'
@@ -116,32 +116,52 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
     cells.order = NULL, order.by = c("labels","clusters"), cluster_cols = FALSE,
-    annotation_col = NULL, show_colnames = FALSE, color = NULL, ...)
+    annotation_col = NULL, show_colnames = FALSE, color = NULL, main = NA, ...)
 {
 
-    if (scores.use == 0 && !is.null(results$orig.results)) {
-        message("Heatmap cannot be made from sparse final scores. Scores from run for 1st reference are shown instead.")
-        scores.use <- 1
+    # Prep for multi-ref results
+    if (!is.null(results$orig.results)) {
+        if (scores.use == 0) {
+            message("A heatmap cannot be made from sparse final scores. Showing scores from run with 1st reference instead.")
+            scores.use <- 1
+        }
+        if (is.na(main)) {
+            main <- paste0("Showing scores from Ref #", scores.use)
+        }
+        if (calls.use == 0) {
+            labels.title <- "Final Labels"
+        } else {
+            labels.title <- paste0("Ref #", calls.use, " Labels")
+        }
+    } else {
+        labels.title <- "Labels"
     }
 
     orig.res <- results
     results <- .ensure_named(.grab_results(orig.res, scores.use))
+    calls.res <- .grab_results(orig.res, calls.use)
 
     if (is.null(annotation_col)) {
         annotation_col <- data.frame(row.names = rownames(results))
     }
     if (show.pruned) {
-        prune.calls <- .grab_results(orig.res, calls.use)$pruned.labels
+        prune.calls <- calls.res$pruned.labels
         if (!is.null(prune.calls)) {
-            pruned <- as.character(is.na(prune.calls))
-            names(pruned) <- rownames(results)
-            annotation_col$Pruned <- pruned[rownames(annotation_col)]
+            names(prune.calls) <- rownames(results)
+            # Pruned calls added this way to ensure they come first for coloring purposes.
+            Pruned <- data.frame(
+                Pruned = as.character(is.na(prune.calls)),
+                row.names = rownames(results))[rownames(annotation_col),]
+            annotation_col <- cbind(Pruned,annotation_col)
         }
     }
     if (show.labels) {
-        labels <- .grab_results(orig.res, calls.use)$labels
+        labels <- calls.res$labels
         names(labels) <- rownames(results)
         annotation_col$Labels <- labels[rownames(annotation_col)]
+        columns <- colnames(annotation_col)
+        columns[columns == "Labels"] <- labels.title
+        colnames(annotation_col) <- columns
     }
     if (!is.null(clusters)) {
         names(clusters) <- rownames(results)
@@ -203,7 +223,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = show_colnames, clustering_method = 'ward.D2',
-        cluster_cols = cluster_cols, ...)
+        cluster_cols = cluster_cols, main = main, ...)
 
     if (normalize) {
         args$color <- viridis::viridis(100)
