@@ -8,6 +8,8 @@ plotScoreHeatmap(
   results,
   cells.use = NULL,
   labels.use = NULL,
+  scores.use = 0,
+  calls.use = 0,
   clusters = NULL,
   show.labels = TRUE,
   show.pruned = FALSE,
@@ -30,6 +32,9 @@ If \code{NULL}, all cells are presented.}
 
 \item{labels.use}{String vector indicating what labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
+
+\item{scores.use, calls.use}{Integer which sets which scores or final labels and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.
+A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.}
 
 \item{clusters}{String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.}
 
@@ -112,6 +117,27 @@ plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
 # We can pass extra tweaks the heatmap as well
 plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
 plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
+
+### Multi-Reference Compatibility ###
+
+# When SingleR is run with multiple references, investigation of how scores
+# and calls from particular references contributed to the final outcome can
+# be achieved through utilization of scores.use and calls.use.
+#
+# NOTE: Final scoring in such runs are performed for a subset of labels for
+# each cell, thus heatmaps cannot be made for final scores.
+# Thus, default output shows final Labels, but targets scores of 1st reference
+example(combineRecomputedResults, echo = FALSE)
+plotScoreHeatmap(pred)
+
+# scores.use sets which run's scores to show
+plotScoreHeatmap(pred,
+    scores.use = 2)
+
+# calls.use sets which run's labels and pruning calls to display
+plotScoreHeatmap(pred,
+    scores.use = 1,
+    calls.use = 1)
 
 }
 \seealso{
