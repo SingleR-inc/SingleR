@@ -4,8 +4,8 @@
 #' @param show String specifying whether to show the scores, the difference from the median or the difference from the next-best score.
 #' @param labels String vector indicating one or more labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param scores.use,calls.use,pruned.use Integer which sets which scores, final label calls, and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} or \code{\link{classifySingleR}} run.\
-#' A value of 0 points to the overall results, while any other integer indicates the index of the original \code{ref} that should be targetted.
+#' @param scores.use,calls.use,pruned.use Integer which sets which scores, final label calls, or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+#' A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
 #' @param dots.on.top Logical specifying whether cell dots should be plotted on top of the violin plots.
 #' @param this.color String specifying the color for cells that were assigned to the label.
 #' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
@@ -155,21 +155,6 @@ plotScoreDistribution <- function(
     }
 
     p
-}
-
-.grab_results <- function(results, index) {
-    if (index == 0) {
-        return(results)
-    } else {
-        return(results$orig.results[[index]])
-    }
-}
-
-.ensure_named <- function(results) {
-    if (is.null(rownames(results))) {
-        rownames(results) <- seq_len(nrow(results))
-    }
-    results
 }
 
 #' @importFrom DelayedMatrixStats rowMedians

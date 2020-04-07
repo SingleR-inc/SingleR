@@ -29,8 +29,8 @@ plotScoreDistribution(
 \item{labels}{String vector indicating one or more labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{scores.use, calls.use, pruned.use}{Integer which sets which scores, final label calls, and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} or \code{\link{classifySingleR}} run.\
-A value of 0 points to the overall results, while any other integer indicates the index of the original \code{ref} that should be targetted.}
+\item{scores.use, calls.use, pruned.use}{Integer which sets which scores, final label calls, or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.}
 
 \item{size}{Numeric scalar to set the size of the dots.}
 
