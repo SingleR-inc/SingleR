@@ -78,11 +78,33 @@ test_that("combineCommonResults handles non-common genes", {
     expect_warning(combined <- combineCommonResults(list(res1=results, res2=results2)), "common genes are not identical")
 })
 
+test_that("combineCommonResults is invariant to ordering", {
+    set.seed(127361)
+
+    SPAWNER <- function() {
+        nlabs <- sample(5:10, 1)
+        scores <- matrix(runif(15*nlabs), ncol=nlabs)
+        colnames(scores) <- paste0("X", sample(10000, nlabs))
+
+        labs <- colnames(scores)[max.col(scores)]
+        results <- DataFrame(scores=I(scores), first.labels=paste0(labs, "1"),
+            labels=labs, pruned.labels=tolower(labs))
+        rownames(results) <- sprintf("CELL_%s", seq_len(nrow(results)))
+
+        results
+    }
+
+    all.res <- list(res1=SPAWNER(), res2=SPAWNER(), res3=SPAWNER())
+    forward <- combineCommonResults(all.res)
+    flipped <- combineCommonResults(rev(all.res))
+    expect_identical(flipped$labels, forward$labels)
+})
+
 ####################################################################
 
 set.seed(10000)
 
-# Making up data (using an uneven distribution to avoid symmetry masking problems).
+# Making up data (using an uneven distribution of samples to avoid symmetry masking problems).
 ref <- .mockRefData(nreps=8)
 ref1 <- ref[,1:4%%4==0]
 ref1 <- ref1[,sample(ncol(ref1))]
@@ -175,4 +197,23 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
         test=test[s,],
         trained=list(train1, train2)), "differ in the universe")
     expect_identical(ref, out)
+})
+
+test_that("combineRecomputedResults is invariant to ordering", {
+    ref3 <- .mockRefData(nreps=8)
+    ref3 <- scater::logNormCounts(ref3)
+    train3 <- trainSingleR(ref3, labels=ref3$label)
+    pred3 <- classifySingleR(test, train3)
+
+    combined <- combineRecomputedResults(
+        results=list(pred1, pred2, pred3), 
+        test=test,
+        trained=list(train1, train2, train3))
+
+    flipped <- combineRecomputedResults(
+        results=rev(list(pred1, pred2, pred3)), 
+        test=test,
+        trained=rev(list(train1, train2, train3)))
+
+    expect_identical(flipped$labels, combined$labels)
 })
