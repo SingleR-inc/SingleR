@@ -4,8 +4,16 @@
 #' @param show String specifying whether to show the scores, the difference from the median or the difference from the next-best score.
 #' @param labels String vector indicating one or more labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param scores.use,calls.use,pruned.use Integer which sets which scores, final label calls, or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+#' @param show.all.originals Logical which sets whether separate sets of plots for all original scores matrices shown be shown when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.
+#' @param calls.use,pruned.use Integer which sets which label calls or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
 #' A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
+#'
+#' @param scores.use Integer which sets which scores to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+#' A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
+#'
+#' Alternatively, \code{scores.use} can be an integer vector pointing to multiple original results dataframes.
+#'
+#' Overwritten when \code{show.all.originals = TRUE}. Set \code{show.all.originals = FALSE} to adjust.
 #' @param dots.on.top Logical specifying whether cell dots should be plotted on top of the violin plots.
 #' @param this.color String specifying the color for cells that were assigned to the label.
 #' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
@@ -16,6 +24,7 @@
 #' Only used when \code{show="delta.med"}.
 #' @param show.min.diff Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
 #' Only used when \code{show="delta.med"} or \code{"delta.next"}.
+#' @param grid.vars named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}}
 #'
 #' @return A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
 #'
@@ -80,24 +89,44 @@
 #' plotScoreDistribution(results = pred, show = "delta.next",
 #'     show.min.diff = 0.03)
 #'
-#' # When SingleR is run with multiple references, investigation of how scores
-#' # and calls from particular references contributed to the final outcome can
-#' # be achieved through utilization of calls.use, scores.use, and pruned.use
+#' ### Multi-Reference Compatibility ###
+#'
+#' # When SingleR is run with multiple references, default output will contain
+#' # separate plots for each original reference, as well as for the the combined
+#' # set when 'show' = "scores".
 #' example(combineRecomputedResults, echo = FALSE)
-#' plotScoreDistribution(results = combined, show = "scores", scores.use = 1)
-#' plotScoreDistribution(results = combined, show = "delta.med", scores.use = 1,
+#' plotScoreDistribution(results = combined, show = "scores")
+#' plotScoreDistribution(results = combined, show = "delta.med")
+#' plotScoreDistribution(results = combined, show = "delta.next")
+#'
+#' # To color and group cells by non-final label and pruned calls,
+#' # use 'calls.use' and 'pruned.use'
+#' plotScoreDistribution(results = combined, show = "delta.med",
+#'     calls.use = 1, pruned.use = 1)
+#' plotScoreDistribution(results = combined, show = "delta.next",
+#'     calls.use = 1, pruned.use = 1)
+#'
+#' # To instead target only final or a certain reference's scores,
+#' # use 'scores.use' and add 'show.all.originals = FALSE'
+#' plotScoreDistribution(results = combined, show = "scores",
+#'     show.all.originals = FALSE, scores.use = 1)
+#'
+#' plotScoreDistribution(results = combined, show = "delta.med",
+#'     show.all.originals = FALSE, scores.use = 1,
 #'     show.nmads = 3,
 #'     show.min.diff = 0.03)
-#' plotScoreDistribution(results = combined, show = "delta.next", scores.use = 1,
+#' plotScoreDistribution(results = combined, show = "delta.next",
+#'     show.all.originals = FALSE, scores.use = 1,
 #'     show.min.diff = 0.03)
 #'
 #' @export
 plotScoreDistribution <- function(
     results,
     show = c("delta.med", "delta.next", "scores"),
-    labels = colnames(.grab_results(results, scores.use)$scores),
+    labels = colnames(results$scores),
+    show.all.originals = TRUE,
     scores.use = 0,
-    calls.use = scores.use,
+    calls.use = 0,
     pruned.use = calls.use,
     size = 0.5,
     ncol = 5,
@@ -106,8 +135,34 @@ plotScoreDistribution <- function(
     pruned.color = "#E69F00",
     other.color = "gray60",
     show.nmads = NULL,
-    show.min.diff = NULL)
+    show.min.diff = NULL,
+    grid.vars = list())
 {
+
+    ### For multi-ref results
+    if (!is.null(results$orig.results)) {
+        if (show.all.originals) {
+            scores.use <- c(seq_along(results$orig.results))
+            if (show == "scores") {
+                scores.use <- c(0,scores.use)
+            }
+        }
+        if (length(scores.use)>1) {
+            # Make individual heatmaps, then return.
+            plots <- lapply(
+                scores.use,
+                function(this) {
+                    plotScoreDistribution(results, show, labels, FALSE, this,
+                        calls.use, pruned.use, size, ncol, dots.on.top,
+                        this.color, pruned.color, other.color,
+                        show.nmads, show.min.diff, grid.vars)
+                })
+            grid.vars <- c(grid.vars, grobs = plots)
+
+            return(do.call(gridExtra::grid.arrange, grid.vars))
+        }
+    }
+
     show <- match.arg(show)
     if (show!="delta.next") {
         df <- .scores_data_gather(results, show, scores.use, calls.use, pruned.use)
@@ -122,7 +177,7 @@ plotScoreDistribution <- function(
     p <- ggplot2::ggplot(data = df,
             ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
         ggplot2::theme_classic() +
-        ggplot2::scale_fill_manual(name = .legend_title(calls.use),
+        ggplot2::scale_fill_manual(name = .legend_title(calls.use, show, scores.use),
             values = c(assigned=this.color, pruned=pruned.color, other=other.color)) +
         ggplot2::scale_y_continuous(name = .y_title(show, scores.use)) +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
@@ -190,15 +245,16 @@ plotScoreDistribution <- function(
 
 .next_data_gather <- function(results, scores.use, calls.use, pruned.use) {
 
+    if (calls.use != scores.use) {
+        message("'calls.use', and 'scores.use' must be the same for 'show=\"delta.next\"'. 'calls.use' was updated.")
+        calls.use <- scores.use
+    }
     score.res <- .ensure_named(.grab_results(results, scores.use))
     call.res <- .ensure_named(.grab_results(results, calls.use))
     pruned.res <- .ensure_named(.grab_results(results, pruned.use))
 
     if (is.null(score.res$tuning.scores)) {
         stop("Target 'results' lacks fine-tuning diagnostics for 'show=\"delta.next\"'")
-    }
-    if (calls.use != scores.use || pruned.use != scores.use) {
-        stop("'calls.use', 'pruned.use', and 'scores.use' should be the same for 'show=\"delta.next\"'")
     }
 
     df <- data.frame(
@@ -263,7 +319,10 @@ plotScoreDistribution <- function(
 }
 
 # Sets the Title for the color legend based on which ref's calls are shown
-.legend_title <- function(calls.use){
+.legend_title <- function(calls.use, show, scores.use){
+    if (show == "delta.next") {
+        calls.use <- scores.use
+    }
     switch(as.character(calls.use==0),
         "TRUE" = "Final Calls",
         "FALSE" = paste0("Ref #", calls.use, " Calls"))
@@ -271,10 +330,10 @@ plotScoreDistribution <- function(
 
 # Sets the Title for the scores axis based which ref's scores are shown
 .y_title <- function(show, scores.use){
-    score_bit <- switch(as.character(scores.use==0),
-        "TRUE" = "Final Scores",
-        "FALSE" = paste0("(Ref #", scores.use, ")"))
-    paste(show, score_bit, sep = ", ")
+    target_bit <- switch(as.character(scores.use==0),
+        "TRUE" = "Final",
+        "FALSE" = paste0("Ref #", scores.use))
+    paste(target_bit, show)
 }
 
 # Sets the Title for the color legend based on which ref's pruning calls are shown

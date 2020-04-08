@@ -42,6 +42,7 @@ Suggests:
     ggplot2,
     pheatmap,
     grDevices,
+    gridExtra,
     viridis,
     AnnotationHub,
     AnnotationDbi

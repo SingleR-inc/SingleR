@@ -7,9 +7,10 @@
 plotScoreDistribution(
   results,
   show = c("delta.med", "delta.next", "scores"),
-  labels = colnames(.grab_results(results, scores.use)$scores),
+  labels = colnames(results$scores),
+  show.all.originals = TRUE,
   scores.use = 0,
-  calls.use = scores.use,
+  calls.use = 0,
   pruned.use = calls.use,
   size = 0.5,
   ncol = 5,
@@ -18,7 +19,8 @@ plotScoreDistribution(
   pruned.color = "#E69F00",
   other.color = "gray60",
   show.nmads = NULL,
-  show.min.diff = NULL
+  show.min.diff = NULL,
+  grid.vars = list()
 )
 }
 \arguments{
@@ -29,7 +31,16 @@ plotScoreDistribution(
 \item{labels}{String vector indicating one or more labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
 
-\item{scores.use, calls.use, pruned.use}{Integer which sets which scores, final label calls, or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+\item{show.all.originals}{Logical which sets whether separate sets of plots for all original scores matrices shown be shown when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.}
+
+\item{scores.use}{Integer which sets which scores to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
+
+Alternatively, \code{scores.use} can be an integer vector pointing to multiple original results dataframes.
+
+Overwritten when \code{show.all.originals = TRUE}. Set \code{show.all.originals = FALSE} to adjust.}
+
+\item{calls.use, pruned.use}{Integer which sets which label calls or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
 A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.}
 
 \item{size}{Numeric scalar to set the size of the dots.}
@@ -49,6 +60,8 @@ Only used when \code{show="delta.med"}.}
 
 \item{show.min.diff}{Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
 Only used when \code{show="delta.med"} or \code{"delta.next"}.}
+
+\item{grid.vars}{named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}}}
 }
 \value{
 A \link[ggplot2]{ggplot} object showing assignment scores in violin plots.
@@ -111,15 +124,34 @@ plotScoreDistribution(results = pred, show = "delta.next")
 plotScoreDistribution(results = pred, show = "delta.next",
     show.min.diff = 0.03)
 
-# When SingleR is run with multiple references, investigation of how scores
-# and calls from particular references contributed to the final outcome can
-# be achieved through utilization of calls.use, scores.use, and pruned.use
+### Multi-Reference Compatibility ###
+
+# When SingleR is run with multiple references, default output will contain
+# separate plots for each original reference, as well as for the the combined
+# set when 'show' = "scores".
 example(combineRecomputedResults, echo = FALSE)
-plotScoreDistribution(results = combined, show = "scores", scores.use = 1)
-plotScoreDistribution(results = combined, show = "delta.med", scores.use = 1,
+plotScoreDistribution(results = combined, show = "scores")
+plotScoreDistribution(results = combined, show = "delta.med")
+plotScoreDistribution(results = combined, show = "delta.next")
+
+# To color and group cells by non-final label and pruned calls,
+# use 'calls.use' and 'pruned.use'
+plotScoreDistribution(results = combined, show = "delta.med",
+    calls.use = 1, pruned.use = 1)
+plotScoreDistribution(results = combined, show = "delta.next",
+    calls.use = 1, pruned.use = 1)
+
+# To instead target only final or a certain reference's scores,
+# use 'scores.use' and add 'show.all.originals = FALSE'
+plotScoreDistribution(results = combined, show = "scores",
+    show.all.originals = FALSE, scores.use = 1)
+
+plotScoreDistribution(results = combined, show = "delta.med",
+    show.all.originals = FALSE, scores.use = 1,
     show.nmads = 3,
     show.min.diff = 0.03)
-plotScoreDistribution(results = combined, show = "delta.next", scores.use = 1,
+plotScoreDistribution(results = combined, show = "delta.next",
+    show.all.originals = FALSE, scores.use = 1,
     show.min.diff = 0.03)
 
 }

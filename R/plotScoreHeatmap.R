@@ -7,8 +7,16 @@
 #' If \code{NULL}, all cells are presented.
 #' @param labels.use String vector indicating what labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
-#' @param scores.use,calls.use Integer which sets which scores or final labels and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.
+#' @param show.all.originals Logical which sets whether heatmaps for all original scores matrices shown be shown when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.
+#' @param calls.use Integer which sets which label and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
 #' A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
+#'
+#' @param scores.use Integer which sets which scores to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
+#' A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.
+#'
+#' Alternatively, \code{scores.use} can be an integer vector pointing to multiple original results dataframes.
+#'
+#' Overwritten when \code{show.all.originals = TRUE}. Set \code{show.all.originals = FALSE} to adjust.
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
 #' @param show.labels Logical indicating whether the final labels of cells should be shown as an annotation bar.
 #' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
@@ -20,7 +28,8 @@
 #' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' Subordinate to \code{cluster_cols}.
-#' @param annotation_col,cluster_cols,show_colnames,color,main,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' @param annotation_col,cluster_cols,show_colnames,color,main,silent,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' @param grid.vars named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}}
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
 #'
@@ -94,39 +103,62 @@
 #' # be achieved through utilization of scores.use and calls.use.
 #' #
 #' # NOTE: Final scoring in such runs are performed for a subset of labels for
-#' # each cell, thus heatmaps cannot be made for final scores.
-#' # Thus, default output shows final Labels, but targets scores of 1st reference
+#' # each cell, and pheatmaps cannot be made for with NAs.
+#' # Thus, default output shows final Labels, but scores of individual references
 #' example(combineRecomputedResults, echo = FALSE)
 #' plotScoreHeatmap(combined)
 #'
-#' # scores.use sets which run's scores to show
+#' # calls.use adjusts which individual run's labels and pruning calls to display
 #' plotScoreHeatmap(combined,
+#'     calls.use = 1)
+#'
+#' # scores.use sets a particular run's scores to show if 'show.all.originals' is
+#' # set to FALSE
+#' plotScoreHeatmap(combined,
+#'     show.all.originals = FALSE,
 #'     scores.use = 2)
 #'
-#' # calls.use sets which run's labels and pruning calls to display
-#' plotScoreHeatmap(combined,
-#'     scores.use = 1,
-#'     calls.use = 1)
 #'
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
-    scores.use = 0, calls.use = 0,
+    show.all.originals = TRUE,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
-    cells.order = NULL, order.by = c("labels","clusters"), cluster_cols = FALSE,
-    annotation_col = NULL, show_colnames = FALSE, color = NULL, main = NA, ...)
+    cells.order = NULL, order.by = c("labels","clusters"),
+    scores.use = 0, calls.use = 0,
+    cluster_cols = FALSE,
+    annotation_col = NULL, show_colnames = FALSE, color = NULL,
+    main = NA, silent = FALSE, ..., grid.vars = list())
 {
 
-    # Prep for multi-ref results
+    ### For multi-ref results
     if (!is.null(results$orig.results)) {
-        if (scores.use == 0) {
+        if (show.all.originals) {
+            scores.use <- seq_along(results$orig.results)
+        }
+        if (length(scores.use)>1) {
+            # Make individual heatmaps, then return.
+            plots <- lapply(
+                scores.use,
+                function(this) {
+                    plotScoreHeatmap(results, cells.use, labels.use, FALSE,
+                        clusters, show.labels, show.pruned, max.labels,
+                        normalize, cells.order, order.by, scores.use = this,
+                        calls.use, cluster_cols, annotation_col, show_colnames,
+                        color, main, silent = TRUE, ...)[[4]]
+                })
+            grid.vars <- c(grid.vars, grobs = plots)
+
+            return(do.call(gridExtra::grid.arrange, grid.vars))
+
+        } else if (scores.use == 0) {
             message("A heatmap cannot be made from sparse final scores. Showing scores from run with 1st reference instead.")
             scores.use <- 1
         }
         if (is.na(main)) {
-            main <- paste0("Showing scores from Ref #", scores.use)
+            main <- paste0("Scores from Ref #", scores.use)
         }
         if (calls.use == 0) {
             labels.title <- "Final Labels"
@@ -172,7 +204,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     rownames(scores) <- rownames(results)
 
     # Trim the scores and potential ordering vars by requested cells or labels
-    labels <- results$labels
+    labels <- calls.res$labels
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
         clusters <- clusters[cells.use]
@@ -223,7 +255,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Create args list for making the heatmap
     args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
         show_colnames = show_colnames, clustering_method = 'ward.D2',
-        cluster_cols = cluster_cols, main = main, ...)
+        cluster_cols = cluster_cols, main = main, silent = silent, ...)
 
     if (normalize) {
         args$color <- viridis::viridis(100)
