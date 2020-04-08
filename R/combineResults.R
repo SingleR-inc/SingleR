@@ -161,6 +161,7 @@ combineResults <- function(results) {
         better <- curbest > last.best
          
         chosen.label[better] <- res$labels[better]
+        last.best[better] <- curbest[better]
 
         if (has.first) { # either everyone has 'first', or no-one does.
             chosen.first[better] <- res$first.labels[better]
@@ -173,8 +174,6 @@ combineResults <- function(results) {
         if (has.de) {
             collected.de[[i]] <- metadata(res)$de.genes
         }
-
-        last.best <- curbest
     }
 
     all.scores <- do.call(cbind, collected.scores)
