@@ -22,8 +22,9 @@
 #' \item A list of character vectors containing marker genes for each label.
 #' }
 #' 
-#' If \code{ref} is a list, then it can be a list of either of the two above choices,
-#' where each element contains markers for labels in the corresponding entry of \code{ref}.
+#' If \code{ref} is a list, 
+#' \code{genes} can be a list of lists of (lists of) character vectors, i.e., either of the two above choices.
+#' Each element of the outer-most list should contain markers for labels in the corresponding entry of \code{ref}.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
 #' @param de.method String specifying how DE genes should be detected between pairs of labels.
@@ -107,8 +108,13 @@
 #'
 #' @section Dealing with multiple references:
 #' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combine-predictions}} for an explanation).
-#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
+#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{genes="de"} or \code{"sd"}.
 #' Rank calculation and index construction is then performed within each reference separately.
+#'
+#' Alternatively, \code{genes} can still be used to explicitly specify marker genes for each label in each of multiple references.
+#' This is achieved by passing a list of lists to \code{genes},
+#' where each inner list corresponds to a reference in \code{ref} and can be of any format described in \dQuote{Custom feature specification}.
+#' Thus, it is possible for \code{genes} to be - wait for it - a list (per reference) of lists (per label) of lists (per label) of character vectors.
 #'
 #' If \code{recompute=TRUE}, the output is exactly equivalent to running \code{trainSingleR} on each reference separately.
 #' If \code{recompute=FALSE}, \code{trainSingleR} is also run each reference but the difference is that the final \code{common} set of genes consists of the union of common genes across all references.
@@ -130,29 +136,11 @@
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
-#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedReuslts}}, to combine results from multiple references.
+#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+#'
 #' @examples
-#' ##############################
-#' ## Mocking up training data ##
-#' ##############################
-#'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#'
-#' g <- rep(LETTERS[1:5], each=4)
-#' ref <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g), 
-#'         lambda=10*2^means[,g]), ncol=length(g))),
-#'     colData=DataFrame(label=g)
-#' )
-#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
-#' 
-#' ########################
-#' ## Doing the training ##
-#' ########################
+#' # Making up some data for a quick demonstration.
+#' ref <- .mockRefData()
 #'
 #' # Normalizing and log-transforming for automated marker detection.
 #' ref <- scater::logNormCounts(ref)
@@ -283,7 +271,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
             if (genes=="de") {
                 common <- unique(unlist(extra))
             } else {
-                genes <- "sd"
+                genes <- "de"
                 common <- rownames(ref)
             }
         }
