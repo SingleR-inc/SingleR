@@ -77,3 +77,25 @@ test_that("combineCommonResults handles non-common genes", {
 
     expect_warning(combined <- combineCommonResults(list(res1=results, res2=results2)), "common genes are not identical")
 })
+
+test_that("combineCommonResults is invariant to ordering", {
+    set.seed(127361)
+
+    SPAWNER <- function() {
+        nlabs <- sample(5:10, 1)
+        scores <- matrix(runif(15*nlabs), ncol=nlabs)
+        colnames(scores) <- paste0("X", sample(10000, nlabs))
+
+        labs <- colnames(scores)[max.col(scores)]
+        results <- DataFrame(scores=I(scores), first.labels=paste0(labs, "1"),
+            labels=labs, pruned.labels=tolower(labs))
+        rownames(results) <- sprintf("CELL_%s", seq_len(nrow(results)))
+
+        results
+    }
+
+    all.res <- list(res1=SPAWNER(), res2=SPAWNER(), res3=SPAWNER())
+    forward <- combineCommonResults(all.res)
+    flipped <- combineCommonResults(rev(all.res))
+    expect_identical(flipped$labels, forward$labels)
+})

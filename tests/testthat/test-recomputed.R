@@ -133,3 +133,22 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
         trained=list(train1, train2)), "differ in the universe")
     expect_identical(ref, out)
 })
+
+test_that("combineRecomputedResults is invariant to ordering", {
+    ref3 <- .mockRefData(nreps=8)
+    ref3 <- scater::logNormCounts(ref3)
+    train3 <- trainSingleR(ref3, labels=ref3$label)
+    pred3 <- classifySingleR(test, train3)
+
+    combined <- combineRecomputedResults(
+        results=list(pred1, pred2, pred3),
+        test=test,
+        trained=list(train1, train2, train3))
+
+    flipped <- combineRecomputedResults(
+        results=rev(list(pred1, pred2, pred3)),
+        test=test,
+        trained=rev(list(train1, train2, train3)))
+
+    expect_identical(flipped$labels, combined$labels)
+})
