@@ -113,6 +113,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
         if (current$search$mode=="de") {
             tmp <- lapply(current$search$extra, unlist, use.names=FALSE)
+            tmp <- lapply(tmp, unique)
             stopifnot(identical(names(tmp), names(current$original.exprs)))
             tmp <- lapply(tmp, intersect, y=available)
             markers[[i]] <- tmp

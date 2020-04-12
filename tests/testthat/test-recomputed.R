@@ -50,29 +50,53 @@ test_that("combineRecomputedResults works as expected (light check)", {
     expect_identical(top, combined$labels)
 })
 
+# Creating a reference function to test the recomputation.
+REF <- function(scores, test, results, refs, subset, mode="de") {
+    for (i in subset) {
+        labs <- lapply(results, function(r) r[i,"labels"])
+
+        if (mode=="de") {
+            markers <- mapply(results, labs, FUN=function(r, l) metadata(r)$de.genes[[l]], SIMPLIFY=FALSE)
+        } else {
+            markers <- lapply(results, FUN=function(r) metadata(r)$common.genes)
+        }
+        all.markers <- unique(unlist(markers))
+
+        keep <- mapply(refs, labs, FUN=function(r, l) r$label==l, SIMPLIFY=FALSE) 
+        origins <- rep(seq_along(keep), vapply(keep, sum, 0L))
+        all.refs <- mapply(refs, keep, FUN=function(R, k) R[all.markers,k,drop=FALSE], SIMPLIFY=FALSE)
+        new.ref <- do.call(BiocGenerics::cbind, all.refs)
+
+        out <- SingleR(test[all.markers,i], new.ref, genes="all", 
+            label=origins, fine.tune=FALSE, prune=FALSE)
+
+        for (j in seq_along(labs)) {
+            expect_equivalent(scores[i,labs[[j]]], out$scores[,j])
+        }
+    }
+}
+
 test_that("combineRecomputedResults works as expected (thorough)", {
     combined <- combineRecomputedResults(
         results=list(pred1, pred2), 
         test=test,
         trained=list(train1, train2))
-    
-    for (i in seq_len(10)) {
-        lab1 <- pred1[i,"labels"]
-        lab2 <- pred2[i,"labels"]
-        markers1 <- metadata(pred1)$de.genes[[lab1]]
-        markers2 <- metadata(pred2)$de.genes[[lab2]]
-        all.markers <- union(unlist(markers1), unlist(markers2))
 
-        keep1 <- ref1$label==lab1
-        keep2 <- ref2$label==lab2
-        origins <- rep(1:2, c(sum(keep1), sum(keep2)))
-        new.ref <- BiocGenerics::cbind(ref1[all.markers, keep1, drop=FALSE], ref2[all.markers, keep2,drop=FALSE])
-        out <- SingleR(test[all.markers,i], new.ref, genes="all", 
-            label=origins, fine.tune=FALSE, prune=FALSE)
+    REF(combined$scores, test, results=list(pred1, pred2), refs=list(ref1, ref2), subset=1:10)
 
-        expect_equivalent(combined$scores[i,lab1], out$scores[,1])
-        expect_equivalent(combined$scores[i,lab2], out$scores[,2])
-    }
+    # Works for 3+ references.
+    ref3 <- .mockRefData(nreps=8)
+    ref3 <- scater::logNormCounts(ref3)
+    ref3$label <- paste0(ref3$label, "X") # avoid problems with same column name in 'scores'.
+    train3 <- trainSingleR(ref3, labels=ref3$label)
+    pred3 <- classifySingleR(test, train3)
+
+    combined <- combineRecomputedResults(
+        results=list(pred1, pred2, pred3),
+        test=test,
+        trained=list(train1, train2, train3))
+   
+    REF(combined$scores, test, results=list(pred1, pred2, pred3), refs=list(ref1, ref2, ref3), subset=ncol(test) - 0:9)
 })
 
 test_that("combineRecomputedResults works as expected in SD mode", {
@@ -87,23 +111,7 @@ test_that("combineRecomputedResults works as expected in SD mode", {
         test=test,
         trained=list(train10, train20))
 
-    for (i in 10+seq_len(10)) {
-        lab1 <- pred10[i,"labels"]
-        lab2 <- pred20[i,"labels"]
-        markers1 <- metadata(pred10)$common.genes
-        markers2 <- metadata(pred20)$common.genes
-        all.markers <- union(unlist(markers1), unlist(markers2))
-
-        keep1 <- ref1$label==lab1
-        keep2 <- ref2$label==lab2
-        origins <- rep(1:2, c(sum(keep1), sum(keep2)))
-        new.ref <- BiocGenerics::cbind(ref1[all.markers, keep1, drop=FALSE], ref2[all.markers, keep2, drop=FALSE])
-        out <- SingleR(test[all.markers,i], new.ref, genes="all",
-            label=origins, fine.tune=FALSE, prune=FALSE)
-
-        expect_equivalent(combined$scores[i,lab1], out$scores[,1])
-        expect_equivalent(combined$scores[i,lab2], out$scores[,2])
-    }
+    REF(combined$scores, test, results=list(pred10, pred20), refs=list(ref1, ref2), subset=11:20, mode="sd")
 })
 
 test_that("combineRecomputedResults handles mismatches to rows and cells", {
@@ -137,6 +145,7 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
 test_that("combineRecomputedResults is invariant to ordering", {
     ref3 <- .mockRefData(nreps=8)
     ref3 <- scater::logNormCounts(ref3)
+    ref3$label <- paste0(ref3$label, "X")
     train3 <- trainSingleR(ref3, labels=ref3$label)
     pred3 <- classifySingleR(test, train3)
 
@@ -150,5 +159,8 @@ test_that("combineRecomputedResults is invariant to ordering", {
         test=test,
         trained=rev(list(train1, train2, train3)))
 
+    expect_identical(flipped$orig.results[,3], combined$orig.results[,1])
+    expect_identical(flipped$orig.results[,2], combined$orig.results[,2])
+    expect_identical(flipped$orig.results[,1], combined$orig.results[,3])
     expect_identical(flipped$labels, combined$labels)
 })

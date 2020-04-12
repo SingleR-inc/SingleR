@@ -24,7 +24,7 @@ Rcpp::RObject recompute_scores(Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels,
     for (size_t i=0; i<nref; ++i) {
         Rcpp::List more_references=References[i];
         const size_t nmore=more_references.size();
-        shift[i+1]=nmore;
+        shift[i+1]=nmore+shift[i];
         
         for (size_t j=0; j<nmore; ++j) {
             references.push_back(beachmat::create_numeric_matrix(more_references[j]));
