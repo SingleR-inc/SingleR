@@ -7,6 +7,13 @@
 
 #' @importFrom BiocParallel bplapply bpmapply SerialParam
 .fine_tune_de <- function(exprs, scores, references, quantile, tune.thresh, de.info, BPPARAM=SerialParam()) {
+    # Checking that all names are in sync.
+    stopifnot(identical(names(references), colnames(scores)))
+    stopifnot(identical(names(references), names(de.info)))
+    for (markers in de.info) {
+        stopifnot(identical(names(markers), names(de.info)))
+    }
+
     # Scanning across all references and subsetting to the common genes.
     # This should reduce the amount of data that gets distributed,
     # as well as the number of cache misses.
@@ -15,14 +22,14 @@
     exprs <- exprs[universe,,drop=FALSE]
 
     # Converting character vectors into integer indices.
-    # We assume that classifySingleR() has already set up the backend.
-    of.interest <- colnames(scores)
-    de.info <- bplapply(de.info[of.interest], function(markers, genes, labels) {
-        lapply(markers[labels], function(x) match(x, genes) - 1L)
-    }, genes=rownames(exprs), labels=of.interest, BPPARAM=BPPARAM)
+    de.info <- lapply(de.info, function(markers) {
+        lapply(markers, function(x) match(x, universe) - 1L)
+    })
 
+    # We assume that classifySingleR() has already set up the backend.
     M <- .prep_for_parallel(exprs, BPPARAM)
     S <- .prep_for_parallel(t(scores), BPPARAM)
+
     bp.out <- bpmapply(Exprs=M, scores=S, FUN=fine_tune_label_de, 
         MoreArgs=list(References=references, quantile=quantile, tune_thresh=tune.thresh, marker_genes=de.info), 
         BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
@@ -32,10 +39,13 @@
 
 #' @importFrom BiocParallel bpmapply SerialParam
 .fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
+    stopifnot(identical(names(references), colnames(scores)))
+
     M <- .prep_for_parallel(exprs, BPPARAM)
     S <- .prep_for_parallel(t(scores), BPPARAM)
     bp.out <- bpmapply(Exprs=M, scores=S, FUN=fine_tune_label_sd, 
-        MoreArgs=list(References=references, quantile=quantile, tune_thresh=tune.thresh, median_mat=t(median.mat), sd_thresh=sd.thresh),
+        MoreArgs=list(References=references, quantile=quantile, tune_thresh=tune.thresh, 
+            median_mat=t(median.mat), sd_thresh=sd.thresh),
         BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
 
     do.call(mapply, c(bp.out, list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE)))

@@ -248,6 +248,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
     # Choosing the gene sets of interest. 
     args <- list()
+
     if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
@@ -257,7 +258,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         }
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
-        .validate_de_gene_set(genes, labels)
+        genes <- .validate_de_gene_set(genes, labels)
         common <- unique(unlist(genes))
 
         # Ensure that the user hasn't supplied genes that aren't available.
@@ -272,19 +273,19 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
-        if (genes=="de") {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
-            common <- unique(unlist(extra))
-        } else if (genes=="sd") {
+        if (genes=="sd") {
             sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh)
             common <- sd.out$genes
             extra <- sd.out$mat
             args$sd.thresh <- sd.thresh
         } else {
-            common <- rownames(ref)
-            extra <- .median_by_label(ref, labels)
-            genes <- "sd"
-            args$sd.thresh <- sd.thresh
+            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
+            if (genes=="de") {
+                common <- unique(unlist(extra))
+            } else {
+                genes <- "sd"
+                common <- rownames(ref)
+            }
         }
     }
 
@@ -306,7 +307,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     indices <- original <- List()
-    for (u in unique(labels)) {
+    ulabels <- .get_levels(labels)
+    for (u in ulabels) {
         # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
         current <- ref[,labels==u,drop=FALSE] 
 
@@ -328,18 +330,21 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     )
 }
 
+.get_levels <- function(labels) sort(unique(labels))
+
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list()) {
     if (de.method=="classic") {
-        ulabels <- unique(labels)
         mat <- .median_by_label(ref, labels)
         if (is.null(de.n)) {
             de.n <- round(500*(2/3)^log2(ncol(mat)))
         }
 
+        ulabels <- .get_levels(labels)
         collected <- list()
         for (i in ulabels) {
             subcollected <- list()
+
             for (j in ulabels) {
                 s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
                 s <- s[s>0]
@@ -388,21 +393,26 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 }
 
 .validate_de_gene_set <- function(genes, labels) {
-    ulabels <- unique(labels)
+    ulabels <- .get_levels(labels)
     if (!all(ulabels %in% names(genes))) {
         stop("need marker gene information for each label")
     }
+
+    genes <- genes[ulabels]
     for (u in ulabels) {
         if (!all(ulabels %in% names(genes[[u]]))) {
             stop("need marker genes between each pair of labels")
         }
+        genes[[u]] <- genes[[u]][ulabels]
     }
+
+    genes
 }
 
 #' @importFrom DelayedMatrixStats rowMedians
 #' @importFrom DelayedArray DelayedArray
 .median_by_label <- function(mat, labels) {
-    ulabels <- unique(labels)
+    ulabels <- .get_levels(labels)
     output <- matrix(0, nrow(mat), length(ulabels))
     rownames(output) <- rownames(mat)
     colnames(output) <- ulabels
