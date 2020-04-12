@@ -10,11 +10,22 @@
 
 typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
 
+/* Computes the score between 'target' and each entry of 'references[labels]',
+ * where the score is defined as the 'quantile'-th quantile of the Spearman 
+ * correlations between 'target' and each column of each entry. We only consider
+ * the genes specified in 'genes' when performing this analysis.
+ *
+ * 'holding_ref' should be of length equal to the number of rows in each entry
+ * of 'references'. 'scaled_left', 'scaled_right', 'collected' and 'all_correlations'
+ * are dynamically resized but can be pre-allocated to the number of genes.
+ *
+ * 'new_scores' should have allocated space for at least 'length(labels)'.
+ */
+
 inline void compute_scores(
     const Rcpp::NumericVector& target,
     const matrix_list& references, 
-    const int* labels, 
-    size_t nlabels,
+    const std::vector<int>& labels, 
     const std::vector<int>& genes, 
     double quantile,
     Rcpp::NumericVector& holding_ref,
@@ -26,7 +37,7 @@ inline void compute_scores(
 ) {
     scaled_ranks(target.begin(), genes, collected, scaled_left);
 
-    for (size_t l=0; l<nlabels; ++l) {
+    for (size_t l=0; l<labels.size(); ++l) {
         auto current=references[labels[l]].get();
         const size_t ncells=current->get_ncol();
         all_correlations.clear();

@@ -55,8 +55,7 @@ public:
             new_scores.resize(labels_in_use.size());
             compute_scores(holder_left, 
                 references, 
-                labels_in_use.data(),
-                labels_in_use.size(),
+                labels_in_use,
                 genes_in_use,
                 quantile,
                 holder_right,
