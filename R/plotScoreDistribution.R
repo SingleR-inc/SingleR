@@ -147,15 +147,15 @@ plotScoreDistribution <- function(
                 scores.use <- c(0,scores.use)
             }
         }
+        # When scores.use is a vector, recursively make calls for each and return plots in a grid.
         if (length(scores.use)>1) {
-            # Make individual heatmaps, then return.
             plots <- lapply(
                 scores.use,
                 function(this) {
                     plotScoreDistribution(results, show, labels, FALSE, this,
                         calls.use, pruned.use, size, ncol, dots.on.top,
                         this.color, pruned.color, other.color,
-                        show.nmads, show.min.diff, grid.vars)
+                        show.nmads, show.min.diff, list())
                 })
             grid.vars <- c(grid.vars, grobs = plots)
 
@@ -163,61 +163,55 @@ plotScoreDistribution <- function(
         }
     }
 
+    # Parse required data
     show <- match.arg(show)
-    if (show!="delta.next") {
-        df <- .scores_data_gather(results, show, scores.use, calls.use, pruned.use)
+    if (show == "delta.next" && calls.use != scores.use && !is.null(results$orig.results)) {
+        message("'calls.use', and 'scores.use' must be the same for 'show=\"delta.next\"'. 'calls.use' was updated to ", scores.use, ".")
+        calls.use <- scores.use
+    }
+    score.res <- .ensure_named(.grab_results(results, scores.use))
+    calls <- .grab_results(results, calls.use)$labels
+    pruned.res <- .grab_results(results, pruned.use)
+    if (!is.null(pruned.res$pruned.labels)) {
+        pruned <- is.na(pruned.res$pruned.labels)
+        prune.label <- .prune_label(pruned.use, calls.use)
     } else {
-        df <- .next_data_gather(results, scores.use, calls.use, pruned.use)
+        pruned <- NULL
+        prune.label <- "pruned"
     }
 
+    # Make data frame
+    if (show!="delta.next") {
+        df <- .scores_data_gather(
+            results, show, score.res, calls, pruned, prune.label)
+    } else {
+        df <- .next_data_gather(
+            results, score.res, calls, pruned, prune.label)
+    }
+
+    # Trim
     labels <- labels[labels %in% colnames(.grab_results(results, scores.use)$scores)]
     df <- df[df$label %in% labels,]
 
-    # Creating the plot object:
-    p <- ggplot2::ggplot(data = df,
-            ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
-        ggplot2::theme_classic() +
-        ggplot2::scale_fill_manual(name = .legend_title(calls.use, show, scores.use),
-            values = c(assigned=this.color, pruned=pruned.color, other=other.color)) +
-        ggplot2::scale_y_continuous(name = .y_title(show, scores.use)) +
-        ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
-        ggplot2::ylab(show)
+    ### Creating the plot
+    legend.title <- .legend_title(calls.use, show, scores.use)
+    ylab <- .y_title(show, scores.use)
 
-    if (length(labels) == 1) {
-        p <- p + ggplot2::scale_x_discrete(name = NULL, labels = NULL)
-    } else {
-        p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
-    }
-
-    # Adding the frills:
-    if (!dots.on.top) {
-        p <- p + ggplot2::geom_jitter(
-            height = 0, width = 0.3, color = "black", shape = 16,size = size,
-            na.rm = TRUE)
-    }
-    p <- p + ggplot2::geom_violin(na.rm=TRUE)
+    p <- .plot_score_distribution(
+        df, legend.title, ylab, prune.label,
+        this.color, pruned.color, other.color, size, ncol, dots.on.top)
 
     if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
         p <- .add_cutoff_lines(
-            p, .grab_results(results, scores.use),
-            df, show, show.nmads, show.min.diff)
-    }
-
-    if (dots.on.top) {
-        p <- p + ggplot2::geom_jitter(
-            height = 0, width = 0.3, color = "black", shape = 16,size = size,
-            na.rm = TRUE)
+            p, score.res, df, show, show.nmads, show.min.diff)
     }
 
     p
 }
 
 #' @importFrom DelayedMatrixStats rowMedians
-.scores_data_gather <- function(results, show, scores.use, calls.use, pruned.use) {
-
-    score.res <- .ensure_named(.grab_results(results, scores.use))
-    call.res <- .ensure_named(.grab_results(results, calls.use))
-    pruned.res <- .ensure_named(.grab_results(results, pruned.use))
+.scores_data_gather <- function(
+    results, show, score.res, calls, pruned, prune.label = "pruned") {
 
     values <- score.res$scores
     if (show=="delta.med") {
@@ -232,26 +226,19 @@ plotScoreDistribution <- function(
 
     # Add whether this label is the final label given to each cell.
     df$cell.calls <- rep("other", nrow(df)) # rep() protects when nrow(df)=0.
-    is.called <- df$label == rep(call.res$labels, each=ncol(values))
+    is.called <- df$label == rep(calls, each=ncol(values))
     df$cell.calls[is.called] <- "assigned"
-
-    if (!is.null(pruned.res$pruned.labels)) {
-        is.pruned <- rep(is.na(pruned.res$pruned.labels), each=ncol(values))
-        df$cell.calls[is.pruned & is.called] <- .prune_label(pruned.use, calls.use)
+    # Replace cell.call if cell was pruned.
+    if (!is.null(pruned)) {
+        is.pruned <- rep(pruned, each=ncol(values))
+        df$cell.calls[is.pruned & is.called] <- prune.label
     }
 
     df
 }
 
-.next_data_gather <- function(results, scores.use, calls.use, pruned.use) {
-
-    if (calls.use != scores.use) {
-        message("'calls.use', and 'scores.use' must be the same for 'show=\"delta.next\"'. 'calls.use' was updated.")
-        calls.use <- scores.use
-    }
-    score.res <- .ensure_named(.grab_results(results, scores.use))
-    call.res <- .ensure_named(.grab_results(results, calls.use))
-    pruned.res <- .ensure_named(.grab_results(results, pruned.use))
+.next_data_gather <- function(
+    results, score.res, calls, pruned, prune.label = "pruned") {
 
     if (is.null(score.res$tuning.scores)) {
         stop("Target 'results' lacks fine-tuning diagnostics for 'show=\"delta.next\"'")
@@ -259,15 +246,53 @@ plotScoreDistribution <- function(
 
     df <- data.frame(
         values = score.res$tuning.scores$first - score.res$tuning.scores$second,
-        label = call.res$labels,
+        label = calls,
         cell.calls = rep("assigned", nrow(results)), # don't unrep, protects when nrow(results)=0.
         stringsAsFactors = FALSE)
 
-    if (!is.null(pruned.res$pruned.labels)) {
-        df$cell.calls[is.na(pruned.res$pruned.labels)] <- .prune_label(pruned.use, calls.use)
+    if (!is.null(pruned)) {
+        df$cell.calls[pruned] <- prune.label
     }
 
     df
+}
+
+.plot_score_distribution <- function(
+    df,
+    legend.title, ylab, prune.label,
+    this.color, pruned.color, other.color, size, ncol, dots.on.top) {
+
+    p <- ggplot2::ggplot(data = df,
+            ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
+        ggplot2::theme_classic() +
+        ggplot2::scale_fill_manual(
+            name = legend.title,
+            breaks = c("assigned", prune.label, "other"),
+            values = c(this.color, pruned.color, other.color)) +
+        ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
+        ggplot2::ylab(ylab)
+
+    if (length(levels(as.factor(df$label))) == 1) {
+        p <- p + ggplot2::scale_x_discrete(name = NULL, labels = NULL)
+    } else {
+        p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
+    }
+
+    # Adding the frills:
+    if (!dots.on.top) {
+        p <- p + ggplot2::geom_jitter(
+            height = 0, width = 0.3, color = "black", shape = 16,size = size,
+            na.rm = TRUE)
+    }
+    p <- p + ggplot2::geom_violin(na.rm=TRUE)
+
+    if (dots.on.top) {
+        p <- p + ggplot2::geom_jitter(
+            height = 0, width = 0.3, color = "black", shape = 16,size = size,
+            na.rm = TRUE)
+    }
+
+    p
 }
 
 .add_cutoff_lines <- function(
