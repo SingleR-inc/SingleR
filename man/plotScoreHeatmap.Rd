@@ -18,10 +18,11 @@ plotScoreHeatmap(
   order.by = c("labels", "clusters"),
   scores.use = 0,
   calls.use = 0,
+  na.color = "gray50",
   cluster_cols = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
-  color = NULL,
+  color = colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
   main = NA,
   silent = FALSE,
   ...,
@@ -66,6 +67,8 @@ Overwritten when \code{show.all.originals = TRUE}. Set \code{show.all.originals 
 
 \item{calls.use}{Integer which sets which label and pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
 A value of 0 points to the overall results, while any other integer indicates the index of the individual output that should be targetted.}
+
+\item{na.color}{String specifying the color for non-calculated scores of multi-reference \code{results}.}
 
 \item{annotation_col, cluster_cols, show_colnames, color, main, silent, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 
