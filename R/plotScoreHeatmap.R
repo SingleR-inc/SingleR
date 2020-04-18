@@ -157,54 +157,26 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             message("A heatmap cannot be made from sparse final scores. Showing scores from run with 1st reference instead.")
             scores.use <- 1
         }
-        if (is.na(main)) {
-            main <- paste0("Scores from Ref #", scores.use)
-        }
-        if (calls.use == 0) {
-            labels.title <- "Final Labels"
-        } else {
-            labels.title <- paste0("Ref #", calls.use, " Labels")
-        }
-    } else {
-        labels.title <- "Labels"
     }
 
-    orig.res <- results
-    results <- .ensure_named(.grab_results(orig.res, scores.use))
-    calls.res <- .grab_results(orig.res, calls.use)
+    ## Extract data & add names
+    scores <- .grab_results(results, scores.use)$scores
+    labels <- .grab_results(results, calls.use)$labels
+    labels.title <- .labels_title(results, calls.use)
+    prune.calls <- .grab_results(results, calls.use)$pruned.labels
 
-    if (is.null(annotation_col)) {
-        annotation_col <- data.frame(row.names = rownames(results))
-    }
-    if (show.pruned) {
-        prune.calls <- calls.res$pruned.labels
-        if (!is.null(prune.calls)) {
-            names(prune.calls) <- rownames(results)
-            # Pruned calls added this way to ensure they come first for coloring purposes.
-            Pruned <- data.frame(
-                Pruned = as.character(is.na(prune.calls)),
-                row.names = rownames(results))[rownames(annotation_col),]
-            annotation_col <- cbind(Pruned,annotation_col)
-        }
-    }
-    if (show.labels) {
-        labels <- calls.res$labels
-        names(labels) <- rownames(results)
-        annotation_col$Labels <- labels[rownames(annotation_col)]
-        columns <- colnames(annotation_col)
-        columns[columns == "Labels"] <- labels.title
-        colnames(annotation_col) <- columns
-    }
-    if (!is.null(clusters)) {
-        names(clusters) <- rownames(results)
-        annotation_col$Clusters <- clusters[rownames(annotation_col)]
-    }
+    rownames(scores) <- rownames(.ensure_named(results))
+    names(labels) <- rownames(scores)
+    prune.calls <- .name_unless_NULL(prune.calls, rownames(scores))
+    clusters <- .name_unless_NULL(clusters, rownames(scores))
+    cells.order <- .name_unless_NULL(cells.order, rownames(scores))
 
-    scores <- results$scores
-    rownames(scores) <- rownames(results)
+    # Make/add-to annotations dataframe
+    annotation_col <- .make_annotation_col(
+        annotation_col, show.labels, labels, .labels_title(results, calls.use),
+        show.pruned, prune.calls, clusters)
 
     # Trim the scores and potential ordering vars by requested cells or labels
-    labels <- calls.res$labels
     if (!is.null(cells.use)) {
         scores <- scores[cells.use,,drop=FALSE]
         clusters <- clusters[cells.use]
@@ -217,7 +189,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Determining how to order the cells.
     #   Simply use current order if clustering turned on.
-    #   Otherwise, by cells.order, if provided, else by order.by(=Labels, default).
+    #   Otherwise, by cells.order, if provided, else by order.by which = labels by default.
     if (cluster_cols) {
         order <- seq_len(nrow(scores))
     } else {
@@ -250,19 +222,28 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
 
     scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
-    scores <- t(scores)
 
-    # Create args list for making the heatmap
-    args <- list(mat = scores[,order,drop=FALSE], border_color = NA,
+    ### Build the heatmap
+    if (!is.null(results$orig.results) && is.na(main)) {
+        main <- paste0("Scores from Ref #", scores.use)
+    }
+    # Create base args list for making the heatmap
+    args <- list(mat = t(scores[order,,drop=FALSE]), border_color = NA,
         show_colnames = show_colnames, clustering_method = 'ward.D2',
         cluster_cols = cluster_cols, main = main, silent = silent, ...)
+
+    .plot_score_heatmap(args, annotation_col, color, show.pruned, normalize)
+}
+
+.plot_score_heatmap <- function(
+    args, annotation_col, color, show.pruned, normalize) {
 
     if (normalize) {
         args$color <- viridis::viridis(100)
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
     } else {
-        abs.max <- max(abs(range(scores)))
+        abs.max <- max(abs(range(args$mat)))
         breaks.len <- ifelse(is.null(color), 101, length(color)+1)
         args$breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
     }
@@ -278,7 +259,43 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         args$color <- color
     }
 
+    # Troubleshooting and testing purposes
+    if (!is.null(args$return.data) && args$return.data) {
+        return(args)
+    }
     do.call(pheatmap::pheatmap, args)
+}
+
+.make_annotation_col <- function(
+    annotation_col = NULL, show.labels, labels, labels.title,
+    show.pruned, prune.calls, clusters = NULL) {
+
+    if (is.null(annotation_col)) {
+        annotation_col <- data.frame(row.names = names(labels))
+    }
+    if (show.pruned && !is.null(prune.calls)) {
+        # Pruned calls added this way to ensure they come first for coloring purposes.
+        Pruned <- as.character(is.na(prune.calls)[rownames(annotation_col)])
+        annotation_col <- cbind(Pruned,annotation_col)
+    }
+    if (show.labels) {
+        annotation_col$Labels <- labels[rownames(annotation_col)]
+        annot.titles <- colnames(annotation_col)
+        annot.titles[annot.titles == "Labels"] <- labels.title
+        colnames(annotation_col) <- annot.titles
+    }
+    if (!is.null(clusters)) {
+        annotation_col$Clusters <- clusters[rownames(annotation_col)]
+    }
+
+    annotation_col
+}
+
+.name_unless_NULL <- function(target, names) {
+    if (!is.null(target)) {
+        names(target) <- names
+    }
+    target
 }
 
 .make_heatmap_annotation_colors <- function(args, show.pruned) {
@@ -393,4 +410,16 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     list(df_colors = df_colors,
          next.color.index.discrete = next.color.index.discrete,
          next.color.index.numeric = next.color.index.numeric)
+}
+
+.labels_title <- function(results, calls.use){
+    if (!is.null(results$orig.results)) {
+        if (calls.use == 0) {
+            return("Final Labels")
+        } else {
+            return(paste0("Ref #", calls.use, " Labels"))
+        }
+    } else {
+        return("Labels")
+    }
 }
