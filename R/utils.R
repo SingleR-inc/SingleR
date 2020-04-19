@@ -44,11 +44,11 @@
     target
 }
 
-.values_title <- function(results, scores.use, val.name){
-    target_bit <- switch(as.character(scores.use==0),
-        "TRUE" = ifelse(is.null(results$orig.results), "", "Final"),
-        "FALSE" = paste0("Ref #", scores.use))
-    paste(target_bit, val.name)
+.values_title <- function(is.combined, ref.use, value.name){
+    target_bit <- switch(as.character(ref.use==0),
+        "TRUE" = ifelse(is.combined, "Combined ", ""),
+        "FALSE" = paste0("Ref #", ref.use, " "))
+    paste0(target_bit, value.name)
 }
 
 .calls_title <- function(results, calls.use, val.name){
