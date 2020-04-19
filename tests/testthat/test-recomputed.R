@@ -50,6 +50,60 @@ test_that("combineRecomputedResults works as expected (light check)", {
     expect_identical(top, combined$labels)
 })
 
+test_that("different combineRecomputedResults algorithms work as expected", {
+    options(SingleR.recompute.minimum=0)
+    combined1 <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2))
+
+    options(SingleR.recompute.minimum=Inf)
+    combined2 <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2))
+
+    expect_equal(combined1, combined2)
+    expect_false(identical(combined1, combined2)) # due to slight numerical differences.
+
+    options(SingleR.recompute.minimum=NULL)
+})
+
+test_that("combineRecomputedResults matrix fragmentation works as expected", {
+    combined1 <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2))
+
+    # Testing that it works upon parallelization.   
+    combined1x <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2),
+        BPPARAM=BiocParallel::MulticoreParam(3))
+    expect_equal(combined1, combined1x)
+
+    # Testing that it works for DA's, as well as when the DA
+    # has memory limits that need to be respected.
+    library(DelayedArray)
+    DA <- DelayedArray(assay(test))
+    combined2a <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=DA,
+        trained=list(train1, train2))
+    expect_equal(combined1, combined2a)
+
+    old <- getAutoBlockSize()
+    setAutoBlockSize(nrow(DA)*8L)
+    combined2b <- combineRecomputedResults(
+        results=list(pred1, pred2),
+        test=DA,
+        trained=list(train1, train2))
+    expect_equal(combined1, combined2b)
+
+    setAutoBlockSize(old)
+})
+
 # Creating a reference function to test the recomputation.
 REF <- function(scores, test, results, refs, subset, mode="de") {
     for (i in subset) {

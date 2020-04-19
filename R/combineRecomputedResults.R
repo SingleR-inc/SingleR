@@ -144,7 +144,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     for (i in seq_along(markers)) {
         current <- markers[[i]]
         for (j in seq_along(current)) {
-            current[[j]] <- match(current[[j]], universe) - 1L
+            current[[j]] <- match(current[[j]], universe)
         }
         markers[[i]] <- current
     }
@@ -158,13 +158,13 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     ##############################################
 
-    M <- .prep_for_parallel(test, BPPARAM)
-    S <- .prep_for_parallel(all.labels - 1L, BPPARAM)
-    bp.out <- bpmapply(Exprs=M, Labels=S, FUN=recompute_scores,
-        MoreArgs=list(References=all.ref, Genes=markers, quantile=quantile),
-        BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
+    M <- .prep_for_parallel(test, BPPARAM, use.grid=is(test, "DelayedMatrix"))
+    S <- .cofragment_matrix(M, all.labels)
 
-    scores <- t(do.call(cbind, bp.out))
+    bp.out <- bpmapply(exprs=M, labels=S, FUN=.nonred_recompute_scores,
+        MoreArgs=list(all.ref=all.ref, markers=markers, quantile=quantile),
+        BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
+    scores <- do.call(rbind, bp.out)
 
     base.scores <- vector("list", length(results))
     for (r in seq_along(base.scores)) {
@@ -177,6 +177,67 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     all.scores <- do.call(cbind, base.scores)
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
-    chosen <- max.col(scores)
+    chosen <- max.col(scores, ties.method="first")
     cbind(output, .combine_result_frames(chosen, results))
+}
+
+#' @importFrom S4Vectors DataFrame selfmatch
+#' @importFrom BiocNeighbors buildIndex KmknnParam
+.nonred_recompute_scores <- function(exprs, labels, all.ref, markers, quantile, BNPARAM=KmknnParam()) 
+# This is a non-redundant calculator of the recomputed scores, where all label
+# combinations that appear >= minimum times are used in a loop to avoid
+# recalculation of ranked references in the corresponding C++ code. However, if
+# it only appears once, then it is used directly in the C++ code for fast
+# looping. Note that the realization of DA's requires sufficiently small 'exprs'.
+{
+    if (is(exprs, "DelayedMatrix")) {
+        exprs <- as.matrix(exprs)
+    }
+
+    # Finding groups of cells with the same combination of per-reference assigned labels.
+    collated <- DataFrame(t(labels))
+    groups <- selfmatch(collated)
+    by.group <- split(seq_along(groups), groups)
+    above.min <- lengths(by.group) >= getOption("SingleR.recompute.minimum", 2L)
+    scores <- matrix(0, ncol(exprs), ncol(collated))
+
+    for (i in which(above.min)) {
+        curgroup <- by.group[[i]]
+        curlabels <- collated[curgroup[1],,drop=FALSE]
+
+        curmarkers <- integer(0)
+        for (i in seq_along(curlabels)) {
+            curlab <- curlabels[[i]]
+            curmarkers <- union(curmarkers, markers[[i]][[curlab]])
+        }
+
+        curtest <- exprs[curmarkers,curgroup,drop=FALSE]
+        curtest <- .scaled_colranks_safe(curtest)
+
+        for (i in seq_along(curlabels)) {
+            curlab <- curlabels[[i]]
+            curorig <- all.ref[[i]][[curlab]]
+            curref <- curorig[curmarkers,,drop=FALSE]
+            curref <- .scaled_colranks_safe(curref)
+            curdex <- buildIndex(curref, BNPARAM=BNPARAM)
+            scores[curgroup,i] <- .find_nearest_quantile(ranked=curtest, index=curdex, quantile=quantile)
+        }
+    }
+
+    if (any(!above.min)) {
+        affected <- sort(unlist(by.group[!above.min]))
+        markers.m1 <- relist(unlist(markers) - 1, markers)
+
+        stuff <- recompute_scores(
+            Exprs=exprs[,affected,drop=FALSE],
+            Labels=labels[,affected,drop=FALSE] - 1L,
+            References=all.ref,
+            Genes=markers.m1,
+            quantile=quantile
+        )
+
+        scores[affected,] <- t(stuff)
+    }
+
+    scores
 }
