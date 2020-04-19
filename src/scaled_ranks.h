@@ -54,11 +54,11 @@ void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& colle
     }
 
     // Special behaviour for no-variance genes; these are left as all-zero scaled ranks.
-    if (sum_squares!=0) {
-        sum_squares = std::sqrt(sum_squares)*2;
-        for (auto& o : outgoing) {
-            o/=sum_squares;
-        }
+    sum_squares = std::max(sum_squares, 0.00000001);
+    sum_squares = std::sqrt(sum_squares)*2;
+    for (auto& o : outgoing) {
+        o/=sum_squares;
     }
+
     return;
 }
