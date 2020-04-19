@@ -240,7 +240,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 {
     # 'scores' is guaranteed to be named by this point.
     clusters <- .name_unless_NULL(clusters, rownames(scores))
-    cells.order <- .name_unless_NULL(clusters, rownames(scores))
+    cells.order <- .name_unless_NULL(cells.order, rownames(scores))
 
     # Adjust data
     scores <- .trim_normalize_reorder_scores(
