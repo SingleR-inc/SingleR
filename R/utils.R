@@ -22,14 +22,6 @@
     x
 }
 
-.grab_results <- function(results, index) {
-    if (index == 0 || is.null(results$orig.results)) {
-        return(results)
-    } else {
-        return(results$orig.results[[index]])
-    }
-}
-
 .ensure_named <- function(results) {
     if (is.null(rownames(results))) {
         rownames(results) <- seq_len(nrow(results))
@@ -49,20 +41,4 @@
         "TRUE" = ifelse(is.combined, "Combined ", ""),
         "FALSE" = paste0("Ref #", ref.use, " "))
     paste0(target_bit, value.name)
-}
-
-.calls_title <- function(results, calls.use, val.name, show = "blank", scores.use = 0){
-    if (show == "delta.next") {
-        calls.use <- scores.use
-    }
-
-    if (!is.null(results$orig.results)) {
-        if (calls.use == 0) {
-            return(paste0("Final ", val.name))
-        } else {
-            return(paste0("Ref #", calls.use, " ", val.name))
-        }
-    } else {
-        return(val.name)
-    }
 }
