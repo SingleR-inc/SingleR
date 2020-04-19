@@ -204,7 +204,7 @@ plotScoreDistribution <- function(
             prune.results <- results$orig.results[[chosen.pruned]]
         }
         prune.calls <- prune.results$pruned.labels
-        prune.title <- .prune_label(results, chosen.pruned, chosen.calls)
+        prune.title <- .prune_label(is.combined, chosen.pruned, chosen.calls)
 
         # Actually creating the plot
         output <- .plot_score_distribution(
@@ -386,10 +386,10 @@ plotScoreDistribution <- function(
 }
 
 # Sets the Title for the color legend based on which ref's pruning calls are shown
-.prune_label <- function(results, chosen.pruned, chosen.calls){
+.prune_label <- function(is.combined, chosen.pruned, chosen.calls){
     if (chosen.pruned!=chosen.calls) {
         which_pruned <- switch(as.character(chosen.pruned==0),
-            "TRUE" = ifelse(is.null(results$orig.results), "", "(in Final)"),
+            "TRUE" = ifelse(is.combined, "(in Final)", ""),
             "FALSE" = paste0("(in Ref #", chosen.pruned, ")"))
         paste("pruned", which_pruned)
     } else {
