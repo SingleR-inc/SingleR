@@ -51,20 +51,7 @@ public:
         bool unchanged=false;
         while (labels_in_use.size() > 1 && !unchanged) {
             commonFUN(labels_in_use, genes_in_use);
-
-            new_scores.resize(labels_in_use.size());
-            compute_scores(holder_left, 
-                references, 
-                labels_in_use,
-                genes_in_use,
-                quantile,
-                holder_right,
-                scaled_left,
-                scaled_right,
-                collected,
-                all_correlations,
-                new_scores.data()
-            );
+            fill_new_scores(references, quantile);
 
             size_t topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
             best_label=labels_in_use[topI];
@@ -90,7 +77,32 @@ public:
 
         return tuned_stats(best_label, max_score, next_score);
     }
+private:
+    void fill_new_scores(const matrix_list& references, double quantile) {
+        scaled_ranks(holder_left.begin(), genes_in_use, collected, scaled_left);
+        new_scores.resize(labels_in_use.size());
 
+        for (size_t l=0; l<labels_in_use.size(); ++l) {
+            auto current=references[labels_in_use[l]].get();
+            const size_t ncells=current->get_ncol();
+            all_correlations.clear();
+            all_correlations.reserve(ncells);
+
+            for (size_t c=0; c<ncells; ++c) {
+                current->get_col(c, holder_right.begin());
+                scaled_ranks(holder_right.begin(), genes_in_use, collected, scaled_right);
+
+                double dist=0;
+                for (size_t j=0; j<scaled_left.size(); ++j) {
+                    const double tmp=scaled_left[j] - scaled_right[j];
+                    dist+=tmp*tmp;
+                }
+                all_correlations.push_back(1 - 2*dist);
+            }
+            new_scores[l]=correlations_to_scores(all_correlations, quantile);
+        }
+        return;
+    }
 private:
     Rcpp::NumericVector holder_left, holder_right;
     std::vector<int> labels_in_use, next_labels, genes_in_use;

@@ -7,7 +7,8 @@
 #include <set>
 
 // [[Rcpp::export(rng=false)]]
-Rcpp::RObject recompute_scores(Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
+Rcpp::RObject recompute_scores(Rcpp::List Groups, 
+    Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
     Rcpp::List References, Rcpp::List Genes, double quantile) 
 {
     auto mat=beachmat::create_numeric_matrix(Exprs);
@@ -17,18 +18,18 @@ Rcpp::RObject recompute_scores(Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels,
 
     /* Preparing a whole bunch of sanity checks. */
 
+    const size_t ngroups=Groups.size();
     const size_t nref=References.size();
-    matrix_list references; 
-    std::vector<int> shift(nref+1);
+    std::vector<matrix_list> references(nref);
 
     for (size_t i=0; i<nref; ++i) {
         Rcpp::List more_references=References[i];
         const size_t nmore=more_references.size();
-        shift[i+1]=nmore+shift[i];
-        
+        auto& currefs=references[i];
+
         for (size_t j=0; j<nmore; ++j) {
-            references.push_back(beachmat::create_numeric_matrix(more_references[j]));
-            if (references.back()->get_nrow()!=ngenes) {
+            currefs.push_back(beachmat::create_numeric_matrix(more_references[j]));
+            if (currefs.back()->get_nrow()!=ngenes) {
                 throw std::runtime_error("each entry of 'References' must have number of rows equal to 'Exprs'");
             }
         }
@@ -60,43 +61,66 @@ Rcpp::RObject recompute_scores(Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels,
 
     Rcpp::NumericVector holder_left(ngenes), holder_right(ngenes);
     ranked_vector collected(ngenes);
-    std::vector<double> scaled_left(ngenes), scaled_right(ngenes);
+    std::vector<double> scaled_left(ngenes);
+    std::vector<std::vector<std::vector<double> > > scaled_rights(nref);
     std::vector<double> all_correlations;
-    std::vector<int> curlabels(nref);
 
-    Rcpp::NumericMatrix output_best(nref, ncells);
+    Rcpp::NumericMatrix output(nref, ncells);
 
-    for (size_t c=0; c<ncells; ++c) {
-        mat->get_col(c, holder_left.begin());
+    for (size_t g=0; g<ngroups; ++g) {
+        Rcpp::IntegerVector curgroup=Groups[g];
+        const size_t cursize=curgroup.size();
+        if (cursize==0) { 
+            continue;
+        }
 
         // Finding all of the genes of interest.
         std::set<int> tmp;
-        auto all_labels=Labels.column(c);
+        auto all_labels=Labels.column(curgroup[0]);
         for (size_t i=0; i<nref; ++i) {
             Rcpp::IntegerVector current=genes[i][all_labels[i]];
             tmp.insert(current.begin(), current.end());
         }
         std::vector<int> universe(tmp.begin(), tmp.end()); // switch to a more cache-efficient vector.
 
-        // Finding the indices of the labels of interest.
+        // Computing the references.
         for (size_t i=0; i<nref; ++i) {
-            curlabels[i]=all_labels[i]+shift[i];
+            auto current=references[i][all_labels[i]].get();
+            const size_t ncells=current->get_ncol();
+
+            auto& scaled_right_set=scaled_rights[i];
+            scaled_right_set.resize(ncells);
+
+            for (size_t c=0; c<ncells; ++c) {
+                current->get_col(c, holder_right.begin());
+                scaled_ranks(holder_right.begin(), universe, collected, scaled_right_set[c]);
+            }
         }
 
-        auto current_out=output_best.column(c);
-        compute_scores(holder_left, 
-            references,
-            curlabels, 
-            universe,
-            quantile,
-            holder_right,
-            scaled_left,
-            scaled_right,
-            collected,
-            all_correlations,
-            current_out.begin()
-        );
+        // Looping through the cells and computing the scores. 
+        for (size_t t=0; t<cursize; ++t) {
+            mat->get_col(curgroup[t], holder_left.begin());
+            scaled_ranks(holder_left.begin(), universe, collected, scaled_left);
+            auto outcol=output.column(curgroup[t]);
+
+            for (size_t i=0; i<nref; ++i) {
+                const auto& cur_set=scaled_rights[i];
+                all_correlations.clear();
+                for (size_t c=0; c<cur_set.size(); ++c) {
+                    const auto& curright=cur_set[c];
+
+                    double dist=0;
+                    for (size_t j=0; j<scaled_left.size(); ++j) {
+                        const double tmp=scaled_left[j] - curright[j];
+                        dist+=tmp*tmp;
+                    }
+                    all_correlations.push_back(1 - 2*dist);
+                }
+
+                outcol[i]=correlations_to_scores(all_correlations, quantile);
+            }
+        }
     }
 
-    return output_best;
+    return output;
 }

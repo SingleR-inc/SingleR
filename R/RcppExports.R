@@ -13,7 +13,7 @@ fine_tune_label_sd <- function(Exprs, scores, References, quantile, tune_thresh,
     .Call('_SingleR_fine_tune_label_sd', PACKAGE = 'SingleR', Exprs, scores, References, quantile, tune_thresh, median_mat, sd_thresh)
 }
 
-recompute_scores <- function(Exprs, Labels, References, Genes, quantile) {
-    .Call('_SingleR_recompute_scores', PACKAGE = 'SingleR', Exprs, Labels, References, Genes, quantile)
+recompute_scores <- function(Groups, Exprs, Labels, References, Genes, quantile) {
+    .Call('_SingleR_recompute_scores', PACKAGE = 'SingleR', Groups, Exprs, Labels, References, Genes, quantile)
 }
 

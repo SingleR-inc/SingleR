@@ -50,25 +50,6 @@ test_that("combineRecomputedResults works as expected (light check)", {
     expect_identical(top, combined$labels)
 })
 
-test_that("different combineRecomputedResults algorithms work as expected", {
-    options(SingleR.recompute.minimum=0)
-    combined1 <- combineRecomputedResults(
-        results=list(pred1, pred2), 
-        test=test,
-        trained=list(train1, train2))
-
-    options(SingleR.recompute.minimum=Inf)
-    combined2 <- combineRecomputedResults(
-        results=list(pred1, pred2), 
-        test=test,
-        trained=list(train1, train2))
-
-    expect_equal(combined1, combined2)
-    expect_false(identical(combined1, combined2)) # due to slight numerical differences.
-
-    options(SingleR.recompute.minimum=NULL)
-})
-
 test_that("combineRecomputedResults matrix fragmentation works as expected", {
     combined1 <- combineRecomputedResults(
         results=list(pred1, pred2), 

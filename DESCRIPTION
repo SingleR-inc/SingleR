@@ -16,6 +16,7 @@ Imports:
     methods,
     Matrix,
     S4Vectors,
+    BiocGenerics,
     DelayedArray,
     DelayedMatrixStats,
     BiocNeighbors,
