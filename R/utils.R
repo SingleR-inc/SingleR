@@ -51,7 +51,11 @@
     paste(target_bit, val.name)
 }
 
-.calls_title <- function(results, calls.use, val.name){
+.calls_title <- function(results, calls.use, val.name, show = "blank", scores.use = 0){
+    if (show == "delta.next") {
+        calls.use <- scores.use
+    }
+
     if (!is.null(results$orig.results)) {
         if (calls.use == 0) {
             return(paste0("Final ", val.name))

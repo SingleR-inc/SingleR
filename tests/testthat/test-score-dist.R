@@ -14,36 +14,36 @@ pred3 <- SingleR(test=test, ref=training, labels=training$label, genes="de", fin
 
 test_that("we can produce single label scoreDistributions when no labels were pruned", {
     expect_s3_class(
-        plotScoreDistribution(results = pred1, labels = "A"),
+        plotScoreDistribution(results = pred1, labels.use = "A"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A", size = 10),
+            results = pred1, labels.use = "A", size = 10),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A", dots.on.top = TRUE),
+            results = pred1, labels.use = "A", dots.on.top = TRUE),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A",
-            this.color = "blue", 
-            pruned.color = "yellow", 
+            results = pred1, labels.use = "A",
+            this.color = "blue",
+            pruned.color = "yellow",
             other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A",
+            results = pred1, labels.use = "A",
             size = 5),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A",
+            results = pred1, labels.use = "A",
             show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred1, labels = "A",
+            results = pred1, labels.use = "A",
             show = "delta.next"),
         "ggplot")
 })
@@ -59,7 +59,7 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
         plotScoreDistribution(results = pred1, dots.on.top = TRUE),
         "ggplot")
     expect_s3_class(
-        plotScoreDistribution(results = pred1, labels = c("A","B","D")),
+        plotScoreDistribution(results = pred1, labels.use = c("A","B","D")),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(results = pred1, ncol = 3),
@@ -67,8 +67,8 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
     expect_s3_class(
         plotScoreDistribution(
             results = pred1,
-            this.color = "blue", 
-            pruned.color = "yellow", 
+            this.color = "blue",
+            pruned.color = "yellow",
             other.color = "orange"),
         "ggplot")
     expect_s3_class(
@@ -87,36 +87,36 @@ test_that("we can produce multi label scoreDistributions when no labels were pru
 
 test_that("we can produce single label scoreDistributions", {
     expect_s3_class(
-        plotScoreDistribution(results = pred2, labels = "A"),
+        plotScoreDistribution(results = pred2, labels.use = "A"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A", size = 10),
+            results = pred2, labels.use = "A", size = 10),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A", dots.on.top = TRUE),
+            results = pred2, labels.use = "A", dots.on.top = TRUE),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A",
-            this.color = "blue", 
-            pruned.color = "yellow", 
+            results = pred2, labels.use = "A",
+            this.color = "blue",
+            pruned.color = "yellow",
             other.color = "orange"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A",
+            results = pred2, labels.use = "A",
             size = 5),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A",
+            results = pred2, labels.use = "A",
             show = "scores"),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(
-            results = pred2, labels = "A",
+            results = pred2, labels.use = "A",
             show = "delta.next"),
         "ggplot")
 })
@@ -132,7 +132,7 @@ test_that("we can produce multi label scoreDistributions", {
         plotScoreDistribution(results = pred2, dots.on.top = TRUE),
         "ggplot")
     expect_s3_class(
-        plotScoreDistribution(results = pred2, labels = c("A","B","D")),
+        plotScoreDistribution(results = pred2, labels.use = c("A","B","D")),
         "ggplot")
     expect_s3_class(
         plotScoreDistribution(results = pred2, ncol = 3),
@@ -140,8 +140,8 @@ test_that("we can produce multi label scoreDistributions", {
     expect_s3_class(
         plotScoreDistribution(
             results = pred2,
-            this.color = "blue", 
-            pruned.color = "yellow", 
+            this.color = "blue",
+            pruned.color = "yellow",
             other.color = "orange"),
         "ggplot")
     expect_s3_class(

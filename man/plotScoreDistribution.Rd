@@ -7,7 +7,7 @@
 plotScoreDistribution(
   results,
   show = c("delta.med", "delta.next", "scores"),
-  labels = colnames(results$scores),
+  labels.use = colnames(results$scores),
   show.all.originals = TRUE,
   scores.use = 0,
   calls.use = 0,
@@ -28,7 +28,7 @@ plotScoreDistribution(
 
 \item{show}{String specifying whether to show the scores, the difference from the median or the difference from the next-best score.}
 
-\item{labels}{String vector indicating one or more labels to show.
+\item{labels.use}{String vector indicating one or more labels to show.
 If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{show.all.originals}{Logical which sets whether separate sets of plots for all original scores matrices shown be shown when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.}
@@ -103,7 +103,7 @@ example(SingleR, echo=FALSE)
 # To show the distribution of scores grouped by label:
 plotScoreDistribution(results = pred)
 # We can display a particular label using the label
-plotScoreDistribution(results = pred, labels = "B")
+plotScoreDistribution(results = pred, labels.use = "B")
 
 # To show the distribution of deltas between cells' maximum and median scores,
 #   grouped by label, change `show` to "delta.med":

@@ -2,7 +2,7 @@
 #'
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}}.
 #' @param show String specifying whether to show the scores, the difference from the median or the difference from the next-best score.
-#' @param labels String vector indicating one or more labels to show.
+#' @param labels.use String vector indicating one or more labels to show.
 #' If \code{NULL}, all labels available in \code{results} are presented.
 #' @param show.all.originals Logical which sets whether separate sets of plots for all original scores matrices shown be shown when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions.
 #' @param calls.use,pruned.use Integer which sets which label calls or pruning calls to use when \code{results} is the output of a multiple reference \code{\link{SingleR}} run or of the \code{\link{combineCommonResults}} or \code{\link{combineRecomputedResults}} functions
@@ -68,7 +68,7 @@
 #' # To show the distribution of scores grouped by label:
 #' plotScoreDistribution(results = pred)
 #' # We can display a particular label using the label
-#' plotScoreDistribution(results = pred, labels = "B")
+#' plotScoreDistribution(results = pred, labels.use = "B")
 #'
 #' # To show the distribution of deltas between cells' maximum and median scores,
 #' #   grouped by label, change `show` to "delta.med":
@@ -123,7 +123,7 @@
 plotScoreDistribution <- function(
     results,
     show = c("delta.med", "delta.next", "scores"),
-    labels = colnames(results$scores),
+    labels.use = colnames(results$scores),
     show.all.originals = TRUE,
     scores.use = 0,
     calls.use = 0,
@@ -152,7 +152,7 @@ plotScoreDistribution <- function(
             plots <- lapply(
                 scores.use,
                 function(this) {
-                    plotScoreDistribution(results, show, labels, FALSE, this,
+                    plotScoreDistribution(results, show, labels.use, FALSE, this,
                         calls.use, pruned.use, size, ncol, dots.on.top,
                         this.color, pruned.color, other.color,
                         show.nmads, show.min.diff, list())
@@ -163,44 +163,39 @@ plotScoreDistribution <- function(
         }
     }
 
-    # Parse required data
     show <- match.arg(show)
     if (show == "delta.next" && calls.use != scores.use && !is.null(results$orig.results)) {
         message("'calls.use', and 'scores.use' must be the same for 'show=\"delta.next\"'. 'calls.use' was updated to ", scores.use, ".")
         calls.use <- scores.use
     }
-    score.res <- .ensure_named(.grab_results(results, scores.use))
+
+    ## Extract data
+    score.res <- .grab_results(results, scores.use)
+    scores <- score.res$scores
+    tuning.scores <- score.res$tuning.scores
+    scores.title <- .values_title(results, scores.use, show)
+
     calls <- .grab_results(results, calls.use)$labels
-    pruned.res <- .grab_results(results, pruned.use)
-    if (!is.null(pruned.res$pruned.labels)) {
-        pruned <- is.na(pruned.res$pruned.labels)
-        prune.label <- .prune_label(pruned.use, calls.use)
-    } else {
-        pruned <- NULL
-        prune.label <- "pruned"
-    }
+    calls.title <- .calls_title(results, calls.use, "Calls", show, scores.use)
 
-    # Make data frame
+    prune.calls <- .grab_results(results, calls.use)$pruned.labels
+    prune.label <- .prune_label(results, pruned.use, calls.use)
+
+    # Make & trim data frame
     if (show!="delta.next") {
-        df <- .scores_data_gather(
-            results, show, score.res, calls, pruned, prune.label)
+        df <- .scores_df_gather(
+            show, scores, calls, prune.calls, prune.label)
     } else {
-        df <- .next_data_gather(
-            results, score.res, calls, pruned, prune.label)
+        df <- .next_df_gather(
+            tuning.scores, calls, prune.calls, prune.label)
     }
-
-    # Trim
-    labels <- labels[labels %in% colnames(.grab_results(results, scores.use)$scores)]
-    df <- df[df$label %in% labels,]
+    labels.use <- labels.use[labels.use %in% df$label]
+    df <- df[df$label %in% labels.use,]
 
     ### Creating the plot
-    legend.title <- .legend_title(calls.use, show, scores.use)
-    ylab <- .y_title(show, scores.use)
-
     p <- .plot_score_distribution(
-        df, legend.title, ylab, prune.label,
+        df, calls.title, scores.title, prune.label,
         this.color, pruned.color, other.color, size, ncol, dots.on.top)
-
     if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
         p <- .add_cutoff_lines(
             p, score.res, df, show, show.nmads, show.min.diff)
@@ -210,17 +205,16 @@ plotScoreDistribution <- function(
 }
 
 #' @importFrom DelayedMatrixStats rowMedians
-.scores_data_gather <- function(
-    results, show, score.res, calls, pruned, prune.label = "pruned") {
+.scores_df_gather <- function(
+    show, values, calls, prune.calls, prune.label) {
 
-    values <- score.res$scores
     if (show=="delta.med") {
         values <- values - DelayedMatrixStats::rowMedians(DelayedArray(values), na.rm = TRUE)
     }
 
     # Create a dataframe with separate rows for each score in values.
     df <- data.frame(
-        label = rep(colnames(score.res$scores), nrow(score.res)),
+        label = rep(colnames(values), nrow(values)),
         values = as.numeric(t(values)),
         stringsAsFactors = FALSE)
 
@@ -229,29 +223,29 @@ plotScoreDistribution <- function(
     is.called <- df$label == rep(calls, each=ncol(values))
     df$cell.calls[is.called] <- "assigned"
     # Replace cell.call if cell was pruned.
-    if (!is.null(pruned)) {
-        is.pruned <- rep(pruned, each=ncol(values))
+    if (!is.null(prune.calls)) {
+        is.pruned <- rep(is.na(prune.calls), each=ncol(values))
         df$cell.calls[is.pruned & is.called] <- prune.label
     }
 
     df
 }
 
-.next_data_gather <- function(
-    results, score.res, calls, pruned, prune.label = "pruned") {
+.next_df_gather <- function(
+    tuning.scores, calls, prune.calls, prune.label) {
 
-    if (is.null(score.res$tuning.scores)) {
+    if (is.null(tuning.scores)) {
         stop("Target 'results' lacks fine-tuning diagnostics for 'show=\"delta.next\"'")
     }
 
     df <- data.frame(
-        values = score.res$tuning.scores$first - score.res$tuning.scores$second,
+        values = tuning.scores$first - tuning.scores$second,
         label = calls,
-        cell.calls = rep("assigned", nrow(results)), # don't unrep, protects when nrow(results)=0.
+        cell.calls = rep("assigned", nrow(tuning.scores)), # don't unrep, protects when nrow(tuning.scores)=0.
         stringsAsFactors = FALSE)
 
-    if (!is.null(pruned)) {
-        df$cell.calls[pruned] <- prune.label
+    if (!is.null(prune.calls)) {
+        df$cell.calls[is.na(prune.calls)] <- prune.label
     }
 
     df
@@ -259,18 +253,18 @@ plotScoreDistribution <- function(
 
 .plot_score_distribution <- function(
     df,
-    legend.title, ylab, prune.label,
+    calls.title, scores.title, prune.label,
     this.color, pruned.color, other.color, size, ncol, dots.on.top) {
 
     p <- ggplot2::ggplot(data = df,
             ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
         ggplot2::theme_classic() +
         ggplot2::scale_fill_manual(
-            name = legend.title,
+            name = calls.title,
             breaks = c("assigned", prune.label, "other"),
             values = c(this.color, pruned.color, other.color)) +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
-        ggplot2::ylab(ylab)
+        ggplot2::ylab(scores.title)
 
     if (length(levels(as.factor(df$label))) == 1) {
         p <- p + ggplot2::scale_x_discrete(name = NULL, labels = NULL)
@@ -343,29 +337,11 @@ plotScoreDistribution <- function(
         width = 1, size = 1.1, show.legend = c(color = TRUE, fill = FALSE))
 }
 
-# Sets the Title for the color legend based on which ref's calls are shown
-.legend_title <- function(calls.use, show, scores.use){
-    if (show == "delta.next") {
-        calls.use <- scores.use
-    }
-    switch(as.character(calls.use==0),
-        "TRUE" = "Final Calls",
-        "FALSE" = paste0("Ref #", calls.use, " Calls"))
-}
-
-# Sets the Title for the scores axis based which ref's scores are shown
-.y_title <- function(show, scores.use){
-    target_bit <- switch(as.character(scores.use==0),
-        "TRUE" = "Final",
-        "FALSE" = paste0("Ref #", scores.use))
-    paste(target_bit, show)
-}
-
 # Sets the Title for the color legend based on which ref's pruning calls are shown
-.prune_label <- function(pruned.use, calls.use){
+.prune_label <- function(results, pruned.use, calls.use){
     if (pruned.use!=calls.use) {
         which_pruned <- switch(as.character(pruned.use==0),
-            "TRUE" = "(in Final)",
+            "TRUE" = ifelse(is.null(results$orig.results), "", "(in Final)"),
             "FALSE" = paste0("(in Ref #", pruned.use, ")"))
         paste("pruned", which_pruned)
     } else {
