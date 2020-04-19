@@ -132,43 +132,91 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     color = grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
     silent = FALSE, ..., grid.vars = list())
 {
+    results <- .ensure_named(results)
 
-    ### For multi-ref results
-    if (!is.null(results$orig.results)) {
-        if (show.all.originals) {
-            scores.use <- c(0,seq_along(results$orig.results))
+    if (show.all.originals) {
+        scores.use <- c(0L, seq_along(results$orig.results))
+    }
+    calls.use <- rep(calls.use, length.out=length(scores.use))
+
+    plots <- vector("list", length(scores.use))
+    for (i in seq_along(plots)) {
+
+        # Pulling out the scores to use in this iteration.
+        chosen.scores <- scores.use[i]
+        if (chosen.scores==0L) {
+            score.results <- results
+            score.name <- "combined"
+        } else {
+            score.results <- results$orig.results[[chosen.scores]]
+            score.name <- colnames(results$orig.results)[chosen.scores]
         }
-        # When scores.use is a vector, recursively make calls for each and return plots in a grid.
-        if (length(scores.use)>1) {
-            plots <- lapply(
-                scores.use,
-                function(this) {
-                    plotScoreHeatmap(results, cells.use, labels.use, FALSE,
-                        clusters, show.labels, show.pruned, max.labels,
-                        normalize, cells.order, order.by, scores.use = this,
-                        calls.use, na.color, cluster_cols, annotation_col,
-                        show_colnames, color, silent = TRUE, ...)[[4]]
-                })
-            grid.vars <- c(grid.vars, grobs = plots)
 
-            return(do.call(gridExtra::grid.arrange, grid.vars))
+        scores <- score.results$scores
+        rownames(scores) <- rownames(results)
+        val.title <- sprintf("Scores (%s)", curname)
+
+        # Pulling out the labels to use in this iteration.
+        chosen.calls <-calls.use[i]
+        if (chosen.calls==0L) {
+            call.results <- results
+            call.name <- "combined"
+        } else {
+            call.results <- results$orig.results[[chosen.calls]]
+            call.name <- colnames(results$orig.results)[chosen.calls]
+        }
+
+        labels <- call.results$label
+        pruned <- call.results$pruned
+        names(labels) <- names(pruned) <- rownames(scores)
+        labels.title <- sprintf("Labels (%s)", call.name)
+
+        # Actually creating the heatmap.
+        output <- .plot_score_heatmap(
+            scores=scores,
+            labels=labels,
+            pruned.calls=pruned,
+            cells.use=cells.use, 
+            labels.use=labels.use,
+            clusters=clusters, 
+            show.labels=show.labels, 
+            show.pruned=show.pruned,
+            scores.title=scores.title,
+            labels.title=labels.title,
+            show_colnames=show_colnames,
+            cluster_cols=cluster_cols,
+            silent=silent,
+            color=color,
+            na.color=na.color,
+            normalize=normalize,
+            ...)
+
+        if (silent) {
+            plots[[i]] <- output[[4]]
+        } else {
+            plots[[i]] <- output
         }
     }
 
-    ## Extract data & add names
-    scores <- .grab_results(results, scores.use)$scores
-    rownames(scores) <- rownames(.ensure_named(results))
-    scores.title <- .values_title(results, scores.use, "Scores")
+    # Doing this to be consistent with raw pheatmap() output.
+    if (length(plots)==1L) {
+        plots[[1]]
+    } else {
+        plots
+    }
+}
 
-    labels <- .grab_results(results, calls.use)$labels
-    names(labels) <- rownames(scores)
-    labels.title <- .calls_title(results, calls.use, "Labels")
-
-    prune.calls <- .grab_results(results, calls.use)$pruned.labels
-    prune.calls <- .name_unless_NULL(prune.calls, rownames(scores))
-
-    clusters <- .name_unless_NULL(clusters, rownames(scores))
-    cells.order <- .name_unless_NULL(cells.order, rownames(scores))
+.plot_score_heatmap <- function(
+    scores, labels, prune.calls, 
+    cells.use, labels.use,
+    clusters, show.labels, show.pruned,
+    scores.title, labels.title,
+    show_colnames, cluster_cols, silent,
+    color, na.color, normalize, ...) 
+{
+    # 'scores' is guaranteed to be named by this point.
+    clusters <- rownames(scores)
+    cells.order <- rownames(scores)
 
     # Adjust data
     scores <- .trim_normalize_reorder_scores(
@@ -180,21 +228,12 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         annotation_col, show.labels, labels, labels.title,
         show.pruned, prune.calls, clusters)
 
-    # Make Plot
-    .plot_score_heatmap(
-        scores, scores.title, show_colnames, cluster_cols, silent,
-        annotation_col, color, na.color, normalize, show.pruned, ...)
-}
-
-.plot_score_heatmap <- function(
-    scores, scores.title, show_colnames, cluster_cols, silent,
-    annotation_col, color, na.color, normalize, show.pruned, ...) {
-
     ### Create base args list for making the heatmap
     args <- list(border_color = NA, show_colnames = show_colnames,
         clustering_method = 'ward.D2', cluster_cols = cluster_cols,
         silent = silent, annotation_col = annotation_col,
         ...)
+
     if (is.null(args$cluster_rows)) {
         args$cluster_rows <- ncol(scores)>1
     }
@@ -275,8 +314,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .trim_normalize_reorder_scores <- function(
     scores, scores.title,
     labels.use, max.labels, cells.use, normalize,
-    cluster_cols, order.by, cells.order, labels, clusters) {
-
+    cluster_cols, order.by, cells.order, labels, clusters) 
+{
     scores <- .trim_byLabel_and_normalize_scores(
         scores, labels.use, max.labels, normalize, scores.title)
 
@@ -310,11 +349,13 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             message("No 'labels.use' in ", scores.title, ". Ignoring input.")
         }
     }
+
     # Trim by labels (max.labels) & normalize
     # Determine labels to show based on 'max.labels' with the highest
     # pre-normalized scores, normalize, then remove other labels.
     maxs <- rowMaxs(scale(t(scores)))
     to.keep <- order(maxs,decreasing=TRUE)[seq_len(max.labels)]
+
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
         mmax <- rowMaxs(scores, na.rm = TRUE)
