@@ -36,3 +36,29 @@
     }
     results
 }
+
+.name_unless_NULL <- function(target, names) {
+    if (!is.null(target)) {
+        names(target) <- names
+    }
+    target
+}
+
+.values_title <- function(results, scores.use, val.name){
+    target_bit <- switch(as.character(scores.use==0),
+        "TRUE" = ifelse(is.null(results$orig.results), "", "Final"),
+        "FALSE" = paste0("Ref #", scores.use))
+    paste(target_bit, val.name)
+}
+
+.calls_title <- function(results, calls.use, val.name){
+    if (!is.null(results$orig.results)) {
+        if (calls.use == 0) {
+            return(paste0("Final ", val.name))
+        } else {
+            return(paste0("Ref #", calls.use, " ", val.name))
+        }
+    } else {
+        return(val.name)
+    }
+}

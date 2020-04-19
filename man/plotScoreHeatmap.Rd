@@ -18,12 +18,11 @@ plotScoreHeatmap(
   order.by = c("labels", "clusters"),
   scores.use = 0,
   calls.use = 0,
-  na.color = "gray50",
+  na.color = "gray30",
   cluster_cols = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
-  color = colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
-  main = NA,
+  color = (grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B")))(100),
   silent = FALSE,
   ...,
   grid.vars = list()
@@ -50,11 +49,11 @@ If \code{NULL}, all labels available in \code{results} are presented.}
 
 \item{normalize}{Logical specifying whether correlations should be normalized to lie in [0, 1].}
 
-\item{cells.order}{Integer vector specifying the ordering of cells/columns of the heatmap.
+\item{cells.order}{Integer or String vector specifying how to order the cells/columns of the heatmap.
 Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 Subordinate to \code{cluster_cols}.}
 
-\item{order.by}{String providing the annotation to be used for clustering.
+\item{order.by}{String providing the annotation to be used for cells/columns ordering.
 Can be "labels" (default) or "clusters" (when provided).
 Subordinate to \code{cells.order} and \code{cluster_cols}.}
 
@@ -70,7 +69,7 @@ A value of 0 points to the overall results, while any other integer indicates th
 
 \item{na.color}{String specifying the color for non-calculated scores of multi-reference \code{results}.}
 
-\item{annotation_col, cluster_cols, show_colnames, color, main, silent, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{annotation_col, cluster_cols, show_colnames, color, silent, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 
 \item{grid.vars}{named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}}}
 }
@@ -133,18 +132,15 @@ plotScoreHeatmap(pred, clusters=clusts, labels.use = c("A","B","D"))
 plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
 
 # We can pass extra tweaks the heatmap as well
-plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
-plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
+plotScoreHeatmap(pred, clusters=clusts, fontsize_row = 20)
+plotScoreHeatmap(pred, clusters=clusts, treeheight_row = 15)
+plotScoreHeatmap(pred, clusters=clusts, cluster_col = TRUE, cutree_cols = 5)
 
 ### Multi-Reference Compatibility ###
 
 # When SingleR is run with multiple references, investigation of how scores
 # and calls from particular references contributed to the final outcome can
 # be achieved through utilization of scores.use and calls.use.
-#
-# NOTE: Final scoring in such runs are performed for a subset of labels for
-# each cell, and pheatmaps cannot be made for with NAs.
-# Thus, default output shows final Labels, but scores of individual references
 example(combineRecomputedResults, echo = FALSE)
 plotScoreHeatmap(combined)
 
@@ -158,6 +154,7 @@ plotScoreHeatmap(combined,
     show.all.originals = FALSE,
     scores.use = 2)
 
+plotScoreHeatmap(combined, treeheight_row = 15, normalize = FALSE, labels.use = c("A", "B"))
 
 }
 \seealso{

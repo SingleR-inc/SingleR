@@ -22,14 +22,14 @@
 #' @param show.pruned Logical indicating whether the pruning status of the labels should be shown as an annotation bar, as defined by \code{\link{pruneScores}}.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
-#' @param order.by String providing the annotation to be used for clustering.
+#' @param order.by String providing the annotation to be used for cells/columns ordering.
 #' Can be "labels" (default) or "clusters" (when provided).
 #' Subordinate to \code{cells.order} and \code{cluster_cols}.
-#' @param cells.order Integer vector specifying the ordering of cells/columns of the heatmap.
+#' @param cells.order Integer or String vector specifying how to order the cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' Subordinate to \code{cluster_cols}.
 #' @param na.color String specifying the color for non-calculated scores of multi-reference \code{results}.
-#' @param annotation_col,cluster_cols,show_colnames,color,main,silent,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
+#' @param annotation_col,cluster_cols,show_colnames,color,silent,... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' @param grid.vars named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}}
 #'
 #' @return A heatmap of assignment scores is generated on the current graphics device using \pkg{pheatmap}.
@@ -94,18 +94,15 @@
 #' plotScoreHeatmap(pred, clusters=clusts, max.labels = 4)
 #'
 #' # We can pass extra tweaks the heatmap as well
-#' plotScoreHeatmap(pred, clusters=clusts, fontsize.row = 9)
-#' plotScoreHeatmap(pred, clusters=clusts, cutree_col = 3)
+#' plotScoreHeatmap(pred, clusters=clusts, fontsize_row = 20)
+#' plotScoreHeatmap(pred, clusters=clusts, treeheight_row = 15)
+#' plotScoreHeatmap(pred, clusters=clusts, cluster_col = TRUE, cutree_cols = 5)
 #'
 #' ### Multi-Reference Compatibility ###
 #'
 #' # When SingleR is run with multiple references, investigation of how scores
 #' # and calls from particular references contributed to the final outcome can
 #' # be achieved through utilization of scores.use and calls.use.
-#' #
-#' # NOTE: Final scoring in such runs are performed for a subset of labels for
-#' # each cell, and pheatmaps cannot be made for with NAs.
-#' # Thus, default output shows final Labels, but scores of individual references
 #' example(combineRecomputedResults, echo = FALSE)
 #' plotScoreHeatmap(combined)
 #'
@@ -119,11 +116,11 @@
 #'     show.all.originals = FALSE,
 #'     scores.use = 2)
 #'
+#' plotScoreHeatmap(combined, treeheight_row = 15, normalize = FALSE, labels.use = c("A", "B"))
 #'
 #' @export
 #' @importFrom utils head
 #' @importFrom DelayedArray rowMaxs rowMins
-#' @importFrom grDevices colorRampPalette
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     show.all.originals = TRUE,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
@@ -132,8 +129,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores.use = 0, calls.use = 0, na.color = "gray30",
     cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE,
-    color = colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
-    main = NA, silent = FALSE, ..., grid.vars = list())
+    color = grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
+    silent = FALSE, ..., grid.vars = list())
 {
 
     ### For multi-ref results
@@ -141,8 +138,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         if (show.all.originals) {
             scores.use <- c(0,seq_along(results$orig.results))
         }
+        # When scores.use is a vector, recursively make calls for each and return plots in a grid.
         if (length(scores.use)>1) {
-            # Make individual heatmaps, then return.
             plots <- lapply(
                 scores.use,
                 function(this) {
@@ -150,7 +147,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
                         clusters, show.labels, show.pruned, max.labels,
                         normalize, cells.order, order.by, scores.use = this,
                         calls.use, na.color, cluster_cols, annotation_col,
-                        show_colnames, color, main, silent = TRUE, ...)[[4]]
+                        show_colnames, color, silent = TRUE, ...)[[4]]
                 })
             grid.vars <- c(grid.vars, grobs = plots)
 
@@ -160,93 +157,66 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     ## Extract data & add names
     scores <- .grab_results(results, scores.use)$scores
-    labels <- .grab_results(results, calls.use)$labels
-    labels.title <- .labels_title(results, calls.use)
-    prune.calls <- .grab_results(results, calls.use)$pruned.labels
-
     rownames(scores) <- rownames(.ensure_named(results))
+    scores.title <- .values_title(results, scores.use, "Scores")
+
+    labels <- .grab_results(results, calls.use)$labels
     names(labels) <- rownames(scores)
+    labels.title <- .calls_title(results, calls.use, "Labels")
+
+    prune.calls <- .grab_results(results, calls.use)$pruned.labels
     prune.calls <- .name_unless_NULL(prune.calls, rownames(scores))
+
     clusters <- .name_unless_NULL(clusters, rownames(scores))
     cells.order <- .name_unless_NULL(cells.order, rownames(scores))
 
-    # Make/add-to annotations dataframe
+    # Adjust data
+    scores <- .trim_normalize_reorder_scores(
+        scores, scores.title, labels.use, max.labels, cells.use, normalize,
+        cluster_cols, order.by, cells.order, labels, clusters)
+
+    # Compile annotations
     annotation_col <- .make_annotation_col(
-        annotation_col, show.labels, labels, .labels_title(results, calls.use),
+        annotation_col, show.labels, labels, labels.title,
         show.pruned, prune.calls, clusters)
 
-    # Trim the scores and potential ordering vars by requested cells or labels
-    if (!is.null(cells.use)) {
-        scores <- scores[cells.use,,drop=FALSE]
-        clusters <- clusters[cells.use]
-        labels <- labels[cells.use]
-        cells.order <- cells.order[cells.use]
-    }
-    if (!is.null(labels.use)) {
-        scores <- scores[,labels.use,drop=FALSE]
-    }
-
-    # Determining how to order the cells.
-    #   Simply use current order if clustering turned on.
-    #   Otherwise, by cells.order, if provided, else by order.by which = labels by default.
-    if (cluster_cols) {
-        order <- seq_len(nrow(scores))
-    } else {
-        if (!is.null(cells.order)) {
-            order <- order(cells.order)
-        } else {
-            order.stat <- switch(match.arg(order.by),
-                labels=labels,
-                clusters=clusters
-            )
-            if (is.null(order.stat)) {
-                stop("'clusters' input is required when 'order.by=\"clusters\"'")
-            }
-            order <- order(order.stat)
-        }
-    }
-
-    # Determine labels to show based on 'max.labels' with the highest
-    # pre-normalized scores (not removed until later, as we still need these
-    # values when normalizing the scores).
-    m <- rowMaxs(scale(t(scores)))
-    to.keep <- head(order(m,decreasing=TRUE), max.labels)
-
-    # Normalize the scores between [0, 1] and cube to create more separation.
-    if (normalize) {
-        mmax <- rowMaxs(scores, na.rm = TRUE)
-        mmin <- rowMins(scores, na.rm = TRUE)
-        scores <- (scores-mmin)/(mmax-mmin)
-        scores <- scores^3
-    }
-
-    scores <- scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
-
-    ### Build the heatmap
-    if (!is.null(results$orig.results) && is.na(main)) {
-        main <- paste0("Scores from Ref #", scores.use)
-    }
-    # Create base args list for making the heatmap
-    args <- list(border_color = NA, show_colnames = show_colnames,
-        clustering_method = 'ward.D2', cluster_cols = cluster_cols,
-        main = main, silent = silent, ...)
-
+    # Make Plot
     .plot_score_heatmap(
-        args, t(scores[order,,drop=FALSE]),
-        annotation_col, color, show.pruned, normalize, na.color)
+        scores, scores.title, show_colnames, cluster_cols, silent,
+        annotation_col, color, na.color, normalize, show.pruned, ...)
 }
 
 .plot_score_heatmap <- function(
-    args, mat, annotation_col, color, show.pruned, normalize, na.color) {
+    scores, scores.title, show_colnames, cluster_cols, silent,
+    annotation_col, color, na.color, normalize, show.pruned, ...) {
 
-    ## Set colors and legend display
+    ### Create base args list for making the heatmap
+    args <- list(border_color = NA, show_colnames = show_colnames,
+        clustering_method = 'ward.D2', cluster_cols = cluster_cols,
+        silent = silent, annotation_col = annotation_col,
+        ...)
+    if (is.null(args$cluster_rows)) {
+        args$cluster_rows <- ncol(scores)>1
+    }
+    if (is.null(args$main)) {
+        args$main <- scores.title
+    }
+
+    # Add annotation colors
+    if (is.null(args$annotation_colors)) {
+        args$annotation_colors <-
+            .make_heatmap_annotation_colors(args, show.pruned)
+    }
+
+    # Add scores & score colors
+    ## Set score colors and legend display
     if (normalize) {
         color <- viridis::viridis(100)
         args$breaks <- seq(0, 1, length.out = 101)
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
     } else {
-        abs.max <- max(abs(range(mat, na.rm = TRUE)))
+        abs.max <- max(abs(range(scores, na.rm = TRUE)))
         breaks.len <- length(color)+1
         args$breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
         args$legend_breaks <- c(-abs.max, abs.max, length.out = 3)
@@ -255,24 +225,16 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     args$color <- color
 
     # Replace NAs and add na.color
-    if (any(is.na(mat))) {
+    if (any(is.na(scores))) {
         # value should be 10% distance above current max
         NA_val <- max(args$breaks) + 0.1*diff(range(args$breaks))
-        mat[is.na(mat)] <- NA_val
+        scores[is.na(scores)] <- NA_val
         args$color <- c(args$color, na.color)
         args$breaks <- c(args$breaks, NA_val)
         args$legend_breaks <- c(args$legend_breaks, NA_val)
         args$legend_labels <- c(args$legend_labels, "NA")
     }
-    args$mat <- mat
-
-    # Add in annotations, if any
-    if (ncol(annotation_col)>0) {
-        args$annotation_col <- annotation_col
-    }
-    if (is.null(args$annotation_colors)) {
-        args <- .make_heatmap_annotation_colors(args, show.pruned)
-    }
+    args$mat <- t(scores)
 
     # Troubleshooting and testing purposes
     if (!is.null(args$return.data) && args$return.data) {
@@ -304,14 +266,84 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         annotation_col$Clusters <- clusters[rownames(annotation_col)]
     }
 
+    if (!ncol(annotation_col)>0) {
+        return(NULL)
+    }
     annotation_col
 }
 
-.name_unless_NULL <- function(target, names) {
-    if (!is.null(target)) {
-        names(target) <- names
+.trim_normalize_reorder_scores <- function(
+    scores, scores.title,
+    labels.use, max.labels, cells.use, normalize,
+    cluster_cols, order.by, cells.order, labels, clusters) {
+
+    scores <- .trim_byLabel_and_normalize_scores(
+        scores, labels.use, max.labels, normalize, scores.title)
+
+    if (!is.null(cells.use)) {
+        # Trim by cell
+        scores <- scores[cells.use,,drop=FALSE]
+        # Trim potential ordering vars
+        clusters <- clusters[cells.use]
+        labels <- labels[cells.use]
+        cells.order <- cells.order[cells.use]
     }
-    target
+
+    if (!cluster_cols) {
+        # Order: priority = 'cells.order', then 'order.by' which can be labels or clusters.
+        scores <- .order_score_matrix(
+            scores, cluster_cols, order.by, cells.order, labels, clusters)
+    }
+
+    scores
+}
+
+.trim_byLabel_and_normalize_scores <- function(
+    scores, labels.use, max.labels, normalize, scores.title) {
+
+    # Trim by labels (labels.use)
+    if (!is.null(labels.use)) {
+        labels.use <- labels.use[labels.use %in% colnames(scores)]
+        if (length(labels.use)>0){
+            scores <- scores[,labels.use,drop=FALSE]
+        } else {
+            message("No 'labels.use' in ", scores.title, ". Ignoring input.")
+        }
+    }
+    # Trim by labels (max.labels) & normalize
+    # Determine labels to show based on 'max.labels' with the highest
+    # pre-normalized scores, normalize, then remove other labels.
+    maxs <- rowMaxs(scale(t(scores)))
+    to.keep <- order(maxs,decreasing=TRUE)[seq_len(max.labels)]
+    # Normalize the scores between [0, 1] and cube to create more separation.
+    if (normalize) {
+        mmax <- rowMaxs(scores, na.rm = TRUE)
+        mmin <- rowMins(scores, na.rm = TRUE)
+        scores <- (scores-mmin)/(mmax-mmin)
+        scores <- scores^3
+    }
+    scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
+}
+
+.order_score_matrix <- function(
+    scores, cluster_cols, order.by = c("labels","clusters"),
+    cells.order, labels, clusters) {
+    # By: cells.order, if provided, else by 'order.by' which = "labels" by default, or "clusters".
+
+    if (!is.null(cells.order)) {
+        order <- order(cells.order)
+    } else {
+        order.stat <- switch(match.arg(order.by),
+            labels=labels,
+            clusters=clusters
+        )
+        if (is.null(order.stat)) {
+            stop("'clusters' input is required when 'order.by=\"clusters\"'")
+        }
+        order <- order(order.stat)
+    }
+
+    scores[order,,drop=FALSE]
 }
 
 .make_heatmap_annotation_colors <- function(args, show.pruned) {
@@ -350,14 +382,14 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         row_colors <- dfcolors_out$df_colors
     }
 
-    args$annotation_colors <- c(col_colors, row_colors)
-    args
+    c(col_colors, row_colors)
 }
 
 .make_heatmap_colors_discrete <- function(show.pruned) {
     # Creates a default vector of colors with 24*10 (overkill) options.
     annotation.colors <- rep(
-        c(  # DittoSeq-v0.2.10 Colors
+        # DittoSeq-v0.2.10 Colors (based on Okabe-Ito colors)
+        c(
             "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
             "#D55E00", "#CC79A7", "#666666", "#AD7700", "#1C91D4",
             "#007756", "#D5C711", "#005685", "#A04700", "#B14380",
@@ -372,9 +404,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
 .make_heatmap_colors_numeric <- function() {
     # Creates a default vector of colors with 8*3 (overkill) options.
-        # These represent max.colors for discrete color scales.
+    # These represent max.colors for discrete color scales.
     rep(
-        c(  # DittoSeq-v0.2.10 Colors, distinct order
+        # DittoSeq-v0.2.10 Colors, distinct order, (based on Okabe-Ito colors)
+        c(
             "#B14380", "#A04700", "#005685", "#D5C711", "#007756",
             "#1C91D4", "#AD7700", "#4D4D4D", "#CC79A7", "#D55E00",
             "#0072B2", "#F0E442", "#009E73", "#56B4E9", "#E69F00",
@@ -426,16 +459,4 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     list(df_colors = df_colors,
          next.color.index.discrete = next.color.index.discrete,
          next.color.index.numeric = next.color.index.numeric)
-}
-
-.labels_title <- function(results, calls.use){
-    if (!is.null(results$orig.results)) {
-        if (calls.use == 0) {
-            return("Final Labels")
-        } else {
-            return(paste0("Ref #", calls.use, " Labels"))
-        }
-    } else {
-        return("Labels")
-    }
 }
