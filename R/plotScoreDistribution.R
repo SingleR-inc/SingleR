@@ -148,8 +148,8 @@ plotScoreDistribution <- function(
 {
     results <- .ensure_named(results)
     show <- match.arg(show)
-
     is.combined <- !is.null(results$orig.results)
+    ref.names <- colnames(results$orig.results)
 
     if (is.null(scores.use)) {
         if (is.combined && show != "scores") {
@@ -183,7 +183,7 @@ plotScoreDistribution <- function(
 
         scores <- score.results$scores
         tuning.scores <- score.results$tuning.scores
-        scores.title <- .values_title(is.combined, chosen.scores, show)
+        scores.title <- .values_title(is.combined, chosen.scores, ref.names, show)
 
         # Pulling out the labels to use in this iteration.
         chosen.calls <- calls.use[i]
@@ -194,7 +194,7 @@ plotScoreDistribution <- function(
         }
 
         labels <- call.results$labels
-        labels.title <- .values_title(is.combined, chosen.calls, "Labels")
+        labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
 
         # Pulling out the pruning calls to use in this iteration.
         chosen.pruned <- pruned.use[i]

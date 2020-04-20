@@ -36,9 +36,15 @@
     target
 }
 
-.values_title <- function(is.combined, ref.use, value.name){
-    target_bit <- switch(as.character(ref.use==0),
-        "TRUE" = ifelse(is.combined, "Combined ", ""),
-        "FALSE" = paste0("Ref #", ref.use, " "))
-    paste0(target_bit, value.name)
+.values_title <- function(is.combined, ref.use, ref.names, value.name){
+    if (ref.use==0) {
+        if (is.combined) {
+            front <- "Combined "
+        } else {
+            front <- ""
+        }
+    } else {
+        front <- paste0(ref.names[ref.use], " ")
+    }
+    paste0(front, value.name)
 }

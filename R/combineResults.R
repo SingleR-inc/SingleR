@@ -186,6 +186,10 @@ combineCommonResults <- function(results) {
     }
 
     output$reference <- chosen
+
+    if (is.null(names(results))) {
+        names(results) <- sprintf("ref%i", seq_along(results))
+    }
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     output

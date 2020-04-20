@@ -138,13 +138,13 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     silent = FALSE, ..., grid.vars = list())
 {
     results <- .ensure_named(results)
+    is.combined <- !is.null(results$orig.results)
+    ref.names <- colnames(results$orig.results)
 
     if (is.null(scores.use)) {
         scores.use <- c(0L, seq_along(results$orig.results)) # seq_along(NULL) is nothing.
     }
     calls.use <- rep(calls.use, length.out=length(scores.use))
-
-    is.combined <- !is.null(results$orig.results)
 
     # Delaying the plotting to a single grid.arrange call,
     # even if it's not requested to be silent.
@@ -163,7 +163,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
         scores <- score.results$scores
         rownames(scores) <- rownames(results)
-        scores.title <- .values_title(is.combined, chosen.scores, "Scores")
+        scores.title <- .values_title(is.combined, chosen.scores, ref.names, "Scores")
 
         # Pulling out the labels to use in this iteration.
         chosen.calls <- calls.use[i]
@@ -176,7 +176,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         labels <- call.results$labels
         pruned <- call.results$pruned.labels
         names(labels) <- names(pruned) <- rownames(scores)
-        labels.title <- .values_title(is.combined, chosen.calls, "Labels")
+        labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
 
         # Actually creating the heatmap.
         output <- .plot_score_heatmap(
@@ -351,6 +351,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     if (!is.null(cells.use)) {
         # Trim by cell
         scores <- scores[cells.use,,drop=FALSE]
+
         # Trim potential ordering vars
         clusters <- clusters[cells.use]
         labels <- labels[cells.use]
