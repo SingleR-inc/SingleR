@@ -290,7 +290,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Add scores & score colors
     ## Set score colors and legend display
-    if (normalize) {
+    if (normalize && ncol(scores) > 1) {
         color <- viridis::viridis(100)
         args$breaks <- seq(0, 1, length.out = 101)
         args$legend_breaks <- c(0,1)
@@ -400,10 +400,15 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
-        mmax <- rowMaxs(scores, na.rm = TRUE)
-        mmin <- rowMins(scores, na.rm = TRUE)
-        scores <- (scores-mmin)/(mmax-mmin)
-        scores <- scores^3
+        if (ncol(scores) > 1) {
+            mmax <- rowMaxs(scores, na.rm = TRUE)
+            mmin <- rowMins(scores, na.rm = TRUE)
+            scores <- (scores-mmin)/(mmax-mmin)
+            scores <- scores^3
+        } else {
+            message("Only 1 'labels.use' in ", scores.title, ". Normalization turned off.")
+            # Note that necessary adjustment to coloring is made in .plot_score_heatmap
+        }
     }
     scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
 }

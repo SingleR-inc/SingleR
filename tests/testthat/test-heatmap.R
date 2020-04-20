@@ -58,6 +58,37 @@ test_that("We can pass excess pheatmap::pheatmap parameters through plotScoreHea
     expect_s3_class(plotScoreHeatmap(results = pred, fontsize.row = 5), "pheatmap")
 })
 
+test_that("heatmap scores color can be adjusted when 'normalize = FALSE'", {
+    expect_equal(
+        plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
+            normalize = FALSE,
+            color = colorRampPalette(c("red", "blue"))(33))$color,
+        colorRampPalette(c("red", "blue"))(33))
+})
+
+test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels", {
+    # Should give message but still output plot
+    expect_message(plotScoreHeatmap(results = pred,
+        labels.use = c("A")),
+        paste0("Only 1 'labels.use' in Scores. Normalization turned off."))
+    expect_equal(
+        suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
+            labels.use = c("A"),
+            color = colorRampPalette(c("red", "blue"))(33), # proximal to normalization being turned off
+            return.data = TRUE)$color),
+        colorRampPalette(c("red", "blue"))(33))
+
+    # Should give message but still output plot
+    expect_message(plotScoreHeatmap(results = pred,
+        labels.use = c("a")),
+        paste0("No 'labels.use' in Scores. Ignoring input."))
+    expect_equal(
+        nrow(suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
+            labels.use = c("a"),
+            return.data = TRUE)$mat)),
+        5)
+})
+
 ####################################
 #### Manual Visualization Check ####
 ####################################
@@ -179,7 +210,126 @@ test_that("Ordering works (by cells, by labels, by clusters) and can be combined
         order.by = "clusters"), "pheatmap")
 })
 
+#######################################
+### Prep for multi-reference checks ###
+#######################################
 
-### Be sure to add
-# labels use not in a scores.results
-# plotScoreHeatmap(combined, treeheight_row = 15, normalize = FALSE, labels.use = c("A", "B"))
+ref <- .mockRefData(nreps=8)
+ref1 <- ref[,1:4%%4==0]
+ref1 <- ref1[,sample(ncol(ref1))]
+ref1 <- scater::logNormCounts(ref1)
+
+ref2 <- ref[,1:4%%4!=0]
+ref2 <- ref2[,sample(ncol(ref2))]
+ref2 <- scater::logNormCounts(ref2)
+
+ref2$label <- tolower(ref2$label)
+
+combined <- SingleR(
+    test, ref = list(smallRef = ref1, largeRef = ref2),
+    labels = list(ref1$label, ref2$label))
+
+combined_prunedRef1 <- combined
+combined_prunedRef1$orig.results$smallRef$pruned.labels[1:3%%3==0] <- NA_character_
+
+ref1.pruned <- is.na(combined_prunedRef1$orig.results$smallRef$pruned.labels)
+ref1.title <- "smallRef"
+ref2.title <- "largeRef"
+
+test_that("heatmap can be made for multi-ref runs - combined", {
+    expect_s3_class(plotScoreHeatmap(results = combined, silent = TRUE,
+        scores.use = 0),
+        "pheatmap")
+    # title correct
+    expect_equal(plotScoreHeatmap(results = combined, silent = TRUE,
+        scores.use = 0, return.data = TRUE)$main,
+        "Combined Scores")
+})
+
+test_that("heatmap can be made for multi-ref runs - individual", {
+    expect_s3_class(plotScoreHeatmap(results = combined, silent = TRUE,
+        scores.use = 1),
+        "pheatmap")
+    # title correct
+    expect_equal(plotScoreHeatmap(results = combined, silent = TRUE,
+        scores.use = 1, return.data = TRUE)$main,
+        paste(ref1.title,"Scores"))
+})
+
+test_that("heatmap can be made for multi-ref runs - multiple", {
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        scores.use = 0:1),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        scores.use = NULL),
+        "gtable")
+    expect_equal(
+        length(
+            plotScoreHeatmap(results = combined, silent = TRUE, grid.vars = NULL,
+                scores.use = NULL)),
+        length(
+            plotScoreHeatmap(results = combined, silent = TRUE, grid.vars = NULL,
+                scores.use = 0:2))
+        )
+})
+
+test_that("heatmap multi-ref - calls & pruned calls can be selected with calls.use", {
+    # Individual
+    expect_s3_class(plotScoreHeatmap(results = combined_prunedRef1, scores.use = 1,
+        calls.use = 1, show.pruned = TRUE),
+        "pheatmap")
+    # Call Annot Title
+    expect_true("smallRef Labels" %in%
+        names(plotScoreHeatmap(results = combined_prunedRef1, scores.use = 1, silent = TRUE,
+            calls.use = 1, show.pruned = TRUE, return.data = TRUE)$annotation_col))
+    # Correct prune calls added
+    expect_equal(sum(ref1.pruned),
+        sum(plotScoreHeatmap(results = combined_prunedRef1, scores.use = 1, silent = TRUE,
+            calls.use = 1, show.pruned = TRUE, return.data = TRUE)$annotation_col$Pruned==TRUE))
+    # All
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        calls.use = 1, show.pruned = TRUE,
+        scores.use = NULL),
+        "gtable")
+})
+
+test_that("heatmap multi-ref - 'na.color'", {
+    expect_equal(
+        tail(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE,
+            scores.use = 0,
+            na.color = "#000000")$color, 1),
+        "#000000")
+})
+
+test_that("heatmap multi-ref - Other typical adjustments throw no unexpected errors", {
+    # Our vars
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        normalize = FALSE),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        labels.use = c("A", "a")),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        max.labels = 3),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        clusters = g),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        order.by = "clusters", clusters = g),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        cluster_col = TRUE),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        cells.order = seq_len(nrow(combined))),
+        "gtable")
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        cells.use = 1:20),
+        "gtable")
+
+    # pheatmap var
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        treeheight_row = 5),
+        "gtable")
+})
