@@ -178,3 +178,8 @@ test_that("Ordering works (by cells, by labels, by clusters) and can be combined
         cells.use = 1:50,
         order.by = "clusters"), "pheatmap")
 })
+
+
+### Be sure to add
+# labels use not in a scores.results
+# plotScoreHeatmap(combined, treeheight_row = 15, normalize = FALSE, labels.use = c("A", "B"))

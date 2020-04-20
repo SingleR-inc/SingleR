@@ -77,26 +77,37 @@
 #' # To show the distribution of scores grouped by label:
 #' plotScoreDistribution(results = pred)
 #' # We can display a particular label using the label
-#' plotScoreDistribution(results = pred, labels.use = "B")
+#' plotScoreDistribution(results = pred,
+#'     labels.use = "B")
 #'
 #' # To show the distribution of deltas between cells' maximum and median scores,
-#' #   grouped by label, change `show` to "delta.med":
-#' #   This is useful for checking/adjusting nmads and min.diff.med
-#' plotScoreDistribution(results = pred, show = "delta.med")
-#' # The nmads cutoff can be displayed using show.nmads.
-#' plotScoreDistribution(results = pred, show = "delta.med",
-#'     show.nmads = 3)
-#' # A min.diff.med cutoff can be shown using show.min.diff
-#' plotScoreDistribution(results = pred, show = "delta.med",
-#'     show.min.diff = 0.03)
+#' #   grouped by label, change 'show' to "delta.med":
+#' #   This is useful for checking/adjusting nmads and min.diff.med cutoffs
+#' plotScoreDistribution(results = pred,
+#'     show = "delta.med")
 #'
 #' # To show the distribution of deltas between cells' top 2 fine-tuning scores,
 #' #   grouped by label, change `show` to "delta.next":
-#' #   This is useful for checking/adjusting min.diff.next
+#' #   This is useful for checking/adjusting min.diff.next cutoffs
 #' plotScoreDistribution(results = pred, show = "delta.next")
-#' # A min.diff.med cutoff can be shown using show.min.diff
-#' plotScoreDistribution(results = pred, show = "delta.next",
-#'     show.min.diff = 0.03)
+#'
+#'
+#' ### Visualizing and adjusting pruning cutoffs ###
+#'
+#' # The default nmads cutoff of 3 is displayed when 'show = "delta.med"', but
+#' # this can be adjusted or turned off with 'show.nmads'
+#' plotScoreDistribution(results = pred,
+#'     show = "delta.med", show.nmads = 2)
+#' plotScoreDistribution(results = pred,
+#'     show = "delta.med", show.nmads = NULL)
+#'
+#' # A min.diff cutoff can be shown using 'show.min.diff' when
+#' # 'show = "delta.med"' or 'show = "delta.next"'
+#' plotScoreDistribution(results = pred,
+#'     show = "delta.med", show.min.diff = 0.03)
+#' plotScoreDistribution(results = pred,
+#'     show = "delta.next", show.min.diff = 0.03)
+#'
 #'
 #' ### Multi-Reference Compatibility ###
 #'
@@ -104,34 +115,33 @@
 #' # separate plots for each original reference, as well as for the the combined
 #' # set when 'show' = "scores".
 #' example(combineRecomputedResults, echo = FALSE)
-#' plotScoreDistribution(results = combined, show = "scores")
-#' plotScoreDistribution(results = combined, show = "delta.med")
-#' plotScoreDistribution(results = combined, show = "delta.next")
+#' plotScoreDistribution(results = combined)
+#'
+#' # 'scores.use' sets which original results to plot distributions for, and can
+#' # be multiple or NULL (default)
+#' plotScoreDistribution(results = combined, show = "scores",
+#'     scores.use = 0)
+#' plotScoreDistribution(results = combined, show = "scores",
+#'     scores.use = 1:2)
 #'
 #' # To color and group cells by non-final label and pruned calls,
 #' # use 'calls.use' and 'pruned.use'
-#' plotScoreDistribution(results = combined, show = "delta.med",
-#'     calls.use = 1, pruned.use = 1)
-#' plotScoreDistribution(results = combined, show = "delta.next",
-#'     calls.use = 1, pruned.use = 1)
-#'
-#' # To instead target only final or a certain reference's scores,
-#' # use 'scores.use'.
 #' plotScoreDistribution(results = combined, show = "scores",
-#'     scores.use = 1)
+#'     calls.use = 1, pruned.use = 1)
 #'
-#' plotScoreDistribution(results = combined, show = "delta.med",
-#'     scores.use = 1,
-#'     show.nmads = 3,
-#'     show.min.diff = 0.03)
-#' plotScoreDistribution(results = combined, show = "delta.next",
-#'     scores.use = 1,
-#'     show.min.diff = 0.03)
+#' # To have plots output in a grid rather than as separate pages, provide,
+#' # a list of inputs for gridExtra::grid.arrange() to 'grids.vars'.
+#' plotScoreDistribution(combined,
+#'     grid.vars = list(ncol = 1))
+#'
+#' # An empty list will use grid.arrange defaluts
+#' plotScoreDistribution(combined,
+#'     grid.vars = list())
 #'
 #' @export
 plotScoreDistribution <- function(
     results,
-    show = c("delta.med", "delta.next", "scores"),
+    show = c("scores", "delta.med", "delta.next"),
     labels.use = colnames(results$scores),
     scores.use = NULL,
     calls.use = 0,
@@ -142,9 +152,9 @@ plotScoreDistribution <- function(
     this.color = "#F0E442",
     pruned.color = "#E69F00",
     other.color = "gray60",
-    show.nmads = NULL,
+    show.nmads = 3,
     show.min.diff = NULL,
-    grid.vars = list())
+    grid.vars = NULL)
 {
     results <- .ensure_named(results)
     show <- match.arg(show)
@@ -166,8 +176,6 @@ plotScoreDistribution <- function(
         calls.use <- scores.use
     }
 
-    # Delaying the plotting to a single grid.arrange call,
-    # even if it's not requested to be silent.
     use.grid <- !is.null(grid.vars) && length(scores.use) > 1L
 
     plots <- vector("list", length(scores.use))
@@ -203,34 +211,28 @@ plotScoreDistribution <- function(
         } else {
             prune.results <- results$orig.results[[chosen.pruned]]
         }
+
         prune.calls <- prune.results$pruned.labels
-        prune.title <- .prune_label(is.combined, chosen.pruned, chosen.calls)
+        prune.title <- .values_title(
+            is.combined, chosen.pruned, paste0("(",ref.names,")"), "pruned")
+
+        # Calculate nmad.cutoff values for 'show.nmads'
+        if (show == "delta.med" && !is.null(show.nmads)) {
+            nmad.vals <- pruneScores(score.results, get.thresholds=TRUE, nmads = show.nmads)
+        }
 
         # Actually creating the plot
         output <- .plot_score_distribution(
             show, scores, tuning.scores, labels, prune.calls, labels.use,
             labels.title, scores.title, prune.title,
-            this.color, pruned.color, other.color, size, ncol, dots.on.top)
-        if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
-            output <- .add_cutoff_lines(
-                output, score.results, show, show.nmads, show.min.diff)
-        }
+            this.color, pruned.color, other.color, size, ncol, dots.on.top,
+            show.nmads, show.min.diff, nmad.vals)
 
         plots[[i]] <- output
     }
 
-    ### Creating the plot
-    p <- .plot_score_distribution(
-        show, scores, tuning.scores, labels, prune.calls, labels.use,
-        labels.title, scores.title, prune.title,
-        this.color, pruned.color, other.color, size, ncol, dots.on.top)
-    if (grepl("delta",show) && !(is.null(show.nmads)) || !(is.null(show.min.diff))) {
-        p <- .add_cutoff_lines(
-            p, score.results, show, show.nmads, show.min.diff)
-    }
-
     if (length(plots)==1L) {
-        # Doing this to be consistent with raw pheatmap() output.
+        # Doing this to be consistent with raw ggplot output.
         plots[[1]]
     } else {
         if (use.grid) {
@@ -244,9 +246,10 @@ plotScoreDistribution <- function(
 .plot_score_distribution <- function(
     show, scores, tuning.scores, labels, prune.calls, labels.use,
     labels.title, scores.title, prune.title,
-    this.color, pruned.color, other.color, size, ncol, dots.on.top) {
+    this.color, pruned.color, other.color, size, ncol, dots.on.top,
+    show.nmads, show.min.diff, nmad.vals) {
 
-    # Make & trim data frame
+    # Make data frame
     if (show!="delta.next") {
         df <- .scores_df_gather(
             show, scores, labels, prune.calls, prune.title)
@@ -254,9 +257,12 @@ plotScoreDistribution <- function(
         df <- .next_df_gather(
             tuning.scores, labels, prune.calls, prune.title)
     }
+
+    # Trim dataframe by labels
     labels.use <- labels.use[labels.use %in% df$label]
     df <- df[df$label %in% labels.use,]
 
+    # Set plot values and theming
     p <- ggplot2::ggplot(data = df,
             ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
         ggplot2::theme_classic() +
@@ -273,12 +279,13 @@ plotScoreDistribution <- function(
         p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
     }
 
-    # Adding the frills:
+    # Adding the data:
     if (!dots.on.top) {
         p <- p + ggplot2::geom_jitter(
             height = 0, width = 0.3, color = "black", shape = 16,size = size,
             na.rm = TRUE)
     }
+
     p <- p + ggplot2::geom_violin(na.rm=TRUE)
 
     if (dots.on.top) {
@@ -286,6 +293,12 @@ plotScoreDistribution <- function(
             height = 0, width = 0.3, color = "black", shape = 16,size = size,
             na.rm = TRUE)
     }
+
+    # Add cutoff lines
+    if (grepl("delta",show) && !is.null(show.nmads) || !(is.null(show.min.diff))) {
+            p <- .add_cutoff_lines(
+                p, show, show.nmads, show.min.diff, nmad.vals, labels.use)
+        }
 
     p
 }
@@ -338,12 +351,12 @@ plotScoreDistribution <- function(
 }
 
 .add_cutoff_lines <- function(
-    p, results, show, show.nmads, show.min.diff) {
+    p, show, show.nmads, show.min.diff, nmad.vals, labels.use) {
 
-    if (show == "delta.med" && !(is.null(show.nmads))) {
+    if (show == "delta.med" && !is.null(show.nmads)) {
         # Add cutoff line for nmads cutoff
             # Uses geom_error (error bars, but with ymin = ymax)
-        p <- .add_nmads_lines(p, results, show.nmads)
+        p <- .add_nmads_lines(p, nmad.vals, labels.use)
     }
 
     if (grepl("delta",show) && !(is.null(show.min.diff))) {
@@ -372,28 +385,18 @@ plotScoreDistribution <- function(
 }
 
 #' @importFrom stats median mad
-.add_nmads_lines <- function(p, results, show.nmads) {
-    to.show <- pruneScores(results, get.thresholds=TRUE)
+.add_nmads_lines <- function(p, nmad.vals, labels.use) {
 
-    df <- data.frame(label=names(to.show), nmads.cutoff=to.show,
+    df <- data.frame(
+        label=names(nmad.vals),
+        nmads.cutoff=nmad.vals,
         values=0, # to keep the inherited aes_string() happy.
-        cell.calls=rep("assigned", length(to.show)),
-        mad=rep("1.nmad", length(to.show))) # Add dummy var for setting color later.
+        cell.calls=rep("assigned", length(nmad.vals)),
+        mad=rep("1.nmad", length(nmad.vals))) # Add dummy var for setting color later.
+
+    df <- df[df$label %in% labels.use, , drop=FALSE]
 
     p + ggplot2::geom_errorbar(data = df, na.rm=TRUE,
         ggplot2::aes_string(x = "cell.calls", ymin= "nmads.cutoff", ymax= "nmads.cutoff", color = "mad"),
         width = 1, size = 1.1, show.legend = c(color = TRUE, fill = FALSE))
 }
-
-# Sets the Title for the color legend based on which ref's pruning calls are shown
-.prune_label <- function(is.combined, chosen.pruned, chosen.calls){
-    if (chosen.pruned!=chosen.calls) {
-        which_pruned <- switch(as.character(chosen.pruned==0),
-            "TRUE" = ifelse(is.combined, "(in Final)", ""),
-            "FALSE" = paste0("(in Ref #", chosen.pruned, ")"))
-        paste("pruned", which_pruned)
-    } else {
-        "pruned"
-    }
-}
-

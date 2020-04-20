@@ -184,3 +184,6 @@ test_that("we can add cutoffs to single and multi-label plots.", {
             results = pred2, show = "delta.next", show.min.diff = 0.05),
        NA)
 })
+
+### Be sure to add
+# Test for when pruned.usse and calls.use not equal
