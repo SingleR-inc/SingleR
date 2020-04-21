@@ -7,6 +7,8 @@
 
 \item Added mappings to standardized Cell Ontology terms in all \code{*Data()} functions.
 
+\item Changed the name of the \code{labels} input of \code{plotScoreDistribution()} to \code{labels.use} for consistency across functions.
+
 \item Fixed a label from adipocytes to astrocytes in \code{BlueprintEncodeData()}.
 
 \item Removed umlauts from labels (e.g., naive) in \code{NovershternHematopoieticData()} to avoid problems with Windows.

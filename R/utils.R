@@ -21,3 +21,30 @@
 
     x
 }
+
+.ensure_named <- function(results) {
+    if (is.null(rownames(results))) {
+        rownames(results) <- seq_len(nrow(results))
+    }
+    results
+}
+
+.name_unless_NULL <- function(target, names) {
+    if (!is.null(target)) {
+        names(target) <- names
+    }
+    target
+}
+
+.values_title <- function(is.combined, ref.use, ref.names, value.name){
+    if (ref.use==0) {
+        if (is.combined) {
+            front <- "Combined "
+        } else {
+            front <- ""
+        }
+    } else {
+        front <- paste0(ref.names[ref.use], " ")
+    }
+    paste0(front, value.name)
+}
