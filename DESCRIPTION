@@ -1,7 +1,7 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
 Version: 1.1.14
-Date: 2020-04-11
+Date: 2020-04-20
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
@@ -39,7 +39,6 @@ Suggests:
     scater,
     scRNAseq,
     scran,
-    BiocGenerics,
     ggplot2,
     pheatmap,
     grDevices,
