@@ -22,8 +22,9 @@
 #' \item A list of character vectors containing marker genes for each label.
 #' }
 #' 
-#' If \code{ref} is a list, then it can be a list of either of the two above choices,
-#' where each element contains markers for labels in the corresponding entry of \code{ref}.
+#' If \code{ref} is a list, 
+#' \code{genes} can be a list of lists of (lists of) character vectors, i.e., either of the two above choices.
+#' Each element of the outer-most list should contain markers for labels in the corresponding entry of \code{ref}.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
 #' @param de.method String specifying how DE genes should be detected between pairs of labels.
@@ -107,8 +108,13 @@
 #'
 #' @section Dealing with multiple references:
 #' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combine-predictions}} for an explanation).
-#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{de="genes"} or \code{"sd"}.
+#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{genes="de"} or \code{"sd"}.
 #' Rank calculation and index construction is then performed within each reference separately.
+#'
+#' Alternatively, \code{genes} can still be used to explicitly specify marker genes for each label in each of multiple references.
+#' This is achieved by passing a list of lists to \code{genes},
+#' where each inner list corresponds to a reference in \code{ref} and can be of any format described in \dQuote{Custom feature specification}.
+#' Thus, it is possible for \code{genes} to be - wait for it - a list (per reference) of lists (per label) of lists (per label) of character vectors.
 #'
 #' If \code{recompute=TRUE}, the output is exactly equivalent to running \code{trainSingleR} on each reference separately.
 #' If \code{recompute=FALSE}, \code{trainSingleR} is also run each reference but the difference is that the final \code{common} set of genes consists of the union of common genes across all references.
@@ -130,29 +136,11 @@
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
-#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedReuslts}}, to combine results from multiple references.
+#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+#'
 #' @examples
-#' ##############################
-#' ## Mocking up training data ##
-#' ##############################
-#'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#'
-#' g <- rep(LETTERS[1:5], each=4)
-#' ref <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g), 
-#'         lambda=10*2^means[,g]), ncol=length(g))),
-#'     colData=DataFrame(label=g)
-#' )
-#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
-#' 
-#' ########################
-#' ## Doing the training ##
-#' ########################
+#' # Making up some data for a quick demonstration.
+#' ref <- .mockRefData()
 #'
 #' # Normalizing and log-transforming for automated marker detection.
 #' ref <- scater::logNormCounts(ref)
@@ -248,6 +236,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
     # Choosing the gene sets of interest. 
     args <- list()
+
     if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
@@ -257,7 +246,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         }
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
-        .validate_de_gene_set(genes, labels)
+        genes <- .validate_de_gene_set(genes, labels)
         common <- unique(unlist(genes))
 
         # Ensure that the user hasn't supplied genes that aren't available.
@@ -272,19 +261,19 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
-        if (genes=="de") {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
-            common <- unique(unlist(extra))
-        } else if (genes=="sd") {
+        if (genes=="sd") {
             sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh)
             common <- sd.out$genes
             extra <- sd.out$mat
             args$sd.thresh <- sd.thresh
         } else {
-            common <- rownames(ref)
-            extra <- .median_by_label(ref, labels)
-            genes <- "sd"
-            args$sd.thresh <- sd.thresh
+            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
+            if (genes=="de") {
+                common <- unique(unlist(extra))
+            } else {
+                genes <- "de"
+                common <- rownames(ref)
+            }
         }
     }
 
@@ -306,7 +295,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     indices <- original <- List()
-    for (u in unique(labels)) {
+    ulabels <- .get_levels(labels)
+    for (u in ulabels) {
         # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
         current <- ref[,labels==u,drop=FALSE] 
 
@@ -328,18 +318,21 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     )
 }
 
+.get_levels <- function(labels) sort(unique(labels))
+
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list()) {
     if (de.method=="classic") {
-        ulabels <- unique(labels)
         mat <- .median_by_label(ref, labels)
         if (is.null(de.n)) {
             de.n <- round(500*(2/3)^log2(ncol(mat)))
         }
 
+        ulabels <- .get_levels(labels)
         collected <- list()
         for (i in ulabels) {
             subcollected <- list()
+
             for (j in ulabels) {
                 s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
                 s <- s[s>0]
@@ -388,21 +381,26 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 }
 
 .validate_de_gene_set <- function(genes, labels) {
-    ulabels <- unique(labels)
+    ulabels <- .get_levels(labels)
     if (!all(ulabels %in% names(genes))) {
         stop("need marker gene information for each label")
     }
+
+    genes <- genes[ulabels]
     for (u in ulabels) {
         if (!all(ulabels %in% names(genes[[u]]))) {
             stop("need marker genes between each pair of labels")
         }
+        genes[[u]] <- genes[[u]][ulabels]
     }
+
+    genes
 }
 
 #' @importFrom DelayedMatrixStats rowMedians
 #' @importFrom DelayedArray DelayedArray
 .median_by_label <- function(mat, labels) {
-    ulabels <- unique(labels)
+    ulabels <- .get_levels(labels)
     output <- matrix(0, nrow(mat), length(ulabels))
     rownames(output) <- rownames(mat)
     colnames(output) <- ulabels

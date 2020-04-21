@@ -1,15 +1,12 @@
 #include "Rcpp.h"
 #include "beachmat/numeric_matrix.h"
-#include "scaled_ranks.h"
+#include "compute_scores.h"
 
-#include <set>
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
 #include <tuple>
-
-typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
 
 typedef std::tuple<int, double, double> tuned_stats;
 
@@ -54,7 +51,7 @@ public:
         bool unchanged=false;
         while (labels_in_use.size() > 1 && !unchanged) {
             commonFUN(labels_in_use, genes_in_use);
-            get_scores(references, quantile);
+            fill_new_scores(references, quantile);
 
             size_t topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
             best_label=labels_in_use[topI];
@@ -80,14 +77,13 @@ public:
 
         return tuned_stats(best_label, max_score, next_score);
     }
-
-    void get_scores(const matrix_list& references, double quantile) {
+private:
+    void fill_new_scores(const matrix_list& references, double quantile) {
         scaled_ranks(holder_left.begin(), genes_in_use, collected, scaled_left);
-        new_scores.clear();
-        new_scores.reserve(labels_in_use.size());
+        new_scores.resize(labels_in_use.size());
 
-        for (auto l : labels_in_use) {
-            auto current=references[l].get();
+        for (size_t l=0; l<labels_in_use.size(); ++l) {
+            auto current=references[labels_in_use[l]].get();
             const size_t ncells=current->get_ncol();
             all_correlations.clear();
             all_correlations.reserve(ncells);
@@ -103,29 +99,9 @@ public:
                 }
                 all_correlations.push_back(1 - 2*dist);
             }
-
-            if (quantile==1 || ncells==1) {
-                new_scores.push_back(*std::max_element(all_correlations.begin(), all_correlations.end()));
-            } else {
-                // See logic in .find_nearest_quantile().
-                const double denom=ncells-1;
-                const size_t qn=std::floor(denom * quantile) + 1;
-
-                // Technically, I should do (qn-1)+1, with the first -1 being to get zero-indexed values
-                // and the second +1 to obtain the ceiling. But they cancel out, so I won't.
-                std::nth_element(all_correlations.begin(), all_correlations.begin()+qn, all_correlations.end());
-                const double rightval=all_correlations[qn];
-
-                // Do NOT be tempted to do the second nth_element with the end at end()+qn;
-                // this does not handle ties properly.
-                std::nth_element(all_correlations.begin(), all_correlations.begin()+qn-1, all_correlations.end());
-                const double leftval=all_correlations[qn-1];
-
-                const double rightweight=quantile - ((qn-1)/denom);
-                const double leftweight=(qn/denom) - quantile;
-                new_scores.push_back((rightval * rightweight + leftval * leftweight)/(rightweight + leftweight));
-            }
+            new_scores[l]=correlations_to_scores(all_correlations, quantile);
         }
+        return;
     }
 private:
     Rcpp::NumericVector holder_left, holder_right;

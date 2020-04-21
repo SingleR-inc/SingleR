@@ -14,7 +14,7 @@ test_that("SingleR works in SD mode", {
 })
 
 test_that("SingleR works with custom gene selection", {
-    all.labs <- unique(training$label)
+    all.labs <- sort(unique(training$label))
     collected <- rep(list(tail(rownames(training), 100)), length(all.labs))
     names(collected) <- all.labs
 

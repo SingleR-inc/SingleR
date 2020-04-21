@@ -7,7 +7,7 @@ test_that("trainSingleR works correctly for genes='de'", {
 
     # Checking that the original expression is correctly returned,
     # and that the NN indices are correctly constructed.
-    for (u in unique(training$label)) {
+    for (u in sort(unique(training$label))) {
         current <- u == training$label
         expect_identical(out$original.exprs[[u]], logcounts(training)[,current]+0)
         expect_s4_class(out$nn.indices[[u]], "BiocNeighborIndex")
@@ -15,7 +15,7 @@ test_that("trainSingleR works correctly for genes='de'", {
     }
 
     # Checking the structure of the DE gene set.
-    expect_identical(names(out$search$extra), unique(training$label))
+    expect_identical(names(out$search$extra), sort(unique(training$label)))
     for (u in names(out$search$extra)) {
         expect_identical(names(out$search$extra[[u]]), names(out$search$extra))
         expect_identical(out$search$extra[[u]][[u]], character(0))
@@ -35,7 +35,7 @@ test_that("trainSingleR works correctly for genes='sd'", {
     expect_identical(out$search$mode, "sd")
 
     # Checking the structure of the extras (a median matrix).
-    expect_identical(colnames(out$search$extra), unique(training$label))
+    expect_identical(colnames(out$search$extra), sort(unique(training$label)))
     expect_identical(rownames(out$search$extra), rownames(training))
 
     # Checking the selected genes.
@@ -46,9 +46,7 @@ test_that("trainSingleR works correctly for genes='all'", {
     out <- trainSingleR(training, training$label, genes='all')
     expect_identical(out$common.genes, rownames(training))
 
-    # Because the search is equivalent to doing a fixed 'SD' search,
-    # there's no DE information for fine-tuning later.
-    ref <- trainSingleR(training, training$label, genes='sd')
+    ref <- trainSingleR(training, training$label, genes='de')
     expect_identical(ref$search, out$search)
 })
 
@@ -315,15 +313,15 @@ test_that("trainSingleR behaves with silly inputs", {
 
     out <- trainSingleR(training[0,], training$label)
     expect_identical(out$common.genes, character(0))
-    expect_identical(names(out$search$extra), unique(training$label))
-    expect_identical(names(out$original.exprs), unique(training$label))
-    expect_identical(names(out$nn.indices), unique(training$label))
+    expect_identical(names(out$search$extra), sort(unique(training$label)))
+    expect_identical(names(out$original.exprs), sort(unique(training$label)))
+    expect_identical(names(out$nn.indices), sort(unique(training$label)))
 
     out <- trainSingleR(training[0,], training$label, genes='sd')
     expect_identical(out$common.genes, character(0))
-    expect_identical(colnames(out$search$extra), unique(training$label))
-    expect_identical(names(out$original.exprs), unique(training$label))
-    expect_identical(names(out$nn.indices), unique(training$label))
+    expect_identical(colnames(out$search$extra), sort(unique(training$label)))
+    expect_identical(names(out$original.exprs), sort(unique(training$label)))
+    expect_identical(names(out$nn.indices), sort(unique(training$label)))
 
     unnamed <- unname(training)
     expect_error(trainSingleR(unnamed, unnamed$label), "must have row names")

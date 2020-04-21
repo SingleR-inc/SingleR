@@ -1,7 +1,7 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 1.1.13
-Date: 2020-03-27
+Version: 1.1.14
+Date: 2020-04-11
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
@@ -16,6 +16,7 @@ Imports:
     methods,
     Matrix,
     S4Vectors,
+    BiocGenerics,
     DelayedArray,
     DelayedMatrixStats,
     BiocNeighbors,

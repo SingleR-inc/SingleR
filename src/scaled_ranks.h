@@ -6,8 +6,8 @@ typedef std::vector<std::pair<double, size_t> > ranked_vector;
 template <class IT> 
 void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& collected, std::vector<double>& outgoing) {
     size_t slen=chosen.size();
-    collected.reserve(slen);
     collected.clear();
+    collected.reserve(slen);
 
     // Sorting all subsetted values (zeroes are handled separately for greater efficiency).
     size_t s=0;
@@ -24,7 +24,6 @@ void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& colle
     // Computing tied ranks. 
     size_t cur_rank=0;
     auto cIt=collected.begin();
-    outgoing.clear();
     outgoing.resize(slen);
 
     while (cIt!=collected.end()) {
@@ -55,11 +54,11 @@ void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& colle
     }
 
     // Special behaviour for no-variance genes; these are left as all-zero scaled ranks.
-    if (sum_squares!=0) {
-        sum_squares = std::sqrt(sum_squares)*2;
-        for (auto& o : outgoing) {
-            o/=sum_squares;
-        }
+    sum_squares = std::max(sum_squares, 0.00000001);
+    sum_squares = std::sqrt(sum_squares)*2;
+    for (auto& o : outgoing) {
+        o/=sum_squares;
     }
+
     return;
 }

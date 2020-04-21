@@ -12,6 +12,8 @@
 \item Removed umlauts from labels (e.g., naive) in \code{NovershternHematopoieticData()} to avoid problems with Windows.
 
 \item Perform PCA before clustering in \code{aggregateReference()} for speed and memory efficiency.
+
+\item Modified \code{genes="all"} behavior in \code{trainSingleR()} to report DE-based markers for fine-tuning only.
 }}
 
 \section{Version 1.0.0}{\itemize{
