@@ -154,7 +154,7 @@ plotScoreDistribution <- function(
     other.color = "gray60",
     show.nmads = 3,
     show.min.diff = NULL,
-    grid.vars = NULL)
+    grid.vars = list())
 {
     results <- .ensure_named(results)
     show <- match.arg(show)
@@ -185,6 +185,9 @@ plotScoreDistribution <- function(
         chosen.scores <- scores.use[i]
         if (chosen.scores==0L) {
             score.results <- results
+            if (is.combined && show != "scores") {
+                stop("'show = ",show,"' cannot be used for combined results.")
+            }
         } else {
             score.results <- results$orig.results[[chosen.scores]]
         }
@@ -259,8 +262,12 @@ plotScoreDistribution <- function(
     }
 
     # Trim dataframe by labels
-    labels.use <- labels.use[labels.use %in% df$label]
-    df <- df[df$label %in% labels.use,]
+    if (any(labels.use %in% df$label)) {
+        labels.use <- labels.use[labels.use %in% df$label]
+        df <- df[df$label %in% labels.use,]
+    } else {
+        message("No 'labels.use' in ", scores.title, ". Ignoring input.")
+    }
 
     # Set plot values and theming
     p <- ggplot2::ggplot(data = df,
