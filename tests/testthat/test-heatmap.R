@@ -280,14 +280,9 @@ test_that("heatmap multi-ref - 'na.color'", {
 
 test_that("heatmap multi-ref - labels with no scores are removed", {
     combined$scores <- cbind(combined$scores, "f" = NA)
-    combined$scores <- cbind(combined$scores, "F" = NA)
-    expect_equal(
-        c("F","f") %in% colnames(combined$scores),
-        c(TRUE, TRUE))
-    expect_equal(
-        c("F","f") %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE,
-            scores.use = 0)$mat),
-        c(FALSE, FALSE))
+    expect_true("f" %in% colnames(combined$scores))
+    expect_false("f" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE,
+            scores.use = 0)$mat))
 })
 
 test_that("heatmap multi-ref - Other typical adjustments throw no unexpected errors", {

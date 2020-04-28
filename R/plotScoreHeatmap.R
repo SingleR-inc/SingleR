@@ -401,10 +401,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores, labels.use, max.labels, normalize, scores.title) {
 
     # Trim by labels (remove any with no scores)
-    all.na <- vapply(
-        seq_len(ncol(scores)),
-        function(x) all(is.na(scores[,x])),
-        FUN.VALUE = logical(1))
+    all.na <- apply(scores, 2, FUN = function(x) all(is.na(x)))
     scores <- scores[,!all.na]
 	
 	# Trim by labels (labels.use)
