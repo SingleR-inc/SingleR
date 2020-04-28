@@ -414,11 +414,21 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         }
     }
 
-    # Trim by labels (max.labels) & normalize
-    # Determine labels to show based on 'max.labels' with the highest
-    # pre-normalized scores, normalize, then remove other labels.
-    maxs <- rowMaxs(scale(t(scores)))
-    to.keep <- order(maxs,decreasing=TRUE)[seq_len(max.labels)]
+    ## Trim by labels (max.labels) & normalize
+    # Determine labels to show based on 'max.labels' with the highest...
+    if (sum(is.na(scores)) < 0.10*prod(dim(scores))) {
+    	# (Individual reference, should really have no NAs)
+	    # pre-normalized scores relative to mean and stdev (per label)
+    	maxs <- rowMaxs(scale(t(scores)), na.rm = TRUE)
+    	to.keep <- order(maxs, decreasing = TRUE)[seq_len(max.labels)]
+    } else {
+    	# (Combined reference, should confoundingly many NAs)
+    	# number of calls, with highest number of times scored in general as tie-breaker
+    	calcs <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
+    	# factor ensures labels with no calls are kept
+    	calls <- table(factor(apply(scores, 1, which.max), levels = seq_len(ncol(scores))))
+    	to.keep <- order(calls, calcs, decreasing = TRUE)[seq_len(max.labels)]
+    }
 
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
@@ -432,6 +442,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             # Note that necessary adjustment to coloring is made in .plot_score_heatmap
         }
     }
+    # Drop labels exceeding 'max.labels' after normalization.
     scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
 }
 
