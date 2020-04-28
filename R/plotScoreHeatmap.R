@@ -403,8 +403,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     # Trim by labels (remove any with no scores)
     all.na <- apply(scores, 2, FUN = function(x) all(is.na(x)))
     scores <- scores[,!all.na]
-	
-	# Trim by labels (labels.use)
+
+    # Trim by labels (labels.use)
     if (!is.null(labels.use)) {
         labels.use <- labels.use[labels.use %in% colnames(scores)]
         if (length(labels.use)>0){
@@ -416,18 +416,18 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     ## Trim by labels (max.labels) & normalize
     # Determine labels to show based on 'max.labels' with the highest...
-    if (sum(is.na(scores)) < 0.10*prod(dim(scores))) {
-    	# (Individual reference, should really have no NAs)
-	    # pre-normalized scores relative to mean and stdev (per label)
-    	maxs <- rowMaxs(scale(t(scores)), na.rm = TRUE)
-    	to.keep <- order(maxs, decreasing = TRUE)[seq_len(max.labels)]
+    if (any(is.na(scores))) {
+        # (individual reference)
+        # pre-normalized scores relative to mean and stdev (per label)
+        maxs <- rowMaxs(scale(t(scores)), na.rm = TRUE)
+        to.keep <- order(maxs, decreasing = TRUE)[seq_len(max.labels)]
     } else {
-    	# (Combined reference, should confoundingly many NAs)
-    	# number of calls, with highest number of times scored in general as tie-breaker
-    	calcs <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
-    	# factor ensures labels with no calls are kept
-    	calls <- table(factor(apply(scores, 1, which.max), levels = seq_len(ncol(scores))))
-    	to.keep <- order(calls, calcs, decreasing = TRUE)[seq_len(max.labels)]
+        # (combined scores)
+        # number of final calls, then the number of times scored in general
+        num.calcs <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
+        # factor ensures labels with no calls are kept
+        times.best <- tabulate(apply(scores, 1, which.max), nbins = ncol(scores))
+        to.keep <- order(times.best, num.calcs, decreasing = TRUE)[seq_len(max.labels)]
     }
 
     # Normalize the scores between [0, 1] and cube to create more separation.
