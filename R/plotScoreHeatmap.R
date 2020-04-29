@@ -195,6 +195,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         scores <- score.results$scores
         rownames(scores) <- rownames(results)
         scores.title <- .values_title(is.combined, chosen.scores, ref.names, "Scores")
+        scores.labels <- score.results$labels
 
         # Pulling out the labels to use in this iteration.
         chosen.calls <- calls.use[i]
@@ -208,7 +209,6 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         prune.calls <- call.results$pruned.labels
         names(labels) <- names(prune.calls) <- rownames(scores)
         labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
-        final.labels <- results$labels
 
         # Actually creating the heatmap.
         output <- .plot_score_heatmap(
@@ -232,7 +232,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             color=color,
             na.color=na.color,
             normalize=normalize,
-            final.labels=final.labels,
+            scores.labels=scores.labels,
             ...)
 
         if (use.grid) {
@@ -260,7 +260,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters, cells.order, order.by, show.labels, show.pruned,
     scores.title, labels.title,
     show_colnames, cluster_cols, annotation_col, silent,
-    color, na.color, normalize, final.labels, ...)
+    color, na.color, normalize, scores.labels, ...)
 {
     # 'scores' is guaranteed to be named by this point.
     clusters <- .name_unless_NULL(clusters, rownames(scores))
@@ -279,7 +279,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cells.order=cells.order,
         labels=labels,
         clusters=clusters,
-        final.labels)
+        scores.labels)
 
     # Compile annotations
     annotation_col <- .make_annotation_col(
@@ -377,10 +377,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .trim_normalize_reorder_scores <- function(
     scores, scores.title,
     labels.use, max.labels, cells.use, normalize,
-    cluster_cols, order.by, cells.order, labels, clusters, final.labels)
+    cluster_cols, order.by, cells.order, labels, clusters, scores.labels)
 {
     scores <- .trim_byLabel_and_normalize_scores(
-        scores, labels.use, max.labels, normalize, scores.title, final.labels)
+        scores, labels.use, max.labels, normalize, scores.title, scores.labels)
 
     if (!is.null(cells.use)) {
         # Trim by cell
@@ -402,7 +402,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 }
 
 .trim_byLabel_and_normalize_scores <- function(
-    scores, labels.use, max.labels, normalize, scores.title, final.labels) {
+    scores, labels.use, max.labels, normalize, scores.title, scores.labels) {
 
     # Trim by labels (remove any with no scores)
     all.na <- apply(scores, 2, FUN = function(x) all(is.na(x)))
@@ -420,20 +420,19 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     ## Trim by labels (max.labels) & normalize
     # Determine labels to show based on 'max.labels' with the highest...
+    # number of final calls
+    times.best <- table(factor(scores.labels, levels = colnames(scores)))
+    # and secondarily by... 
     if (!any(is.na(scores))) {
         # (individual reference)
         # pre-normalized scores relative to mean and stdev (per label)
-        maxs <- rowMaxs(scale(t(scores)), na.rm = TRUE)
-        to.keep <- order(maxs, decreasing = TRUE)[seq_len(max.labels)]
+        secondary <- rowMaxs(scale(t(scores)), na.rm = TRUE)
     } else {
         # (combined scores)
-        # number of final calls, then the number of times scored in general
-        num.calcs <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
-        # factor ensures labels with no calls are kept
-        times.best <- table(factor(final.labels, levels = colnames(scores)))
-        # times.best <- table(final.labels)[colnames(scores)]
-        to.keep <- order(times.best, num.calcs, decreasing = TRUE)[seq_len(max.labels)]
+        # the number of times scored in general
+        secondary <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
     }
+    to.keep <- order(times.best, secondary, decreasing = TRUE)[seq_len(max.labels)]
 
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
