@@ -47,9 +47,14 @@
 #' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indicating labels assigned to the cells.
 #' Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 #'
-#' If \code{max.labels} is less than the total number of unique labels, only the labels with the largest maximum scores are shown in the plot.
-#' Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
-#'
+#' If \code{max.labels} is less than the total number of unique labels, only the top labels are shown in the plot.
+#' Labels that were called most frequently are prioritized.
+#' Then remaining labels are selected based on:
+#' \itemize{
+#' \item General case: Labels with max z-scores after per-cell centering and scaling of the scores matrix.
+#' \item Recomputed scores of combined predictions: Labels which were suggested most frequently by individual references.
+#' }
+#' 
 #' @section Working with combined results:
 #' When \code{results} are the output of a combined prediction (see \code{?\link{combine-predictions}}),
 #' \code{scores.use} and \code{calls.use} are used to indicate which prediction's scores or labels should be presented.
@@ -194,6 +199,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         scores <- score.results$scores
         rownames(scores) <- rownames(results)
         scores.title <- .values_title(is.combined, chosen.scores, ref.names, "Scores")
+        scores.labels <- score.results$labels
 
         # Pulling out the labels to use in this iteration.
         chosen.calls <- calls.use[i]
@@ -230,6 +236,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             color=color,
             na.color=na.color,
             normalize=normalize,
+            scores.labels=scores.labels,
             ...)
 
         if (use.grid) {
@@ -257,7 +264,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters, cells.order, order.by, show.labels, show.pruned,
     scores.title, labels.title,
     show_colnames, cluster_cols, annotation_col, silent,
-    color, na.color, normalize, ...)
+    color, na.color, normalize, scores.labels, ...)
 {
     # 'scores' is guaranteed to be named by this point.
     clusters <- .name_unless_NULL(clusters, rownames(scores))
@@ -275,7 +282,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         order.by=order.by,
         cells.order=cells.order,
         labels=labels,
-        clusters=clusters)
+        clusters=clusters,
+        scores.labels)
 
     # Compile annotations
     annotation_col <- .make_annotation_col(
@@ -373,10 +381,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .trim_normalize_reorder_scores <- function(
     scores, scores.title,
     labels.use, max.labels, cells.use, normalize,
-    cluster_cols, order.by, cells.order, labels, clusters)
+    cluster_cols, order.by, cells.order, labels, clusters, scores.labels)
 {
     scores <- .trim_byLabel_and_normalize_scores(
-        scores, labels.use, max.labels, normalize, scores.title)
+        scores, labels.use, max.labels, normalize, scores.title, scores.labels)
 
     if (!is.null(cells.use)) {
         # Trim by cell
@@ -398,7 +406,11 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 }
 
 .trim_byLabel_and_normalize_scores <- function(
-    scores, labels.use, max.labels, normalize, scores.title) {
+    scores, labels.use, max.labels, normalize, scores.title, scores.labels) {
+
+    # Trim by labels (remove any with no scores)
+    all.na <- apply(scores, 2, FUN = function(x) all(is.na(x)))
+    scores <- scores[,!all.na, drop = FALSE]
 
     # Trim by labels (labels.use)
     if (!is.null(labels.use)) {
@@ -410,11 +422,21 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         }
     }
 
-    # Trim by labels (max.labels) & normalize
-    # Determine labels to show based on 'max.labels' with the highest
-    # pre-normalized scores, normalize, then remove other labels.
-    maxs <- rowMaxs(scale(t(scores)))
-    to.keep <- order(maxs,decreasing=TRUE)[seq_len(max.labels)]
+    ## Trim by labels (max.labels) & normalize
+    # Determine labels to show based on 'max.labels' with the highest...
+    # number of final calls
+    times.best <- table(factor(scores.labels, levels = colnames(scores)))
+    # and secondarily by... 
+    if (!any(is.na(scores))) {
+        # (individual reference)
+        # pre-normalized scores relative to mean and stdev (per label)
+        secondary <- rowMaxs(scale(t(scores)), na.rm = TRUE)
+    } else {
+        # (combined scores)
+        # the number of times scored in general
+        secondary <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
+    }
+    to.keep <- order(times.best, secondary, decreasing = TRUE)[seq_len(max.labels)]
 
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
@@ -428,6 +450,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             # Note that necessary adjustment to coloring is made in .plot_score_heatmap
         }
     }
+    # Drop labels exceeding 'max.labels' after normalization.
     scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
 }
 
@@ -563,6 +586,6 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
     names(df_colors) <- names(annotation_df)
     list(df_colors = df_colors,
-         next.color.index.discrete = next.color.index.discrete,
-         next.color.index.numeric = next.color.index.numeric)
+        next.color.index.discrete = next.color.index.discrete,
+        next.color.index.numeric = next.color.index.numeric)
 }
