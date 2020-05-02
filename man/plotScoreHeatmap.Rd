@@ -91,8 +91,12 @@ If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap indic
 Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 
 If \code{max.labels} is less than the total number of unique labels, only the top labels are shown in the plot.
-Specifically, the set of scores for each cell is centred and scaled, and the maximum transformed score for each label is used to choose the labels to retain.
-Alternatively, for recomputed scores of combined predictions, the number cells for which each label was the best call (primary) or for which each label was an individual reference's suggestion (secondary) are used to choose the labels to retain.
+Labels that were called most frequently are prioritized.
+Then remaining labels are selected based on:
+\itemize{
+\item General case: Labels with max z-scores after per-cell centering and scaling of the scores matrix.
+\item Recomputed scores of combined predictions: Labels which were suggested most frequently by individual references.
+}
 }
 \section{Working with combined results}{
 
