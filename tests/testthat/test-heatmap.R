@@ -278,6 +278,36 @@ test_that("heatmap multi-ref - 'na.color'", {
         "#000000")
 })
 
+test_that("heatmap multi-ref - labels with no scores are removed", {
+    combined$scores <- cbind(combined$scores, "f" = NA)
+    expect_true("f" %in% colnames(combined$scores))
+    expect_false("f" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE,
+            scores.use = 0)$mat))
+})
+
+test_that("heatmap multi-ref - labels with least calls/calcs are removed by 'max.labels'", {
+    combined$scores <- cbind(combined$scores, "neverCalled" = 1) # actual score is immaterial
+    combined$scores <- cbind(combined$scores, "rarelyCalc" = NA)
+    combined$scores[1,"rarelyCalc"] <- 1 # Needs at least one score to not be removed anyway.
+    expect_true(all(c("neverCalled", "rarelyCalc") %in% colnames(combined$scores)))
+    
+    # Both there with no trimming
+    expect_true(all(c("neverCalled", "rarelyCalc") %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
+        max.labels = 40)$mat)))
+    
+    # The rarely picked for calculation "rarelyCalc" label should be removed first
+    expect_true("neverCalled" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
+        max.labels = 11)$mat))
+    expect_false("rarelyCalc" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
+        max.labels = 11)$mat))
+    
+    # The never picked as final label "neverCalled" label should be removed next
+    expect_false("neverCalled" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
+        max.labels = 10)$mat))
+    expect_false("rarelyCalc" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
+        max.labels = 10)$mat))
+})
+
 test_that("heatmap multi-ref - Other typical adjustments throw no unexpected errors", {
     # Our vars
     expect_s3_class(plotScoreHeatmap(results = combined,
