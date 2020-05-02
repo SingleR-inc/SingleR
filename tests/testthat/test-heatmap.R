@@ -73,9 +73,10 @@ test_that("heatmap scores color can be adjusted when 'normalize = FALSE'", {
 
 test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels", {
     # Should give message but still output plot
-    expect_message(plotScoreHeatmap(results = pred,
+    expect_warning(plotScoreHeatmap(results = pred,
         labels.use = c("A")),
-        paste0("Only 1 'labels.use' in Scores. Normalization turned off."))
+        paste0("disabling normalization"))
+
     expect_equal(
         suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
             labels.use = c("A"),
@@ -84,9 +85,10 @@ test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels",
         colorRampPalette(c("red", "blue"))(33))
 
     # Should give message but still output plot
-    expect_message(plotScoreHeatmap(results = pred,
+    expect_warning(plotScoreHeatmap(results = pred,
         labels.use = c("a")),
-        paste0("No 'labels.use' in Scores. Ignoring input."))
+        paste0("ignoring 'labels.use'"))
+
     expect_equal(
         nrow(suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
             labels.use = c("a"),

@@ -418,40 +418,39 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         if (length(labels.use)>0){
             scores <- scores[,labels.use,drop=FALSE]
         } else {
-            message("No 'labels.use' in ", scores.title, ". Ignoring input.")
+            warning("ignoring 'labels.use' without any values in ", scores.title)
         }
     }
 
-    ## Trim by labels (max.labels) & normalize
-    # Determine labels to show based on 'max.labels' with the highest...
-    # number of final calls
+    # Trim by labels (max.labels), using primarily the most frequent labels.
     times.best <- table(factor(scores.labels, levels = colnames(scores)))
-    # and secondarily by... 
     if (!any(is.na(scores))) {
-        # (individual reference)
-        # pre-normalized scores relative to mean and stdev (per label)
+        # To break ties, we sort by the scaled maximum if there are no NAs.
+        # This is done _before_ within-cell normalization of the scores,
+        # after which it makes little sense to compare scores between cells.
         secondary <- rowMaxs(scale(t(scores)), na.rm = TRUE)
     } else {
-        # (combined scores)
-        # the number of times scored in general
+        # If there are NAs - usually from combineRecomputedResults -
+        # we sort by the frequency of non-NA occurrences.
         secondary <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
     }
-    to.keep <- order(times.best, secondary, decreasing = TRUE)[seq_len(max.labels)]
+    to.keep <- order(times.best, secondary, decreasing=TRUE)
+    to.keep <- head(to.keep, max.labels)
 
     # Normalize the scores between [0, 1] and cube to create more separation.
     if (normalize) {
-        if (ncol(scores) > 1) {
+        if (ncol(scores) > 1L) {
             mmax <- rowMaxs(scores, na.rm = TRUE)
             mmin <- rowMins(scores, na.rm = TRUE)
-            scores <- (scores-mmin)/(mmax-mmin)
+            scores <- (scores-mmin)/pmax(mmax-mmin, 1e-8)
             scores <- scores^3
         } else {
-            message("Only 1 'labels.use' in ", scores.title, ". Normalization turned off.")
-            # Note that necessary adjustment to coloring is made in .plot_score_heatmap
+            warning("disabling normalization with only one label in ", scores.title)
         }
     }
-    # Drop labels exceeding 'max.labels' after normalization.
-    scores[,seq_len(ncol(scores)) %in% to.keep,drop=FALSE]
+
+    # Drop labels exceeding 'max.labels'.
+    scores[,to.keep,drop=FALSE]
 }
 
 .order_score_matrix <- function(
