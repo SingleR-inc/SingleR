@@ -423,7 +423,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     }
 
     # Trim by labels (max.labels), using primarily the most frequent labels.
-    times.best <- table(factor(scores.labels, levels = colnames(scores)))
+    times.best <- table(factor(scores.labels, levels = unique(colnames(scores))))[colnames(scores)]
     if (!any(is.na(scores))) {
         # To break ties, we sort by the scaled maximum if there are no NAs.
         # This is done _before_ within-cell normalization of the scores,
