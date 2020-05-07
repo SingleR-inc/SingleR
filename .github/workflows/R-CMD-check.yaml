@@ -41,6 +41,7 @@ jobs:
           BiocManager::install('BiocFileCache')
           install.packages("Rtsne")
           BiocManager::install("GenomeInfoDbData")
+          BiocManager::install('ensembldb')
           saveRDS(remotes::dev_package_deps(dependencies = TRUE), "depends.Rds", version = 2)
         shell: Rscript {0}
 
