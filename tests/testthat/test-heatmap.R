@@ -347,5 +347,5 @@ test_that("heatmap - max.labels trim when duplicate labels", {
     combined_dup1 <- SingleR(
         test, ref = list(smallRef = ref1, smallRef2 = ref1, largeRef = ref2),
         labels = list(ref1$label, ref1$label, ref2$label))
-    expect_s3_class(plotScoreHeatmap(results = pred, max.labels = 10, "pheatmap"))
+    expect_s3_class(plotScoreHeatmap(results = pred, max.labels = 10), "pheatmap")
 })
