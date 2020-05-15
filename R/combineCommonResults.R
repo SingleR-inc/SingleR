@@ -18,7 +18,8 @@
 #' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
 #'
 #' The \code{\link{metadata}} contains \code{common.genes},
-#' a character vector of the common genes that were used across all references in \code{results}.
+#' a character vector of the common genes that were used across all references in \code{results};
+#' and \code{label.origin}, a DataFrame specifying the reference of origin for each label in \code{scores}.
 #' 
 #' @details
 #' For each cell, we identify the reference with the highest score across all of its labels.
@@ -88,13 +89,15 @@ combineCommonResults <- function(results) {
 
     all.scores <- do.call(cbind, collected.scores)
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
+
     metadata(output)$common.genes <- all.common[[1]]
+    metadata(output)$label.origin <- .create_label_origin(collected.scores)
 
     chosen <- max.col(do.call(cbind, collected.best))
     cbind(output, .combine_result_frames(chosen, results))
 }
 
-#' @importFrom S4Vectors DataFrame metadata metadata<-
+#' @importFrom S4Vectors DataFrame
 .combine_result_frames <- function(chosen, results) {
     has.first <- !is.null(results[[1]]$first.labels)
     has.pruned <- !is.null(results[[1]]$pruned.labels)
@@ -127,15 +130,6 @@ combineCommonResults <- function(results) {
         output$pruned.labels <- chosen.pruned
     }
 
-    # Collating some DE statistics.
-    if (has.de <- !is.null(metadata(results[[1]])$de.genes)) {
-        collected.de <- vector("list", length(results))
-        for (i in seq_along(results)) {
-            collected.de[[i]] <- metadata(results[[i]])$de.genes
-        }
-        metadata(output)$de.genes <- do.call(c, collected.de)
-    }
-
     output$reference <- chosen
 
     if (is.null(names(results))) {
@@ -144,4 +138,12 @@ combineCommonResults <- function(results) {
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     output
+}
+
+#' @importFrom S4Vectors DataFrame
+.create_label_origin <- function(collected.scores) {
+    DataFrame(
+        label=unlist(lapply(collected.scores, colnames)),
+        reference=rep(seq_along(collected.scores), vapply(collected.scores, ncol, 0L))
+    )
 }

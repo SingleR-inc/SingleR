@@ -22,6 +22,11 @@
 #' }
 #' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
 #'
+#' The \code{\link{metadata}} contains \code{label.origin}, 
+#' a DataFrame specifying the reference of origin for each label in \code{scores}.
+#' Note that, unlike \code{\link{combineCommonResults}}, no \code{common.genes} is reported
+#' as this function does not use a common set of genes across all references.
+#'
 #' @details
 #' This function implements a variant of Option 3 described in \code{?"\link{combine-predictions}"}.
 #' For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
@@ -81,7 +86,7 @@
 #' combined[,1:5]
 #'
 #' @export
-#' @importFrom S4Vectors DataFrame 
+#' @importFrom S4Vectors DataFrame metadata<-
 #' @importFrom BiocParallel bpiterate SerialParam
 #' @importFrom BiocNeighbors KmknnParam buildIndex
 combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
@@ -177,6 +182,8 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     all.scores <- do.call(cbind, base.scores)
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
+    metadata(output)$label.origin <- .create_label_origin(base.scores)
+
     chosen <- max.col(scores, ties.method="first")
     cbind(output, .combine_result_frames(chosen, results))
 }
