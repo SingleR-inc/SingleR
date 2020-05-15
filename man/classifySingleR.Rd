@@ -44,31 +44,43 @@ This is only used if \code{genes="sd"} when constructing \code{trained} and defa
 }
 \value{
 A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
-If \code{fine.tune=FALSE}, fields are:
+In the case of a single reference, this contains:
 \itemize{
-\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
-\item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
-\item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
-Only added if \code{prune=TRUE}.
-}
-
-If \code{fine.tune=TRUE}, fields are:
-\itemize{
-\item \code{scores}, a numeric matrix of correlations as above.
+\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} 
+for each label (column) in each cell (row).
+This will contain \code{NA}s if multiple references were supplied to \code{\link{trainSingleR}} with \code{recompute=TRUE}.
 \item \code{first.labels}, a character vector containing the predicted label \emph{before} fine-tuning.
+Only added if \code{fine.tune=TRUE}.
 \item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
 These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
-\item \code{labels}, a character vector containing the predicted label after fine-tuning.
-\item \code{pruned.labels}, a character vector of pruned labels as above.
+Only added if \code{fine.tune=TRUE}.
+\item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
+\item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality}.
+els are replaced with \code{NA}s.
 Only added if \code{prune=TRUE}.
 }
 
-In both cases, the \code{\link{metadata}} of the DataFrame contains:
+The \code{\link{metadata}} of the DataFrame contains:
 \itemize{
 \item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
 \item \code{de.genes}, a list of list of genes used to distinguish between each pair of labels.
 Only returned if \code{genes="de"} when constructing \code{trained}, see \code{?\link{trainSingleR}} for more details. 
 }
+
+In the case of multiple references, the output of \code{\link{combineCommonResults}} 
+or \code{\link{combineRecomputedResults}} is returned.
+This is a \linkS4class{DataFrame} containing:
+\itemize{
+\item \code{scores}, a numeric matrix of scores for each cell (row) across all labels in all references (columns).
+This will contain \code{NA}s if recomputation is performed.
+\item \code{labels}, \code{first.labels} (if \code{fine.tune=TRUE}) and \code{pruned.labels} (if \code{prune=TRUE}),
+containing the consolidated labels of varying flavors as described above.
+\item \code{orig.results}, a \linkS4class{DataFrame} of DataFrames containing 
+the results of running \code{\link{classifySingleR}} against each individual reference.
+Each nested DataFrame has the same format as described above.
+}
+The \code{\link{metadata}} of the top-level DataFrame contains \code{common.genes}
+if recomputation is not performed.
 }
 \description{
 Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.

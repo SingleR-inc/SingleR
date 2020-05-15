@@ -68,6 +68,9 @@ NULL
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
 #' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+#'
+#' The \code{\link{metadata}} contains \code{common.genes},
+#' a character vector of the common genes that were used across all references in \code{results}.
 #' 
 #' @details
 #' For each cell, we identify the reference with the highest score across all of its labels.
