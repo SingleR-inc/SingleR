@@ -39,9 +39,11 @@ test_that("combineCommonResults works as expected", {
     expect_equivalent(combined$orig.results$res2, results2)
 
     combined <- combineCommonResults(list(res1=results, res2=results))
-    standard <- c("first.labels", "labels", "pruned.labels")
     expect_identical(combined$scores, cbind(results$scores, results$scores))
-    expect_identical(combined[,standard], results[,standard])
+
+    for (standard in c("first.labels", "labels", "pruned.labels")) {
+        expect_identical(combined[,standard], results[,standard])
+    }
 })
 
 test_that("combineCommonResults handles non-matching cells", {
