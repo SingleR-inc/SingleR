@@ -42,7 +42,8 @@
 #' }
 #'
 #' In the case of multiple references, the output of \code{\link{combineCommonResults}} 
-#' or \code{\link{combineRecomputedResults}} is returned.
+#' or \code{\link{combineRecomputedResults}} is returned,
+#' depending on whether \code{recompute=TRUE} when constructing \code{trained}.
 #' This is a \linkS4class{DataFrame} containing:
 #' \itemize{
 #' \item \code{scores}, a numeric matrix of scores for each cell (row) across all labels in all references (columns).
@@ -53,8 +54,7 @@
 #' the results of running \code{\link{classifySingleR}} against each individual reference.
 #' Each nested DataFrame has the same format as described above.
 #' }
-#' The \code{\link{metadata}} of the top-level DataFrame contains \code{common.genes}
-#' if recomputation is not performed.
+#' See \code{?\link{combineCommonResults}} and \code{?\link{combineRecomputedResults}} for more details.
 #' 
 #' @author Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.
 #'
