@@ -103,8 +103,9 @@
 #' @examples
 #' # Running the SingleR() example.
 #' example(SingleR, echo=FALSE)
+#'
 #' # Grab the original identities of the cells as mock clusters
-#' clusts <- g
+#' clusts <- test$label
 #'
 #' # Creating a heatmap with just the labels.
 #' plotScoreHeatmap(pred)

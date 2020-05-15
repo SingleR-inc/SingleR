@@ -47,51 +47,21 @@
 #'
 #' @author Aaron Lun, based on code by Dvir Aran.
 #' @examples
-#' ##############################
-#' ## Mocking up training data ##
-#' ##############################
+#' # Mocking up data with log-normalized expression values:
+#' ref <- .mockRefData()
+#' test <- .mockTestData(ref)
 #'
-#' Ngroups <- 5
-#' Ngenes <- 1000
-#' means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-#' means[1:900,] <- 0
-#' colnames(means) <- LETTERS[1:5]
-#'
-#' g <- rep(LETTERS[1:5], each=4)
-#' ref <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*length(g), 
-#'         lambda=10*2^means[,g]), ncol=length(g))),
-#'     colData=DataFrame(label=g)
-#' )
-#' rownames(ref) <- sprintf("GENE_%s", seq_len(nrow(ref)))
-#' 
 #' ref <- scater::logNormCounts(ref)
-#' trained <- trainSingleR(ref, ref$label)
-#'
-#' ###############################
-#' ## Mocking up some test data ##
-#' ###############################
-#'
-#' N <- 100
-#' g <- sample(LETTERS[1:5], N, replace=TRUE)
-#' test <- SummarizedExperiment(
-#'     list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-#'     colData=DataFrame(cluster=g)
-#' )
-#' 
-#' rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
 #' test <- scater::logNormCounts(test)
-#' 
-#' ###############################
-#' ## Performing classification ##
-#' ###############################
-#' 
-#' pred <- SingleR(test, ref, labels=ref$label)
-#' table(predicted=pred$labels, truth=g)
 #'
+#' # Running the classification with different options:
+#' pred <- SingleR(test, ref, labels=ref$label)
+#' table(predicted=pred$labels, truth=test$label)
+#'
+#' k.out<- kmeans(t(assay(test, "logcounts")), center=5) # mock up a clustering
 #' pred2 <- SingleR(test, ref, labels=ref$label, 
-#'     method="cluster", clusters=test$cluster) 
-#' table(predicted=pred2$labels, truth=rownames(pred2))
+#'     method="cluster", clusters=k.out$cluster) 
+#' table(predicted=pred2$labels, cluster=rownames(pred2))
 #'
 #' @export
 #' @importFrom BiocNeighbors KmknnParam
