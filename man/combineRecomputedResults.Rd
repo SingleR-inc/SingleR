@@ -48,6 +48,11 @@ scores are not recomputed for the other labels.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
 It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+
+The \code{\link{metadata}} contains \code{label.origin}, 
+a DataFrame specifying the reference of origin for each label in \code{scores}.
+Note that, unlike \code{\link{combineCommonResults}}, no \code{common.genes} is reported
+as this function does not use a common set of genes across all references.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.

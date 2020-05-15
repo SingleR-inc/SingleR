@@ -68,7 +68,8 @@ Only returned if \code{genes="de"} when constructing \code{trained}, see \code{?
 }
 
 In the case of multiple references, the output of \code{\link{combineCommonResults}} 
-or \code{\link{combineRecomputedResults}} is returned.
+or \code{\link{combineRecomputedResults}} is returned,
+depending on whether \code{recompute=TRUE} when constructing \code{trained}.
 This is a \linkS4class{DataFrame} containing:
 \itemize{
 \item \code{scores}, a numeric matrix of scores for each cell (row) across all labels in all references (columns).
@@ -79,8 +80,7 @@ containing the consolidated labels of varying flavors as described above.
 the results of running \code{\link{classifySingleR}} against each individual reference.
 Each nested DataFrame has the same format as described above.
 }
-The \code{\link{metadata}} of the top-level DataFrame contains \code{common.genes}
-if recomputation is not performed.
+See \code{?\link{combineCommonResults}} and \code{?\link{combineRecomputedResults}} for more details.
 }
 \description{
 Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.
@@ -112,47 +112,19 @@ This is done using \code{\link{combineRecomputedResults}} if \code{recompute=TRU
 otherwise it is done using \code{\link{combineCommonResults}}.
 }
 \examples{
-##############################
-## Mocking up training data ##
-##############################
-
-Ngroups <- 5
-Ngenes <- 1000
-means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-means[1:900,] <- 0
-colnames(means) <- LETTERS[1:5]
-
-g <- rep(LETTERS[1:5], each=4)
-ref <- SummarizedExperiment(
-    list(counts=matrix(rpois(1000*length(g), 
-        lambda=10*2^means[,g]), ncol=length(g))),
-    colData=DataFrame(label=g)
-)
-rownames(ref) <- sprintf("GENE_\%s", seq_len(nrow(ref)))
+# Mocking up data with log-normalized expression values:
+ref <- .mockRefData()
+test <- .mockTestData(ref)
 
 ref <- scater::logNormCounts(ref)
-trained <- trainSingleR(ref, ref$label)
-
-###############################
-## Mocking up some test data ##
-###############################
-
-N <- 100
-g <- sample(LETTERS[1:5], N, replace=TRUE)
-test <- SummarizedExperiment(
-    list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-    colData=DataFrame(cluster=g)
-)
-
-rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
 test <- scater::logNormCounts(test)
 
-###############################
-## Performing classification ##
-###############################
+# Setting up the training:
+trained <- trainSingleR(ref, label=ref$label)
 
+# Performing the classification:
 pred <- classifySingleR(test, trained)
-table(predicted=pred$labels, truth=g)
+table(predicted=pred$labels, truth=test$label)
 
 }
 \seealso{

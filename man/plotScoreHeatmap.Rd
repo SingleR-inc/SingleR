@@ -141,8 +141,9 @@ Also note that this transformation is done \emph{after} the choice of the top \c
 \examples{
 # Running the SingleR() example.
 example(SingleR, echo=FALSE)
+
 # Grab the original identities of the cells as mock clusters
-clusts <- g
+clusts <- test$label
 
 # Creating a heatmap with just the labels.
 plotScoreHeatmap(pred)

@@ -92,51 +92,21 @@ If this intersection is empty (e.g., because the two datasets use different anno
 \code{ref} can contain both single-cell or bulk data, but in the case of the former, read the Note in \code{?\link{trainSingleR}}.
 }
 \examples{
-##############################
-## Mocking up training data ##
-##############################
-
-Ngroups <- 5
-Ngenes <- 1000
-means <- matrix(rnorm(Ngenes*Ngroups), nrow=Ngenes)
-means[1:900,] <- 0
-colnames(means) <- LETTERS[1:5]
-
-g <- rep(LETTERS[1:5], each=4)
-ref <- SummarizedExperiment(
-    list(counts=matrix(rpois(1000*length(g), 
-        lambda=10*2^means[,g]), ncol=length(g))),
-    colData=DataFrame(label=g)
-)
-rownames(ref) <- sprintf("GENE_\%s", seq_len(nrow(ref)))
+# Mocking up data with log-normalized expression values:
+ref <- .mockRefData()
+test <- .mockTestData(ref)
 
 ref <- scater::logNormCounts(ref)
-trained <- trainSingleR(ref, ref$label)
-
-###############################
-## Mocking up some test data ##
-###############################
-
-N <- 100
-g <- sample(LETTERS[1:5], N, replace=TRUE)
-test <- SummarizedExperiment(
-    list(counts=matrix(rpois(1000*N, lambda=2^means[,g]), ncol=N)),
-    colData=DataFrame(cluster=g)
-)
-
-rownames(test) <- sprintf("GENE_\%s", seq_len(nrow(test)))
 test <- scater::logNormCounts(test)
 
-###############################
-## Performing classification ##
-###############################
-
+# Running the classification with different options:
 pred <- SingleR(test, ref, labels=ref$label)
-table(predicted=pred$labels, truth=g)
+table(predicted=pred$labels, truth=test$label)
 
+k.out<- kmeans(t(assay(test, "logcounts")), center=5) # mock up a clustering
 pred2 <- SingleR(test, ref, labels=ref$label, 
-    method="cluster", clusters=test$cluster) 
-table(predicted=pred2$labels, truth=rownames(pred2))
+    method="cluster", clusters=k.out$cluster) 
+table(predicted=pred2$labels, cluster=rownames(pred2))
 
 }
 \references{
