@@ -19,6 +19,9 @@ This mimics the output of \code{\link{classifySingleR}} and contains the followi
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
 It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+
+The \code{\link{metadata}} contains \code{common.genes},
+a character vector of the common genes that were used across all references in \code{results}.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
