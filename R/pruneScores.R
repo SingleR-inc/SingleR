@@ -33,7 +33,7 @@
 #' By comparison, references with more distinct cell types would yield large deltas, even for cells that have no representative type in the reference and are incorrectly assigned to the next-most-related label.
 #' The outlier definition procedure adjusts naturally to these situations.
 #'
-#' The default \code{nmads} is motivated by the fact that, for a normal distribution, 99% of observations lie within 3 standard deviations from the mean.
+#' The default \code{nmads} is motivated by the fact that, for a normal distribution, 99\% of observations lie within 3 standard deviations from the mean.
 #' Smaller values for \code{nmads} will increase the stringency of the pruning.
 #'
 #' @section Applying a hard filter on the deltas: 
