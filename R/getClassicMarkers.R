@@ -36,11 +36,13 @@
 #' 
 #' @examples
 #' ref <- .mockRefData()
+#' ref <- scater::logNormCounts(ref)
 #' out <- getClassicMarkers(ref, labels=ref$label)
 #' str(out)
 #'
 #' # Works with multiple references:
 #' ref2 <- .mockRefData()
+#' ref2 <- scater::logNormCounts(ref2)
 #' out2 <- getClassicMarkers(list(ref, ref2), labels=list(ref$label, ref2$label))
 #' str(out2)
 #'
@@ -109,7 +111,10 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         left <- choices$first[i]
         right <- choices$second[i]
         chosen <- lfc[[i]]
-        output[[left]][[right]] <- names(chosen)[head(order(chosen, decreasing=TRUE), de.n)]
+
+        # FYI, the as.character() accounts for the edge case of NULL names,
+        # which apparently happens due to incorrect matrix zero-subsetting.
+        output[[left]][[right]] <- as.character(names(chosen)[head(order(chosen, decreasing=TRUE), de.n)])
     }
 
     output

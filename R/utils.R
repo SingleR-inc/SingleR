@@ -3,7 +3,7 @@
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom DelayedArray DelayedArray
 .to_clean_matrix <- function(x, assay.type, check.missing, msg="x") {
-    if (is.null(rownames(x))) {
+    if (is.null(rownames(x)) && nrow(x)) { # zero-length matrices have NULL dimnames.
         stop(sprintf("'%s' must have row names", msg))
     }
     if (is(x, "SummarizedExperiment")) {
