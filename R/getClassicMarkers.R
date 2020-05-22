@@ -46,7 +46,7 @@
 #'
 #' @export
 #' @importFrom S4Vectors selfmatch
-getClassicMarkers <- function(ref, labels, assay.type=1, check.missing=TRUE, de.n=NULL) { 
+getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL) { 
 
     if (!.is_list(ref)) {
         ulabels <- .get_levels(labels)
