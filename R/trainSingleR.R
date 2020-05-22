@@ -323,25 +323,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list()) {
     if (de.method=="classic") {
-        mat <- .median_by_label(ref, labels)
-        if (is.null(de.n)) {
-            de.n <- round(500*(2/3)^log2(ncol(mat)))
-        }
-
-        ulabels <- .get_levels(labels)
-        collected <- list()
-        for (i in ulabels) {
-            subcollected <- list()
-
-            for (j in ulabels) {
-                s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
-                s <- s[s>0]
-                subcollected[[j]] <- as.character(head(names(s), de.n))
-            }
-            collected[[i]] <- subcollected
-        }
-
-        collected
+        getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE)
     } else {
         if (de.method=="t") {
             FUN <- scran::pairwiseTTests
