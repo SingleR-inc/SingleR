@@ -9,10 +9,6 @@
 #' This is only relevant for combined results, see Details.
 #' @param show String specifying whether to show the difference from the median (\code{"delta.med"}) 
 #' or the difference from the next-best score (\code{"delta.next"}).
-#' @param show.nmads Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
-#' Only used when \code{show="delta.med"}.
-#' @param show.min.diff Numeric scalar that shows the threshold that would be used for pruning with \code{\link{pruneScores}}.
-#' Only used when \code{show="delta.med"} or \code{"delta.next"}.
 #'
 #' @return
 #' If \code{deltas.use} specifies a single set of deltas,
@@ -37,9 +33,9 @@
 #' This may manifest as negative values when \code{show="delta.med"}.
 #' \code{show="delta.next"} is guaranteed to be positive but may be overly stringent for references involving very similar labels.
 #'
-#' Note that \code{\link{pruneScores}} trims based on the \code{min.diff.med} and \code{min.diff.next} cutoffs first,
-#' before calculating the first-labels' delta medians.
-#' Thus, the actual \code{nmads} cut-off used in \code{\link{pruneScores}} may vary from the one portrayed in the plot.
+#' Pruned calls are identified as \code{NA}s in the \code{pruned.labels} field in \code{results}.
+#' Points corresponding to cells with pruned calls are colored by \code{pruned.color};
+#' this can be disabled by setting \code{pruned.color=NA}.
 #'
 #' For combined results (see \code{?"\link{combine-predictions}"}),
 #' this function can show both the combined and individual deltas or labels.
@@ -73,14 +69,6 @@
 #' # Showing the delta to the next-highest score:
 #' plotDeltaDistribution(pred, show = "delta.next")
 #'
-#' # Adjusting the default 'nmads' for the pruning threshold:
-#' plotDeltaDistribution(pred, show.nmads = 2)
-#'
-#' # Alternatively using a 'min.diff' cutoff:
-#' plotDeltaDistribution(pred, show.min.diff = 0.03)
-#'
-#' plotDeltaDistribution(pred, show = "delta.next", show.min.diff = 0.03)
-#'
 #' # Multi-reference compatibility:
 #' example(combineRecomputedResults, echo = FALSE)
 #' plotDeltaDistribution(results = combined)
@@ -99,12 +87,11 @@ plotDeltaDistribution <- function(
     labels.use = colnames(results$scores),
     deltas.use = NULL,
     calls.use = 0,
-    pruned.use = 0,
-    size = 0.5,
+    size = 2,
     ncol = 5,
     dots.on.top = TRUE,
-    show.nmads = 3,
-    show.min.diff = NULL,
+    this.color = "#F0E442",
+    pruned.color = "#E69F00",
     grid.vars = list())
 {
     results <- .ensure_named(results)
@@ -126,7 +113,6 @@ plotDeltaDistribution <- function(
         warning("updating 'calls.use' to be the same as 'deltas.use' for 'show=\"delta.next\"'")
         calls.use <- deltas.use
     }
-    pruned.use <- rep(pruned.use, length.out=length(deltas.use))
 
     plots <- vector("list", length(deltas.use))
     for (i in seq_along(plots)) {
@@ -161,17 +147,18 @@ plotDeltaDistribution <- function(
         labels <- call.results$labels
         labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
 
-        # Calculate nmad.cutoff values for 'show.nmads'
-        if (show == "delta.med" && !is.null(show.nmads)) {
-            nmad.vals <- pruneScores(score.results, get.thresholds=TRUE, nmads = show.nmads)
+        # Checking if we need pruning.
+        pruned <- NULL
+        if (is.na(pruned.color)) {
+            pruned <- is.na(call.results$pruned.labels)
         }
 
         # Actually creating the plot
         plots[[i]] <- .plot_delta_distribution(
-            values=values, labels=labels, labels.use=labels.use,
+            values=values, labels=labels, pruned=pruned, labels.use=labels.use,
             labels.title=labels.title, scores.title=scores.title, 
-            this.color=this.color, size=size, ncol=ncol, dots.on.top=dots.on.top,
-            show=show, show.nmads=show.nmads, show.min.diff=show.min.diff, nmad.vals=nmad.vals)
+            this.color=this.color, pruned.color=pruned.color,
+            size=size, ncol=ncol, dots.on.top=dots.on.top)
     }
 
     if (length(plots)==1L) {
@@ -187,12 +174,20 @@ plotDeltaDistribution <- function(
 }
 
 .plot_delta_distribution <- function(
-    values, labels, labels.use,
+    values, labels, pruned, labels.use,
     labels.title, scores.title, 
-    this.color, size, ncol, dots.on.top,
-    show, show.nmads, show.min.diff, nmad.vals) 
+    this.color, pruned.color,
+    size, ncol, dots.on.top)
 {
-    df <- data.frame(values=values, label=labels, x=character(length(values)))
+    df <- data.frame(values=values, 
+        label=labels, 
+        x=character(length(values)))
+
+    aes <- list(y="values", x="x")
+    if (is.null(pruned)) {
+        df$pruned <- pruned
+        aes$color_by <- "pruned"
+    }
 
     # Trim dataframe by labels:
     if (any(keep <- labels.use %in% df$label)) {
@@ -203,60 +198,15 @@ plotDeltaDistribution <- function(
     }
 
     # Making the violin plots.
-    p <- ggplot2::ggplot(data = df, ggplot2::aes_string(y = "values", x = "x")) +
-        ggplot2::xlab("")
+    p <- ggplot2::ggplot(data = df, do.call(ggplot2::aes_string, aes)) + 
+        ggplot2::xlab("") + 
+        ggplot2::scale_color_manual(
+            name = labels.title,
+            breaks = c("FALSE", "TRUE"),
+            values = c(this.color, pruned.color))
+
     p <- .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
         size=size, dots.on.top=dots.on.top)
 
-    # Add cutoff lines:
-    if (!is.null(show.nmads) || !(is.null(show.min.diff))) {
-        p <- .add_cutoff_lines(p, show=show, show.nmads=show.nmads, 
-            show.min.diff=show.min.diff, nmad.vals=nmad.vals, labels.use=labels.use)
-    }
-
     p
-}
-
-.add_cutoff_lines <- function(p, show, show.nmads, show.min.diff, nmad.vals, labels.use) {
-    # Add cutoff line for nmads cutoff
-    if (show == "delta.med" && !is.null(show.nmads)) {
-        p <- .add_nmads_lines(p, nmad.vals, labels.use)
-    }
-
-    # Add cutoff line for min.diff cutoff
-    if (!is.null(show.min.diff)) {
-        df_min.diff <- data.frame(color = "2.min.diff", show.min.diff = show.min.diff)
-        p <- p + ggplot2::geom_hline(
-            data = df_min.diff, na.rm = TRUE, size = 1.1,
-            ggplot2::aes_string(yintercept = "show.min.diff", color = "color"))
-    }
-
-    # Set the colors and a=labels for combined legend.
-    p + ggplot2::scale_color_manual(
-            name = "Lines",
-            values = c(
-                '1.nmad' = "#0072B2",
-                '2.min.diff' = "red"),
-            labels = c(
-                '1.nmad' = "nmad cutoff",
-                '2.min.diff' = "min.diff cutoff")
-            ) +
-        ggplot2::guides(
-            color = ggplot2::guide_legend(override.aes = list(size=2)))
-}
-
-.add_nmads_lines <- function(p, nmad.vals, labels.use) {
-    df <- data.frame(
-        label=names(nmad.vals),
-        nmads.cutoff=nmad.vals,
-        x = character(length(nmad.vals)),
-        values=numeric(length(nmad.vals)), # to keep the inherited aes_string() happy.
-        mad=rep("1.nmad", length(nmad.vals)) # Add dummy var for setting color later.
-    ) 
-
-    df <- df[df$label %in% labels.use, , drop=FALSE]
-
-    p + ggplot2::geom_errorbar(data = df, na.rm=TRUE,
-            ggplot2::aes_string(ymin= "nmads.cutoff", ymax= "nmads.cutoff", color = "mad"),
-            width = 1, size = 1.1, show.legend = c(color = TRUE, fill = FALSE))
 }
