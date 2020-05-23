@@ -218,7 +218,7 @@ plotScoreDistribution <- function(
         size=size, dots.on.top=dots.on.top)
 }
 
-.pretty_violins <- function(p, df, ncol, scores.title, size, dots.on.top) {
+.pretty_violins <- function(p, df, ncol, scores.title, size, dots.on.top, ...) {
     p <- p + ggplot2::theme_classic() +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
         ggplot2::ylab(scores.title)
@@ -237,7 +237,7 @@ plotScoreDistribution <- function(
         p <- p + jit
     }
 
-    p <- p + ggplot2::geom_violin(na.rm=TRUE)
+    p <- p + ggplot2::geom_violin(na.rm=TRUE, ...)
 
     if (dots.on.top) {
         p <- p + jit
