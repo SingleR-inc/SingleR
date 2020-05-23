@@ -214,12 +214,15 @@ plotScoreDistribution <- function(
             name = labels.title,
             breaks = c("assigned", "pruned", "other"),
             values = c(this.color, pruned.color, other.color))
+    
+    jit <- ggplot2::geom_jitter(height = 0, width = 0.3, color = "black",
+        shape = 16, size = size, na.rm = TRUE)
 
     .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
-        size=size, dots.on.top=dots.on.top)
+        size=size, dots.on.top=dots.on.top, jitter=jit)
 }
 
-.pretty_violins <- function(p, df, ncol, scores.title, size, dots.on.top, ...) {
+.pretty_violins <- function(p, df, ncol, scores.title, size, dots.on.top, jitter, ...) {
     p <- p + ggplot2::theme_classic() +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
         ggplot2::ylab(scores.title)
@@ -230,18 +233,14 @@ plotScoreDistribution <- function(
         p <- p + ggplot2::scale_x_discrete(name = "Labels", labels = NULL)
     }
 
-    # Adding the data:
-    jit <- ggplot2::geom_jitter(height = 0, width = 0.3, color = "black",
-        shape = 16, size = size, na.rm = TRUE)
-
     if (!dots.on.top) {
-        p <- p + jit
+        p <- p + jitter
     }
 
     p <- p + ggplot2::geom_violin(na.rm=TRUE, ...)
 
     if (dots.on.top) {
-        p <- p + jit
+        p <- p + jitter
     }
 
     p
