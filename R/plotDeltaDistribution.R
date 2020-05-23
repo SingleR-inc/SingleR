@@ -206,7 +206,7 @@ plotDeltaDistribution <- function(
             values = c(this.color, pruned.color))
 
     p <- .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
-        size=size, dots.on.top=dots.on.top)
+        size=size, dots.on.top=dots.on.top, fill="grey")
 
     p
 }
