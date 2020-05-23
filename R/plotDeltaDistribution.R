@@ -90,7 +90,7 @@ plotDeltaDistribution <- function(
     size = 2,
     ncol = 5,
     dots.on.top = TRUE,
-    this.color = "#F0E442",
+    this.color = "#000000",
     pruned.color = "#E69F00",
     grid.vars = list())
 {
@@ -149,7 +149,7 @@ plotDeltaDistribution <- function(
 
         # Checking if we need pruning.
         pruned <- NULL
-        if (is.na(pruned.color)) {
+        if (!is.na(pruned.color)) {
             pruned <- is.na(call.results$pruned.labels)
         }
 
@@ -183,10 +183,10 @@ plotDeltaDistribution <- function(
         label=labels, 
         x=character(length(values)))
 
-    aes <- list(y="values", x="x")
-    if (is.null(pruned)) {
+    aes.jit <- NULL
+    if (!is.null(pruned)) {
         df$pruned <- pruned
-        aes$color_by <- "pruned"
+        aes.jit <- ggplot2::aes_string(color = "pruned")
     }
 
     # Trim dataframe by labels:
@@ -198,15 +198,19 @@ plotDeltaDistribution <- function(
     }
 
     # Making the violin plots.
-    p <- ggplot2::ggplot(data = df, do.call(ggplot2::aes_string, aes)) + 
-        ggplot2::xlab("") + 
-        ggplot2::scale_color_manual(
-            name = labels.title,
+    p <- ggplot2::ggplot(data = df, ggplot2::aes_string(x="x", y="values")) + 
+        ggplot2::xlab("")
+
+    if (!is.null(pruned)) {
+        p <- p + ggplot2::scale_color_manual(
+            name = "Pruned",
             breaks = c("FALSE", "TRUE"),
             values = c(this.color, pruned.color))
+    }
 
-    p <- .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
-        size=size, dots.on.top=dots.on.top, fill="grey")
+    jit <- ggplot2::geom_jitter(mapping = aes.jit, height = 0, width = 0.3, 
+        shape = 16, size = size, na.rm = TRUE)
 
-    p
+    .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
+        size=size, dots.on.top=dots.on.top, jitter=jit, fill="grey")
 }
