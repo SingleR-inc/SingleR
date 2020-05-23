@@ -29,7 +29,7 @@
 #' If \code{scores.use} specifies multiple scores for a combined result,
 #' multiple ggplot objects are generated in a grid on the current graphics device.
 #' 
-#' If \code{score.use} specifies multiple scores and \code{grid.vars} is set to \code{NULL},
+#' If \code{scores.use} specifies multiple scores and \code{grid.vars=NULL},
 #' a list is returned containing the ggplot objects for manual display.
 #'
 #' @details
@@ -48,16 +48,17 @@
 #'
 #' For combined results (see \code{?"\link{combine-predictions}"}),
 #' this function can show both the combined and individual scores or labels.
-#' This is done using the \code{scores.use} and \code{labels.use} arguments,
+#' This is done using the \code{scores.use} and \code{calls.use} arguments,
 #' entries of which refer to columns of \code{results$orig.results} if positive or to the combined results if zero.
 #' For example:
 #' \itemize{
-#' \item If we set \code{scores.use=2} and \code{labels.use=1},
+#' \item If we set \code{scores.use=2} and \code{calls.use=1},
 #' we will plot the scores from the second individual reference faceted by the labels predicted from the first reference.
-#' \item If we set \code{scores.use=1:2} and \code{labels.use=0},
-#' we will plot the scores from first and second references (in separate plots) faceted by the combined labels.
-#' \item By default, the function will create a plot for the combined scores and each individual reference.
-#' In each plot, the scores are shown faceted by the combined labels. 
+#' \item If we set \code{scores.use=1:2} and \code{calls.use=1:2},
+#' we will plot the scores from first and second references (in separate plots) faceted by their corresponding labels.
+#' \item By default, the function will create a separate plot for the combined scores and each individual reference,
+#' where the scores in each plot are faceted by the combined labels.
+#' This is equivalent to \code{scores.use=0:N} and \code{calls.use=0} for \code{N} individual references.
 #' }
 #'
 #' @seealso

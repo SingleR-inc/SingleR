@@ -44,12 +44,12 @@
 #' \code{labels.use} is also allowed to contain zero, in which case the combined labels are used.
 #' For example:
 #' \itemize{
-#' \item If we set \code{deltas.use=2} and \code{labels.use=1},
+#' \item If we set \code{deltas.use=2} and \code{calls.use=1},
 #' we will plot the deltas from the second individual reference against the labels faceted from the first reference.
-#' \item If we set \code{deltas.use=1:2} and \code{labels.use=0},
-#' we will plot the deltas from first and second references (in separate plots) faceted by the combined labels.
-#' \item By default, the function will create a plot of deltas each individual reference.
-#' In each plot, the deltas are faceted by the combined labels. 
+#' \item If we set \code{deltas.use=1:2} and \code{calls.use=1:2},
+#' we will plot the deltas from first and second references (in separate plots) faceted by their corresponding labels.
+#' \item By default, the function will create a separate plot for each individual reference faceted by the combined labels. 
+#' This is equivalent to \code{deltas.use=1:N} and \code{calls.use=0} for \code{N} individual references.
 #' }
 #'
 #' @seealso
@@ -121,7 +121,7 @@ plotDeltaDistribution <- function(
         chosen.scores <- deltas.use[i]
         if (is.combined) {
             if (chosen.scores==0L) {
-                stop("deltas cannot be shown for combined results.")
+                stop("deltas cannot be shown for combined results")
             }
             score.results <- results$orig.results[[chosen.scores]]
         } else {
