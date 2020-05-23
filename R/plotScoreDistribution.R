@@ -11,8 +11,7 @@
 #' This is only relevant for combined results, see Details.
 #' @param calls.use Integer scalar or vector specifying the individual annotation result from which to take labels.
 #' This is only relevant for combined results, see Details.
-#' @param calls.use Integer scalar or vector specifying the individual annotation result from which to take pruned labels.
-#' This is only relevant for combined results, see Details.
+#' @param pruned.use Deprecated and ignored.
 #' @param dots.on.top Logical scalar specifying whether cell dots should be plotted on top of the violin plots.
 #' @param this.color String specifying the color for cells that were assigned to the label.
 #' @param pruned.color String specifying the color for cells that were assigned to the label but pruned.
@@ -39,8 +38,8 @@
 #' \itemize{
 #' \item \dQuote{Assigned}, containing scores for all cells assigned to that label.
 #' Colored according to \code{this.color}.
-#' \item \dQuote{Pruned}, containing scores for all cells assigned to that label but pruned out.
-#' Colored according to \code{pruned.color}.
+#' \dQuote{Pruned}, containing scores for all cells assigned to that label but pruned out.
+#' Colored according to \code{pruned.color}, and can be omitted by setting \code{pruned.color=NA}.
 #' \item \dQuote{Other}, containing the scores for all cells assigned to other labels.
 #' Colored according to \code{other.color}.
 #' }
@@ -54,11 +53,11 @@
 #' For example:
 #' \itemize{
 #' \item If we set \code{scores.use=2} and \code{labels.use=1},
-#' we will plot the scores from the second individual reference against the labels predicted from the first reference.
+#' we will plot the scores from the second individual reference faceted by the labels predicted from the first reference.
 #' \item If we set \code{scores.use=1:2} and \code{labels.use=0},
-#' we will plot the scores from first and second references (in separate plots) against the combined labels.
+#' we will plot the scores from first and second references (in separate plots) faceted by the combined labels.
 #' \item By default, the function will create a plot for the combined scores and each individual reference.
-#' In each plot, the scores are shown against the combined labels. 
+#' In each plot, the scores are shown faceted by the combined labels. 
 #' }
 #'
 #' @seealso
@@ -104,7 +103,7 @@ plotScoreDistribution <- function(
     labels.use = colnames(results$scores),
     scores.use = NULL,
     calls.use = 0,
-    pruned.use = 0,
+    pruned.use = NULL,
     size = 0.5,
     ncol = 5,
     dots.on.top = TRUE,
@@ -124,7 +123,6 @@ plotScoreDistribution <- function(
         scores.use <- c(0L, seq_along(results$orig.results)) # seq_along(NULL) is nothing.
     }
     calls.use <- rep(calls.use, length.out=length(scores.use))
-    pruned.use <- rep(pruned.use, length.out=length(scores.use))
 
     plots <- vector("list", length(scores.use))
     for (i in seq_along(plots)) {
@@ -153,26 +151,15 @@ plotScoreDistribution <- function(
         labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
 
         # Pulling out the pruning calls to use in this iteration.
-        chosen.pruned <- pruned.use[i]
-        if (chosen.pruned==0L) {
-            prune.results <- results
-        } else {
-            prune.results <- results$orig.results[[chosen.pruned]]
-        }
-
-        prune.calls <- prune.results$pruned.labels
-        prune.title <- .values_title(
-            is.combined, chosen.pruned, paste0("(",ref.names,")"), "pruned")
-
-        # Calculate nmad.cutoff values for 'show.nmads'
-        if (show == "delta.med" && !is.null(show.nmads)) {
-            nmad.vals <- pruneScores(score.results, get.thresholds=TRUE, nmads = show.nmads)
+        prune.calls <- NULL
+        if (!is.na(pruned.color)) {
+            prune.calls <- call.results$pruned.labels
         }
 
         # Actually creating the plot
         plots[[i]] <- .plot_score_distribution(
             scores=scores, labels=labels, prune.calls=prune.calls, labels.use=labels.use, 
-            labels.title=labels.title, scores.title=scores.title, prune.title=prune.title,
+            labels.title=labels.title, scores.title=scores.title, 
             this.color=this.color, pruned.color=pruned.color, other.color=other.color, 
             size=size, ncol=ncol, dots.on.top=dots.on.top)
     }
@@ -191,7 +178,7 @@ plotScoreDistribution <- function(
 
 .plot_score_distribution <- function(
     scores, labels, prune.calls, labels.use,
-    labels.title, scores.title, prune.title,
+    labels.title, scores.title, 
     this.color, pruned.color, other.color, size, ncol, dots.on.top)
 {
     # Create a dataframe with separate rows for each score in values.
@@ -208,7 +195,7 @@ plotScoreDistribution <- function(
     # Replace cell.call if cell was pruned.
     if (!is.null(prune.calls)) {
         is.pruned <- rep(is.na(prune.calls), each=ncol(scores))
-        df$cell.calls[is.pruned & is.called] <- prune.title
+        df$cell.calls[is.pruned & is.called] <- "pruned"
     }
 
     # Trim dataframe by labels
@@ -224,7 +211,7 @@ plotScoreDistribution <- function(
             ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
         ggplot2::scale_fill_manual(
             name = labels.title,
-            breaks = c("assigned", prune.title, "other"),
+            breaks = c("assigned", "pruned", "other"),
             values = c(this.color, pruned.color, other.color))
 
     .pretty_violins(p, df=df, ncol=ncol, scores.title=scores.title, 
