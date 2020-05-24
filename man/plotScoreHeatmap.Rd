@@ -72,13 +72,13 @@ used to arrange the multiple plots generated when \code{scores.use} is of length
 }
 \value{
 If \code{scores.use} specifies a single set of scores,
-the output of \code{\link{pheatmap}} is returned showing the heatmap on the current graphics device.
+the output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
 
 If \code{scores.use} specifies multiple scores for a combined result,
 multiple heatmaps are generated in a grid on the current graphics device.
 
 If \code{scores.use} specifies multiple scores and \code{grid.vars} is set to \code{NULL},
-a list is returned containing the \code{\link{pheatmap}} globs for manual display.
+a list is returned containing the \code{\link[pheatmap]{pheatmap}} globs for manual display.
 }
 \description{
 Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.

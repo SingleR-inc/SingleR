@@ -4,7 +4,7 @@
 #'
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, 
 #' \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.
-#' @param show Deprecated, use \code{\link{plotDeltaDistributions}} instead for \code{show!="scores"}.
+#' @param show Deprecated, use \code{\link{plotDeltaDistribution}} instead for \code{show!="scores"}.
 #' @param labels.use Character vector specifying the labels to show in the plot facets.
 #' Defaults to all labels in \code{results}.
 #' @param references Integer scalar or vector specifying the references to visualize.
@@ -18,7 +18,7 @@
 #' @param other.color String specifying the color for other cells not assigned to the label.
 #' @param size Numeric scalar to set the size of the dots.
 #' @param ncol Integer scalar to set the number of labels to display per row.
-#' @param show.nmads,show.min.diff,grid.vars Deprecated, use \code{\link{plotDeltaDistributions}} instead.
+#' @param show.nmads,show.min.diff Deprecated, use \code{\link{plotDeltaDistribution}} instead.
 #' @param grid.vars Named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
 #' used to arrange the multiple plots generated when \code{references} is of length greater than 1.
 #'
@@ -38,7 +38,7 @@
 #' \itemize{
 #' \item \dQuote{Assigned}, containing scores for all cells assigned to that label.
 #' Colored according to \code{this.color}.
-#' \dQuote{Pruned}, containing scores for all cells assigned to that label but pruned out.
+#' \dQuote{Pruned}, containing scores for all cells assigned to that label but pruned out, e.g., by \code{\link{pruneScores}}.
 #' Colored according to \code{pruned.color}, and can be omitted by setting \code{pruned.color=NA}.
 #' \item \dQuote{Other}, containing the scores for all cells assigned to other labels.
 #' Colored according to \code{other.color}.
@@ -60,11 +60,9 @@
 #' }
 #'
 #' @seealso
-#' \code{\link{SingleR}}, to generate scores.
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
-#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
-#'
-#' \code{\link[gridExtra]{grid.arrange}}, for tweaks to the how plots are arranged when multiple are output together.
+#' \code{\link{plotDeltaDistribution}} and \code{\link{plotScoreHeatmap}}, for alternative diagnostic plots.
 #'
 #' @author Daniel Bunis and Aaron Lun
 #' @examples

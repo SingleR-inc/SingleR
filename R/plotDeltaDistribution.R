@@ -48,11 +48,9 @@
 #' However, this can be changed to show all deltas for an individual reference by setting \code{chosen.only=FALSE}.
 #'
 #' @seealso
-#' \code{\link{SingleR}}, to generate scores.
+#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
-#' \code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
-#'
-#' \code{\link[gridExtra]{grid.arrange}}, for tweaks to the how plots are arranged when multiple are output together.
+#' \code{\link{plotScoreDistribution}} and \code{\link{plotScoreHeatmap}}, for alternative diagnostic plots.
 #'
 #' @author Daniel Bunis and Aaron Lun
 #' @examples

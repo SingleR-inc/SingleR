@@ -33,13 +33,13 @@
 #'
 #' @return
 #' If \code{scores.use} specifies a single set of scores,
-#' the output of \code{\link{pheatmap}} is returned showing the heatmap on the current graphics device.
+#' the output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
 #'
 #' If \code{scores.use} specifies multiple scores for a combined result,
 #' multiple heatmaps are generated in a grid on the current graphics device.
 #'
 #' If \code{scores.use} specifies multiple scores and \code{grid.vars} is set to \code{NULL},
-#' a list is returned containing the \code{\link{pheatmap}} globs for manual display.
+#' a list is returned containing the \code{\link[pheatmap]{pheatmap}} globs for manual display.
 #'
 #' @details
 #' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores 
