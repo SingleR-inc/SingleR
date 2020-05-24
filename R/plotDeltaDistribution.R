@@ -5,16 +5,16 @@
 #' across cells assigned to each reference label.
 #'
 #' @inheritParams plotScoreDistribution
-#' @param deltas.use Integer scalar or vector specifying the individual annotation result from which to take deltas.
-#' This is only relevant for combined results, see Details.
+#' @param chosen.only Logical scalar indicating whether to only show deltas 
+#' for individual labels that were chosen as the final label in a combined result.
 #' @param show String specifying whether to show the difference from the median (\code{"delta.med"}) 
 #' or the difference from the next-best score (\code{"delta.next"}).
 #'
 #' @return
-#' If \code{deltas.use} specifies a single set of deltas,
+#' If \code{references} specifies a single set of deltas,
 #' a \link[ggplot2]{ggplot} object is returned showing the deltas in violin plots.
 #'
-#' If \code{deltas.use} specifies multiple deltas for a combined result,
+#' If \code{references} specifies multiple deltas for a combined result,
 #' multiple ggplot objects are generated in a grid on the current graphics device.
 #' 
 #' If \code{delta.use} specifies multiple deltas and \code{grid.vars} is set to \code{NULL},
@@ -38,19 +38,14 @@
 #' this can be disabled by setting \code{pruned.color=NA}.
 #'
 #' For combined results (see \code{?"\link{combine-predictions}"}),
-#' this function can show both the combined and individual deltas or labels.
-#' This is done using the \code{deltas.use} and \code{labels.use} arguments,
+#' this function will show the deltas faceted by the assigned label within each individual reference.
+#' The references to show in this manner can be specified using the \code{references} argument, 
 #' entries of which refer to columns of \code{results$orig.results}.
-#' \code{labels.use} is also allowed to contain zero, in which case the combined labels are used.
-#' For example:
-#' \itemize{
-#' \item If we set \code{deltas.use=2} and \code{calls.use=1},
-#' we will plot the deltas from the second individual reference against the labels faceted from the first reference.
-#' \item If we set \code{deltas.use=1:2} and \code{calls.use=1:2},
-#' we will plot the deltas from first and second references (in separate plots) faceted by their corresponding labels.
-#' \item By default, the function will create a separate plot for each individual reference faceted by the combined labels. 
-#' This is equivalent to \code{deltas.use=1:N} and \code{calls.use=0} for \code{N} individual references.
-#' }
+#'
+#' By default, a separate plot is created for each individual reference in a combined \code{results}.
+#' Deltas are only shown in each plot if the label in the corresponding reference 
+#' was chosen as the overall best label in the combined results.
+#' However, this can be changed to show all deltas for an individual reference by setting \code{chosen.only=FALSE}.
 #'
 #' @seealso
 #' \code{\link{SingleR}}, to generate scores.
@@ -71,22 +66,21 @@
 #'
 #' # Multi-reference compatibility:
 #' example(combineRecomputedResults, echo = FALSE)
+#'
 #' plotDeltaDistribution(results = combined)
 #'
-#' # To have plots output in a grid rather than as separate pages, provide,
-#' # a list of inputs for gridExtra::grid.arrange() to 'grids.vars'.
-#' plotDeltaDistribution(combined, grid.vars = list(ncol = 1))
+#' plotDeltaDistribution(results = combined, chosen.only=FALSE)
 #'
-#' # An empty list will use grid.arrange defaluts
-#' plotDeltaDistribution(combined, grid.vars = list())
+#' # Tweaking the grid controls:
+#' plotDeltaDistribution(combined, grid.vars = list(ncol = 2))
 #'
 #' @export
 plotDeltaDistribution <- function(
     results,
     show = c("delta.med", "delta.next"),
     labels.use = colnames(results$scores),
-    deltas.use = NULL,
-    calls.use = 0,
+    references = NULL,
+    chosen.only = TRUE,
     size = 2,
     ncol = 5,
     dots.on.top = TRUE,
@@ -99,58 +93,49 @@ plotDeltaDistribution <- function(
     is.combined <- !is.null(results$orig.results)
     ref.names <- colnames(results$orig.results)
 
-    if (is.null(deltas.use)) {
+    if (is.null(references)) {
         if (is.combined) {
             # Combined 'delta.med'/'delta.next' are not worth showing.
-            deltas.use <- seq_along(results$orig.results) 
+            references <- seq_along(results$orig.results) 
         } else {
-            deltas.use <- 0L
+            references <- 0L
         }
     }
 
-    calls.use <- rep(calls.use, length.out=length(deltas.use))
-    if (is.combined && show == "delta.next" && any(calls.use != deltas.use)) {
-        warning("updating 'calls.use' to be the same as 'deltas.use' for 'show=\"delta.next\"'")
-        calls.use <- deltas.use
-    }
-
-    plots <- vector("list", length(deltas.use))
+    plots <- vector("list", length(references))
     for (i in seq_along(plots)) {
 
         # Pulling out the scores to use in this iteration.
-        chosen.scores <- deltas.use[i]
+        chosen <- references[i]
         if (is.combined) {
-            if (chosen.scores==0L) {
+            if (chosen==0L) {
                 stop("deltas cannot be shown for combined results")
             }
-            score.results <- results$orig.results[[chosen.scores]]
+            current.results <- results$orig.results[[chosen]]
+            if (chosen.only) {
+                current.results <- current.results[chosen==results$reference,]
+            }
         } else {
-            score.results <- results
+            current.results <- results
         }
-        scores.title <- .values_title(is.combined, chosen.scores, ref.names, show)
+        scores.title <- .values_title(is.combined, chosen, ref.names, show)
 
         # Computing the values that we want to show.
         if (show=="delta.med") {
-            values <- getDeltaFromMedian(score.results)
+            values <- getDeltaFromMedian(current.results)
         } else if (show=="delta.next") {
-            values <- score.results$tuning.scores$first - score.results$tuning.scores$second
+            tuned <- current.results$tuning.scores
+            values <- tuned$first - tuned$second
         }
 
         # Pulling out the labels to use in this iteration.
-        chosen.calls <- calls.use[i]
-        if (chosen.calls==0L) {
-            call.results <- results
-        } else {
-            call.results <- results$orig.results[[chosen.calls]]
-        }
-
-        labels <- call.results$labels
-        labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
+        labels <- current.results$labels
+        labels.title <- .values_title(is.combined, chosen, ref.names, "Labels")
 
         # Checking if we need pruning.
         pruned <- NULL
         if (!is.na(pruned.color)) {
-            pruned <- is.na(call.results$pruned.labels)
+            pruned <- is.na(current.results$pruned.labels)
         }
 
         # Actually creating the plot
@@ -165,7 +150,7 @@ plotDeltaDistribution <- function(
         # Doing this to be consistent with raw ggplot output.
         plots[[1]]
     } else {
-        if (!is.null(grid.vars) && length(deltas.use) > 1L) {
+        if (!is.null(grid.vars) && length(references) > 1L) {
             do.call(gridExtra::grid.arrange, c(plots, grid.vars))
         } else {
             plots

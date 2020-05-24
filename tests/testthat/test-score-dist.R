@@ -147,56 +147,39 @@ ref2.title <- "largeRef"
 ######################################
 
 test_that("plotScoreDistribution works for multi-ref runs - combined", {
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = 0),
+    expect_s3_class(plotScoreDistribution(results = combined, references = 0),
         "ggplot")
 })
 
 test_that("plotScoreDistribution works for multi-ref runs - individual", {
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = 1),
+    expect_s3_class(plotScoreDistribution(results = combined, references = 1),
         "ggplot")
 })
 
 test_that("plotScoreDistribution works for multi-ref runs - multiple", {
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = 0:1),
+    expect_s3_class(plotScoreDistribution(results = combined, references = 0:1),
         "gtable")
 
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = NULL),
+    expect_s3_class(plotScoreDistribution(results = combined, references = NULL),
         "gtable")
 
     expect_equal(
         length(
             plotScoreDistribution(results = combined, grid.vars = NULL,
-                scores.use = NULL)),
+                references = NULL)),
         length(
             plotScoreDistribution(results = combined, grid.vars = NULL,
-                scores.use = 0:2)
+                references = 0:2)
         )
     )
 })
 
-test_that("plotScoreDistribution respects the calls.use specification", {
-    # Individual scores.use
-    expect_s3_class(plotScoreDistribution(results = combined_prunedRef1, 
-        scores.use = 1, calls.use = 1), 
-        "ggplot")
-
-    # All scores.use
-    expect_s3_class(plotScoreDistribution(results = combined_prunedRef1,
-        calls.use = 1, scores.use = NULL),
-        "gtable")
-
-    # Multiple calls.use
-    expect_s3_class(plotScoreDistribution(results = combined_prunedRef1,
-        calls.use = 0:2, scores.use = NULL),
-        "gtable")
-})
-
 test_that("plotScoreDistribution works with grid.vars control", {
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = NULL,
+    expect_s3_class(plotScoreDistribution(results = combined, references = NULL,
         grid.vars = NULL)[[1]],
         "ggplot")
 
-    expect_s3_class(plotScoreDistribution(results = combined, scores.use = NULL,
+    expect_s3_class(plotScoreDistribution(results = combined, references = NULL,
         grid.vars = list(ncol = 2)),
         "gtable")
 })
@@ -221,76 +204,62 @@ test_that("plotScoreDistribution works with other typical adjustments", {
 
 test_that("plotDeltaDistribution works for multi-ref runs - combined", {
     expect_error(plotDeltaDistribution(results = combined,
-        deltas.use = 0, show = "delta.med"),
+        references = 0, show = "delta.med"),
         "deltas cannot be shown")
 
     expect_error(plotDeltaDistribution(results = combined,
-        deltas.use = 0, show = "delta.next"),
+        references = 0, show = "delta.next"),
         "deltas cannot be shown")
 })
 
 test_that("plotDeltaDistribution works for multi-ref runs - individual", {
     expect_s3_class(plotDeltaDistribution(results = combined,
-        deltas.use = 1, show = "delta.med"),
+        references = 1, show = "delta.med"),
         "ggplot")
 
     expect_s3_class(plotDeltaDistribution(results = combined,
-        deltas.use = 1, show = "delta.next"),
+        references = 1, show = "delta.next"),
         "ggplot")
 })
 
 test_that("plotDeltaDistribution can be made for multi-ref runs - multiple", {
     expect_error(plotDeltaDistribution(results = combined,
-        deltas.use = 0:1),
+        references = 0:1),
         "deltas cannot be shown")
 
     expect_s3_class(plotDeltaDistribution(results = combined,
-        deltas.use = NULL),
+        references = NULL),
         "gtable")
 
-    # when deltas.use = NULL combined plot should not be requested.
+    # when references = NULL combined plot should not be requested.
     expect_equal(
         length(
             plotDeltaDistribution(results = combined, grid.vars = NULL,
-                show = "delta.med", deltas.use = NULL)),
+                show = "delta.med", references = NULL)),
         length(
             plotDeltaDistribution(results = combined, grid.vars = NULL,
-                show = "delta.med", deltas.use = 1:2))
+                show = "delta.med", references = 1:2))
         )
 })
 
-test_that("plotDeltaDistribution responds to call.use", {
-    # Individual deltas.use
-    expect_s3_class(plotDeltaDistribution(results = combined_prunedRef1, deltas.use = 1,
-        calls.use = 1, show = "delta.med"),
+test_that("plotDeltaDistribution responds to chosen.only", {
+    # Individual references
+    expect_s3_class(plotDeltaDistribution(results = combined_prunedRef1, references = 1,
+        chosen.only = FALSE, show = "delta.med"),
         "ggplot")
 
-    expect_s3_class(plotDeltaDistribution(results = combined_prunedRef1, deltas.use = 1,
-        calls.use = 1, show = "delta.next"),
-        "ggplot")
-
-    # All deltas.use
+    # All references
     expect_s3_class(plotDeltaDistribution(results = combined_prunedRef1,
-        calls.use = 1, deltas.use = NULL, show = "delta.med"),
-        "gtable")
-
-    # Outputs but with message
-    expect_warning(plotDeltaDistribution(results = combined_prunedRef1,
-        calls.use = 1, deltas.use = NULL, show = "delta.next"),
-        "updating 'calls.use'")
-
-    # Multiple calls.use
-    expect_s3_class(plotDeltaDistribution(results = combined_prunedRef1,
-        calls.use = 1:2, deltas.use = NULL),
+        chosen.only = FALSE, references = NULL, show = "delta.med"),
         "gtable")
 })
 
 test_that("plotDeltaDistribution responds to grid.vars control", {
-    expect_s3_class(plotDeltaDistribution(results = combined, deltas.use = NULL,
+    expect_s3_class(plotDeltaDistribution(results = combined, references = NULL,
         grid.vars = NULL)[[1]],
         "ggplot")
 
-    expect_s3_class(plotDeltaDistribution(results = combined, deltas.use = NULL,
+    expect_s3_class(plotDeltaDistribution(results = combined, references = NULL,
         grid.vars = list(ncol = 2)),
         "gtable")
 })
