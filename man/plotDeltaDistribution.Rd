@@ -8,8 +8,8 @@ plotDeltaDistribution(
   results,
   show = c("delta.med", "delta.next"),
   labels.use = colnames(results$scores),
-  deltas.use = NULL,
-  calls.use = 0,
+  references = NULL,
+  chosen.only = TRUE,
   size = 2,
   ncol = 5,
   dots.on.top = TRUE,
@@ -28,11 +28,11 @@ or the difference from the next-best score (\code{"delta.next"}).}
 \item{labels.use}{Character vector specifying the labels to show in the plot facets.
 Defaults to all labels in \code{results}.}
 
-\item{deltas.use}{Integer scalar or vector specifying the individual annotation result from which to take deltas.
+\item{references}{Integer scalar or vector specifying the references to visualize.
 This is only relevant for combined results, see Details.}
 
-\item{calls.use}{Integer scalar or vector specifying the individual annotation result from which to take labels.
-This is only relevant for combined results, see Details.}
+\item{chosen.only}{Logical scalar indicating whether to only show deltas 
+for individual labels that were chosen as the final label in a combined result.}
 
 \item{size}{Numeric scalar to set the size of the dots.}
 
@@ -44,13 +44,14 @@ This is only relevant for combined results, see Details.}
 
 \item{pruned.color}{String specifying the color for cells that were assigned to the label but pruned.}
 
-\item{grid.vars}{Deprecated, use \code{\link{plotDeltaDistributions}} instead.}
+\item{grid.vars}{Named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
+used to arrange the multiple plots generated when \code{references} is of length greater than 1.}
 }
 \value{
-If \code{deltas.use} specifies a single set of deltas,
+If \code{references} specifies a single set of deltas,
 a \link[ggplot2]{ggplot} object is returned showing the deltas in violin plots.
 
-If \code{deltas.use} specifies multiple deltas for a combined result,
+If \code{references} specifies multiple deltas for a combined result,
 multiple ggplot objects are generated in a grid on the current graphics device.
 
 If \code{delta.use} specifies multiple deltas and \code{grid.vars} is set to \code{NULL},
@@ -79,19 +80,14 @@ Points corresponding to cells with pruned calls are colored by \code{pruned.colo
 this can be disabled by setting \code{pruned.color=NA}.
 
 For combined results (see \code{?"\link{combine-predictions}"}),
-this function can show both the combined and individual deltas or labels.
-This is done using the \code{deltas.use} and \code{labels.use} arguments,
+this function will show the deltas faceted by the assigned label within each individual reference.
+The references to show in this manner can be specified using the \code{references} argument, 
 entries of which refer to columns of \code{results$orig.results}.
-\code{labels.use} is also allowed to contain zero, in which case the combined labels are used.
-For example:
-\itemize{
-\item If we set \code{deltas.use=2} and \code{calls.use=1},
-we will plot the deltas from the second individual reference against the labels faceted from the first reference.
-\item If we set \code{deltas.use=1:2} and \code{calls.use=1:2},
-we will plot the deltas from first and second references (in separate plots) faceted by their corresponding labels.
-\item By default, the function will create a separate plot for each individual reference faceted by the combined labels. 
-This is equivalent to \code{deltas.use=1:N} and \code{calls.use=0} for \code{N} individual references.
-}
+
+By default, a separate plot is created for each individual reference in a combined \code{results}.
+Deltas are only shown in each plot if the label in the corresponding reference 
+was chosen as the overall best label in the combined results.
+However, this can be changed to show all deltas for an individual reference by setting \code{chosen.only=FALSE}.
 }
 \examples{
 example(SingleR, echo=FALSE)
@@ -104,22 +100,19 @@ plotDeltaDistribution(pred, show = "delta.next")
 
 # Multi-reference compatibility:
 example(combineRecomputedResults, echo = FALSE)
+
 plotDeltaDistribution(results = combined)
 
-# To have plots output in a grid rather than as separate pages, provide,
-# a list of inputs for gridExtra::grid.arrange() to 'grids.vars'.
-plotDeltaDistribution(combined, grid.vars = list(ncol = 1))
+plotDeltaDistribution(results = combined, chosen.only=FALSE)
 
-# An empty list will use grid.arrange defaluts
-plotDeltaDistribution(combined, grid.vars = list())
+# Tweaking the grid controls:
+plotDeltaDistribution(combined, grid.vars = list(ncol = 2))
 
 }
 \seealso{
-\code{\link{SingleR}}, to generate scores.
+\code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 
-\code{\link{pruneScores}}, to remove low-quality labels based on the scores, and to see more about the quailty cutoffs.
-
-\code{\link[gridExtra]{grid.arrange}}, for tweaks to the how plots are arranged when multiple are output together.
+\code{\link{plotScoreDistribution}} and \code{\link{plotScoreHeatmap}}, for alternative diagnostic plots.
 }
 \author{
 Daniel Bunis and Aaron Lun
