@@ -47,74 +47,71 @@
 #' str(out2)
 #'
 #' @export
-#' @importFrom S4Vectors selfmatch
-getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL) { 
-
-    if (!.is_list(ref)) {
-        ulabels <- .get_levels(labels)
-        stats <- .pairwise_median_logfc(ref, labels, assay.type=assay.type, check.missing=check.missing)
-        choices <- stats$choices
-        lfc <- stats$lfc
-    } else {
-        ulabels <- .get_levels(unlist(labels))
-        stats <- mapply(FUN=.pairwise_median_logfc, ref=ref, labels=labels, 
-            assay.type=assay.type, check.missing=check.missing, SIMPLIFY=FALSE)
-
-        all.choices <- lapply(stats, "[[", i="choices")
-        all.choices <- do.call(rbind, all.choices)
-        all.lfc <- lapply(stats, "[[", i="lfc")
-        all.lfc <- unlist(all.lfc, recursive=FALSE)
-
-        m <- selfmatch(all.choices)
-        by.m <- split(all.lfc, m)
-        lfc <- lapply(by.m, Reduce, f="+")
-        choices <- all.choices[match(names(lfc), as.character(m)),]
-    }
-
-    .choose_top_markers(ulabels, choices=choices, lfc=lfc, de.n=de.n)
-}
-
-.pairwise_median_logfc <- function(ref, labels, assay.type, check.missing) {
-    ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
-    mat <- .median_by_label(ref, labels)
-
-    choices <- expand.grid(first=colnames(mat), second=colnames(mat), stringsAsFactors=FALSE)
-    choices <- choices[choices$first!=choices$second,]
-    choices <- DataFrame(choices)
-
-    lfc <- vector("list", nrow(choices))
-    for (i in seq_along(lfc)) {
-        left <- choices$first[i]
-        right <- choices$second[i]
-        lfc[[i]] <- mat[,left] - mat[,right]
-    }
-
-    list(choices=choices, lfc=lfc)
-}
-
+#' @importFrom S4Vectors selfmatch DataFrame
 #' @importFrom utils head
-.choose_top_markers <- function(ulabels, choices, lfc, de.n) {
-    if (is.null(de.n)) {
-        de.n <- round(500*(2/3)^log2(length(ulabels)))
+getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL) { 
+    if (!.is_list(ref)) { 
+        ref <- list(ref)
+        labels <- list(labels)
     }
 
-    output <- list()
+    # Setting up references.
+    common <- Reduce(intersect, lapply(ref, rownames))
+    if (length(common)==0L && any(vapply(ref, nrow, 0L) > 0L)) {
+        stop("no common row names across 'ref'")
+    }
+
+    for (i in seq_along(ref)) {
+        current <- ref[[i]][common,,drop=FALSE]
+        current <- .to_clean_matrix(current, assay.type, check.missing, msg="ref")
+        ref[[i]] <- .median_by_label(current, labels[[i]])
+    }
+
+    # Identify all label combinations within each reference.
+    collated <- list()
+    for (i in seq_along(ref)) {
+        curnames <- as.character(colnames(ref[[i]])) # coerce NULL to character(0) for zero-ncol ref.
+        pairs <- expand.grid(first=curnames, second=curnames, stringsAsFactors=FALSE)
+        pairs <- pairs[pairs$first!=pairs$second,]
+        collated[[i]] <- DataFrame(pairs, index=rep(i, nrow(pairs)))
+    }
+
+    collated <- do.call(rbind, collated)
+    chosen <- selfmatch(collated[,1:2])
+    indices <- split(collated$index, chosen)
+    choices <- collated[match(as.integer(names(indices)), chosen),]
+
+    # Setting up the output structure.
+    ulabels <- .get_levels(unlist(lapply(ref, colnames)))
+    output <- vector("list", length(ulabels))
+    names(output) <- ulabels
+    empty <- output
+
     for (i in ulabels) {
-        subout <- list()
+        subout <- empty
         for (j in ulabels) {
             subout[[j]] <- character(0)
         }
         output[[i]] <- subout
     }
 
-    for (i in seq_len(nrow(choices))) {
+    # Identify top hits based on the average (or sum, it doesn't matter)
+    # of the log-fold changes between labels across references.
+    if (is.null(de.n)) {
+        de.n <- round(500*(2/3)^log2(length(ulabels)))
+    }
+
+    for (i in seq_along(indices)) {
         left <- choices$first[i]
         right <- choices$second[i]
-        chosen <- lfc[[i]]
 
-        # FYI, the as.character() accounts for the edge case of NULL names,
-        # which apparently happens due to incorrect matrix zero-subsetting.
-        output[[left]][[right]] <- as.character(names(chosen)[head(order(chosen, decreasing=TRUE), de.n)])
+        lfc <- 0
+        for (r in indices[[i]]) {
+            lfc <- lfc + (ref[[r]][,left] - ref[[r]][,right])
+        }
+
+        keep <- head(order(lfc, decreasing=TRUE), de.n)
+        output[[left]][[right]] <- as.character(names(lfc)[keep]) # to handle NULL rownames upon matrix zero-subsetting.
     }
 
     output
