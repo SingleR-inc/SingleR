@@ -143,7 +143,7 @@
 #' ref <- .mockRefData()
 #'
 #' # Normalizing and log-transforming for automated marker detection.
-#' ref <- scater::logNormCounts(ref)
+#' ref <- scuttle::logNormCounts(ref)
 #'
 #' trained <- trainSingleR(ref, ref$label)
 #' trained

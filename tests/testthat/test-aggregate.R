@@ -1,7 +1,7 @@
 # This tests the aggregator function.
 # library(testthat); library(SingleR); source("test-aggregate.R")
 
-library(scater)
+library(scuttle)
 sce <- mockSCE()
 sce <- logNormCounts(sce)
 

@@ -19,7 +19,7 @@ training <- SingleCellExperiment(
 )
 
 rownames(training) <- sprintf("GENE_%s", seq_len(nrow(training)))
-training <- scater::logNormCounts(training)
+training <- scuttle::logNormCounts(training)
 
 ##################################################
 ## Mocking up some test data for classification ##
@@ -33,7 +33,7 @@ test <- SingleCellExperiment(
 )
 
 rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
-test <- scater::logNormCounts(test)
+test <- scuttle::logNormCounts(test)
 
 ##################################################
 ## Setting up flush tests for inadvertent DA BP ##

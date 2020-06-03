@@ -81,7 +81,7 @@ Moreover, unlike counts, the sum of transformed and normalized expression values
 We do not use the median to avoid consistently obtaining zeros for lowly expressed genes.
 }
 \examples{
-library(scater)
+library(scuttle)
 sce <- mockSCE()
 sce <- logNormCounts(sce)
 

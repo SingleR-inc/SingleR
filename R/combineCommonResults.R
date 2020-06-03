@@ -51,9 +51,9 @@
 #' test <- .mockTestData(ref1)
 #'
 #' # Applying classification with SingleR's multi-reference mode.
-#' ref1 <- scater::logNormCounts(ref1)
-#' ref2 <- scater::logNormCounts(ref2)
-#' test <- scater::logNormCounts(test)
+#' ref1 <- scuttle::logNormCounts(ref1)
+#' ref2 <- scuttle::logNormCounts(ref2)
+#' test <- scuttle::logNormCounts(test)
 #'
 #' pred <- SingleR(test, list(ref1, ref2), labels=list(ref1$label, ref2$label))
 #' pred[,1:5] # Only viewing the first 5 columns for visibility.

@@ -89,8 +89,8 @@
 #' ref <- .mockRefData()
 #' test <- .mockTestData(ref)
 #'
-#' ref <- scater::logNormCounts(ref)
-#' test <- scater::logNormCounts(test)
+#' ref <- scuttle::logNormCounts(ref)
+#' test <- scuttle::logNormCounts(test)
 #'
 #' # Setting up the training:
 #' trained <- trainSingleR(ref, label=ref$label)

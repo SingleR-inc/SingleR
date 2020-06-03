@@ -176,7 +176,7 @@ Users should also be sure to set the seed as the aggregation involves randomizat
 ref <- .mockRefData()
 
 # Normalizing and log-transforming for automated marker detection.
-ref <- scater::logNormCounts(ref)
+ref <- scuttle::logNormCounts(ref)
 
 trained <- trainSingleR(ref, ref$label)
 trained

@@ -87,13 +87,13 @@ ref2$label <- tolower(ref2$label)
 test <- .mockTestData(ref)
 
 # Performing classification within each reference.
-test <- scater::logNormCounts(test)
+test <- scuttle::logNormCounts(test)
 
-ref1 <- scater::logNormCounts(ref1)
+ref1 <- scuttle::logNormCounts(ref1)
 train1 <- trainSingleR(ref1, labels=ref1$label)
 pred1 <- classifySingleR(test, train1)
 
-ref2 <- scater::logNormCounts(ref2)
+ref2 <- scuttle::logNormCounts(ref2)
 train2 <- trainSingleR(ref2, labels=ref2$label)
 pred2 <- classifySingleR(test, train2)
 

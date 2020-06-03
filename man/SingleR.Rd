@@ -96,8 +96,8 @@ If this intersection is empty (e.g., because the two datasets use different anno
 ref <- .mockRefData()
 test <- .mockTestData(ref)
 
-ref <- scater::logNormCounts(ref)
-test <- scater::logNormCounts(test)
+ref <- scuttle::logNormCounts(ref)
+test <- scuttle::logNormCounts(test)
 
 # Running the classification with different options:
 pred <- SingleR(test, ref, labels=ref$label)

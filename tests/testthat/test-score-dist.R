@@ -123,11 +123,11 @@ test_that("plotDeltaDistribution warns if no 'labels.use' are present", {
 ref <- .mockRefData(nreps=8)
 ref1 <- ref[,1:4%%4==0]
 ref1 <- ref1[,sample(ncol(ref1))]
-ref1 <- scater::logNormCounts(ref1)
+ref1 <- scuttle::logNormCounts(ref1)
 
 ref2 <- ref[,1:4%%4!=0]
 ref2 <- ref2[,sample(ncol(ref2))]
-ref2 <- scater::logNormCounts(ref2)
+ref2 <- scuttle::logNormCounts(ref2)
 
 ref2$label <- tolower(ref2$label)
 
