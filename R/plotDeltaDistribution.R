@@ -37,7 +37,7 @@
 #' Points corresponding to cells with pruned calls are colored by \code{pruned.color};
 #' this can be disabled by setting \code{pruned.color=NA}.
 #'
-#' For combined results (see \code{?"\link{combine-predictions}"}),
+#' For combined results (see \code{?\link{combineRecomputedResults}}),
 #' this function will show the deltas faceted by the assigned label within each individual reference.
 #' The references to show in this manner can be specified using the \code{references} argument, 
 #' entries of which refer to columns of \code{results$orig.results}.

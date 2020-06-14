@@ -62,7 +62,7 @@
 #' }
 #' 
 #' @section Working with combined results:
-#' For combined results (see \code{?"\link{combine-predictions}"}),
+#' For combined results (see \code{?\link{combineRecomputedResults}}),
 #' this function can show both the combined and individual scores or labels.
 #' This is done using the \code{scores.use} and \code{calls.use} arguments,
 #' entries of which refer to columns of \code{results$orig.results} if positive or to the combined results if zero.

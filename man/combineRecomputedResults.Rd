@@ -60,7 +60,8 @@ The label from the results with the highest score for each cell is retained.
 Unlike \code{\link{combineCommonResults}}, this does not assume that each run of \code{\link{classifySingleR}} was performed using the same set of common genes, instead recomputing the scores for comparison across references.
 }
 \details{
-This function implements a variant of Option 3 described in \code{?"\link{combine-predictions}"}.
+Here, the strategy is to performed classification separately within each reference, 
+then collating the results to choose the label with the highest score across references.
 For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
 We also retrieve the marker genes associated with that label and take the union of markers across all references.
 This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};

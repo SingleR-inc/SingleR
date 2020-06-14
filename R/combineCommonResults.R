@@ -1,9 +1,7 @@
 #' Combine SingleR results with common genes
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
-#' For each cell, the label from the result with the highest score is used as that cell's combined label.
-#' This assumes that each run of \code{\link{classifySingleR}} was performed using a common set of marker genes,
-#' hence the \code{Common} in the function name.
+#' This assumes that each run of \code{\link{classifySingleR}} was performed using a common set of marker genes.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #'
@@ -22,10 +20,11 @@
 #' and \code{label.origin}, a DataFrame specifying the reference of origin for each label in \code{scores}.
 #' 
 #' @details
+#' Here, the strategy is to performed classification separately within each reference, 
+#' then collating the results to choose the label with the highest score across references.
 #' For each cell, we identify the reference with the highest score across all of its labels.
 #' The \dQuote{combined label} is then defined as the label assigned to that cell in the highest-scoring reference.
-#' (The same logic is also applied to the first and pruned labels, if available.)
-#' See comments in \code{?"\link{combine-predictions}"} for the overall rationale.
+#' (The same logic is also applied to the first and pruned labels, if those are available.)
 #' 
 #' Each result should be generated from training sets that use a common set of genes during classification, 
 #' i.e., \code{common.genes} should be the same in the \code{trained} argument to each \code{\link{classifySingleR}} call.

@@ -144,7 +144,7 @@ If \code{genes} explicitly contains gene identities (as character vectors), \cod
 
 \section{Dealing with multiple references}{
 
-The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combine-predictions}} for an explanation).
+The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineRecomputedResults}} for an explanation).
 To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{genes="de"} or \code{"sd"}.
 Rank calculation and index construction is then performed within each reference separately.
 
