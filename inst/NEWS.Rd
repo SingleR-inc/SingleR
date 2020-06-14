@@ -2,6 +2,12 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 1.4.0}{\itemize{
+\item Migrated all of the dataset getter functions to the \pkg{celldex} package.
+
+\item Streamlined the vignette to point to the book at \url{https://ltla.github.io/SingleRBook/}.
+}}
+
 \section{Version 1.2.0}{\itemize{
 \item Added support for consolidating labels from multiple references via \code{combineResults()}.
 
