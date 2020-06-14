@@ -24,8 +24,7 @@ Imports:
     BiocSingular,
     stats,
     utils,
-    Rcpp,
-    ExperimentHub
+    Rcpp
 LinkingTo:
     Rcpp,
     beachmat
@@ -45,8 +44,7 @@ Suggests:
     grDevices,
     gridExtra,
     viridis,
-    AnnotationHub,
-    AnnotationDbi
+    celldex
 biocViews: 
     Software,
     SingleCell, 
