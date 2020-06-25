@@ -48,9 +48,9 @@ install_github("LTLA/SingleR")
 
 ## Usage
 
-The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels.
+The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels. Documentation and basic examples can be accessed with `?SingleR`.
 
-Both basic and advanced examples can be found in the [vignette](https://bioconductor.org/packages/release/bioc/vignettes/SingleR/inst/doc/SingleR.html) or with additional context in the [SingleR book](https://ltla.github.io/SingleRBook/).
+Both basic and advanced examples can be found in the [SingleR book](https://ltla.github.io/SingleRBook/).
 
 ### Usage with Seurat/SingleCellExperiment objects
 
