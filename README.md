@@ -1,5 +1,19 @@
 # SingleR - Single-cell Recognition
 
+[![Bioconductor Time](https://bioconductor.org/shields/years-in-bioc/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html "How long has SingleR been in a release of Bioconductor")
+[![Bioconductor Downloads](https://bioconductor.org/shields/downloads/release/SingleR.svg)](https://bioconductor.org/packages/stats/bioc/SingleR/ "Ranking by number of downloads. A lower number means the package is downloaded more frequently. Determined within a package type (software, experiment, annotation, workflow) and uses the number of distinct IPs for the last 12 months")
+[![Support posts](https://bioconductor.org/shields/posts/SingleR.svg)](https://support.bioconductor.org/t/SingleR/ "Support site activity for SingleR, last 6 months: tagged questions/avg. answers per question/avg. comments per question/accepted answers, or 0 if no tagged posts.")
+
+**Current build status**
+- `release` [![Bioconductor Availability](https://bioconductor.org/shields/availability/3.11/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html#archives "Whether SingleR release is available on all platforms") 
+[![Bioconductor Dependencies](https://bioconductor.org/shields/dependencies/release/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html#since "Number of recursive dependencies needed to install package")
+[![Bioconductor Commits](https://bioconductor.org/shields/lastcommit/release/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR "Time since last commit, possible values: today, < 1 week, < 1 month, < 3 months, since release, before release")
+[![Bioconductor Release Build](https://bioconductor.org/shields/build/release/bioc/SingleR.svg)](https://bioconductor.org/checkResults/release/bioc-LATEST/SingleR/ "Bioconductor release build")
+- `development` [![Bioconductor Availability](https://bioconductor.org/shields/availability/3.12/SingleR.svg)](https://bioconductor.org/packages/devel/bioc/html/SingleR.html#archives "Whether SingleR devel is available on all platforms") 
+[![Bioconductor Dependencies](https://bioconductor.org/shields/dependencies/devel/SingleR.svg)](https://bioconductor.org/packages/devel/bioc/html/SingleR.html#since "Number of recursive dependencies needed to install package")
+[![Bioconductor Commits](https://bioconductor.org/shields/lastcommit/devel/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR "Time since last commit, possible values: today, < 1 week, < 1 month, < 3 months, since release, before release")
+[![Bioconductor Devel Build](https://bioconductor.org/shields/build/devel/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR/ "Bioconductor devel build")
+
 Recent advances in single cell RNA-seq (scRNA-seq) have enabled an unprecedented level of granularity in characterizing gene expression changes in disease models. 
 Multiple single cell analysis methodologies have been developed to detect gene expression changes and to cluster cells by similarity of gene expression. 
 However, the classification of clusters by cell type relies heavily on known marker genes, and the annotation of clusters is performed manually. 
@@ -9,81 +23,34 @@ SingleR leverages reference transcriptomic datasets of pure cell types to infer 
 
 For more informations please refer to the manuscript: [Aran, Looney, Liu et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage. Nature Immunology (2019)](https://www.nature.com/articles/s41590-018-0276-y)
 
-## Install
+This repository contains a simplified, more performant version of `SingleR`. 
+The original repository containing the legacy version can be found [here](https://github.com/dviraran/SingleR). 
+**This version does not support the browser application that accompanied the original version.**
 
-`SingleR` requires several development versions of Bioconductor packages, so you should be sure to switch to using `bioc-devel` prior to installation so that proper versions are installed.
-This will no longer be necessary once `SingleR` is added to Bioconductor.
+## Installation
 
-```R
-if (!requireNamespace("BiocManager", quietly=TRUE))
-    install.packages("BiocManager")
-BiocManager::install(version = "devel")
-BiocManager::valid()
+This is the __development__ version of the R/Bioconductor package SingleR. It may contain unstable or untested new features. If you are looking for the __release__ version of this package please go to its official [Bioconductor landing page](https://bioconductor.org/packages/SingleR) and follow the instructions there to install it.
 
-devtools::install_github('LTLA/SingleR')
+If you were really looking for this development version, then you can install it via:
+
+```r
+install.packages("BiocManager")
+BiocManager::install("SingleR", version = "devel")
 ```
 
-## Updates
+Alternatively, you can install it from GitHub using the [devtools](https://github.com/hadley/devtools "devtools") package.
 
-**08.14.2019**
-This repository contains a simplified, more performant version of `SingleR`. 
-It is currently in the process of being added to Bioconductor. 
-The original repository can be found [here](https://github.com/dviraran/SingleR). 
-This version does not support the browser application that accompanied the original version.
+```r
+install.packages("devtools")
+library(devtools)
+install_github("LTLA/SingleR")
+```
 
 ## Usage
 
 The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels.
-The package directly provides a number of reference datasets generated from bulk RNA-seq of pure cell types.
-There are currently five data sets from human cells (Human Primary Cell Atlas, Blueprint/ENCODE, Database of Immune Cell Expression, Differentiation Map, and Monaco et al., 2019 Immune Cell Data) and two data sets from mouse cells (e.g. Immunological Genome Project).
-More details can be found in the vignette.
 
-Each reference dataset is obtained with a specific function: `HumanPrimaryCellAtlasData()`, `BlueprintEncodeData()`, `DatabaseImmuneCellExpressionData()`, `NovershternHematopoieticData()`, `MonacoImmuneData()`, `ImmGenData()`, `MouseRNAseqData()`.
-Here, we show an example with data from HPCA:
-
-
-```R
-library(SingleR)
-hpca.se <- HumanPrimaryCellAtlasData()
-```
-
-The newly generated `SummarizedExperiment` object can then be used for the annotation of your scRNA-seq dataset.
-To illustrate this, we will use a hESC dataset from the `scRNAseq` package, subsetted for the sake of speed.
-
-```R
-library(scRNAseq)
-library(scater)
-
-hESCs <- LaMannoBrainData('human-es')
-hESCs <- hESCs[,1:100] # for demo-purposes only!
-
-# Grab the common genes between the sets.
-common <- intersect(rownames(hESCs), rownames(hpca.se))
-hpca.se <- hpca.se[common,]
-hESCs <- hESCs[common,]
-
-# Test and reference sets should always be log normalized. The included reference sets are already normalized. 
-hESCs <- logNormCounts(hESCs)
-```
-
-The reference data sets all come with two sets of cell labels, `label.main` and `label.fine`. 
-The "main" labels tend to be less fine-grained than the "fine" labels, e.g., instead of specifying different subsets of T cells, the main labels will lump them all together under the label "T cells". 
-For our example, we will use the more specific fine-grained cell type labels.
-
-```R
-pred.hpca <- SingleR(test = hESCs, ref = hpca.se, 
-    labels = hpca.se$label.fine, assay.type.ref = "normcounts")
-table(pred.hpca$labels)
-```
-
-We can now visualize our results via `plotScoreHeatmap()`, which visualizes the scores for all cells across all reference labels.
-This allows users to inspect the confidence of the predicted labels across the dataset.
-
-```R
-plotScoreHeatmap(pred.hpca)
-```
-
-This is the most basic use of `SingleR()`, more advanced examples can be found in the vignette.
+Both basic and advanced examples can be found in the [vignette](https://bioconductor.org/packages/release/bioc/vignettes/SingleR/inst/doc/SingleR.html) or with additional context in the [SingleR book](https://ltla.github.io/SingleRBook/).
 
 ### Usage with Seurat/SingleCellExperiment objects
 
