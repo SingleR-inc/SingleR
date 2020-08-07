@@ -327,7 +327,7 @@ test_that("trainSingleR behaves with silly inputs", {
     expect_error(trainSingleR(unnamed, unnamed$label), "must have row names")
 })
 
-test_that("trainSingleR works when more genes are supplied than in reference", {
+test_that("trainSingleR works when 'genes' contains markers outside of the reference", {
     train.sub <- head(training, 90)
     collected <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
     genes <- unique(unlist(collected))
@@ -341,5 +341,16 @@ test_that("trainSingleR works when more genes are supplied than in reference", {
     set.seed(100)
     collected2 <- lapply(collected, function(l) lapply(l, intersect, y=rownames(train.sub))) 
     ref <- SingleR::trainSingleR(train.sub, training$label, genes = collected2)
+    expect_identical(out, ref)
+})
+
+test_that("trainSingleR works when restricting", {
+    keep <- c(letters, head(rownames(training), 90))
+    set.seed(100)
+    expect_error(out <- SingleR::trainSingleR(training, training$label, restrict=keep), NA)
+
+    # Behaves the same as if those genes were intersected.
+    set.seed(100)
+    ref <- SingleR::trainSingleR(head(training, 90), training$label)
     expect_identical(out, ref)
 })

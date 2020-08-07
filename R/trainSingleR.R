@@ -44,6 +44,8 @@
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
+#' @param restrict A character vector of gene names to use for marker selection.
+#' By default, all genes in \code{ref} are used.
 #'
 #' @return 
 #' For a single reference, a \linkS4class{List} is returned containing:
@@ -76,6 +78,10 @@
 #' \item \code{genes="all"} will not perform any feature selection.
 #' }
 #' If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
+#'
+#' If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
+#' Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
+#' This can be convenient for ensuring that only appropriate genes are used (e.g., not pseudogenes or predicted genes).
 #'
 #' @section Custom feature specification:
 #' Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.
@@ -161,7 +167,7 @@
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
-    aggr.ref=FALSE, aggr.args=list(), recompute=TRUE,
+    aggr.ref=FALSE, aggr.args=list(), recompute=TRUE, restrict=NULL,
     assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
 {
     de.method <- match.arg(de.method)
@@ -180,6 +186,11 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     gns <- lapply(ref, rownames)
     if (length(unique(gns))!=1L) {
         stop("row names are not identical across references")
+    }
+
+    if (!is.null(restrict)) {
+        keep <- gns[[1]] %in% restrict
+        ref <- lapply(ref, FUN="[", i=keep, , drop=FALSE)
     }
 
     labels <- lapply(labels, as.character)

@@ -60,8 +60,8 @@ Only used if \code{method="cluster"}.}
 when \code{ref} contains multiple references from which the individual results are to be combined.
 (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
 
-\item{restrict}{A character vector of gene names to use to restrict training.
-Genes are only considered if they are in \code{restrict} and \code{rownames(ref)}.}
+\item{restrict}{A character vector of gene names to use for marker selection.
+By default, all genes in \code{ref} are used.}
 
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 

@@ -70,8 +70,8 @@ Otherwise, defaults to 10.}
 when \code{ref} contains multiple references from which the individual results are to be combined.
 (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
 
-\item{restrict}{A character vector of gene names to use to restrict training.
-Genes are only considered if they are in \code{restrict} and \code{rownames(ref)}.}
+\item{restrict}{A character vector of gene names to use for marker selection.
+By default, all genes in \code{ref} are used.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
@@ -114,6 +114,10 @@ The set of all features is defined as those genes with standard deviations above
 \item \code{genes="all"} will not perform any feature selection.
 }
 If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
+
+If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
+Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
+This can be convenient for ensuring that only appropriate genes are used (e.g., not pseudogenes or predicted genes).
 }
 \section{Custom feature specification}{
 

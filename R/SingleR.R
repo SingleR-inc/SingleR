@@ -73,7 +73,7 @@
 SingleR <- function(test, ref, 
     labels, method = c("single", "cluster"), clusters = NULL, 
     genes = "de", sd.thresh=1, de.method ="classic", de.n = NULL, de.args = list(),
-    aggr.ref = FALSE, aggr.args = list(), recompute=TRUE,
+    aggr.ref = FALSE, aggr.args = list(), recompute=TRUE, restrict=NULL,
     quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, prune=TRUE, 
     assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
@@ -110,7 +110,7 @@ SingleR <- function(test, ref,
     trained <- trainSingleR(ref, labels, genes = genes, sd.thresh = sd.thresh, 
         de.method = de.method, de.n = de.n, de.args = de.args,
         aggr.ref = aggr.ref, aggr.args = aggr.args, recompute=recompute,
-        check.missing=FALSE, BNPARAM=BNPARAM)
+        restrict = restrict, check.missing=FALSE, BNPARAM=BNPARAM)
 
     method <- match.arg(method)
     if (method=="cluster") {
