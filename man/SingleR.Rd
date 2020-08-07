@@ -18,6 +18,7 @@ SingleR(
   aggr.ref = FALSE,
   aggr.args = list(),
   recompute = TRUE,
+  restrict = NULL,
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
@@ -58,6 +59,9 @@ Only used if \code{method="cluster"}.}
 \item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
 when \code{ref} contains multiple references from which the individual results are to be combined.
 (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
+
+\item{restrict}{A character vector of gene names to use to restrict training.
+Genes are only considered if they are in \code{restrict} and \code{rownames(ref)}.}
 
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 

@@ -234,7 +234,7 @@ test_that("trainSingleR behaves with multiple references, no recomputation", {
     expect_identical(ref2, out[[2]])
 
     # Checking that the union of common genes are taken correctly 
-    # by scrambling the genes and makeing sure that we get the union.
+    # by scrambling the genes and making sure that we get the union.
     training1 <- training2 <- training
     training1 <- training1[sample(nrow(training1)),]
     rownames(training1) <- rownames(training)

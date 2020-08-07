@@ -22,9 +22,9 @@
 #' \item A list of character vectors containing marker genes for each label.
 #' }
 #' 
-#' If \code{ref} is a list, 
-#' \code{genes} can be a list of lists of (lists of) character vectors, i.e., either of the two above choices.
-#' Each element of the outer-most list should contain markers for labels in the corresponding entry of \code{ref}.
+#' If \code{ref} \emph{is} a list, \code{genes} can be a list of length equal to \code{ref}.
+#' Each element of the list should be one of the two above choices described for non-list \code{ref},
+#' containing markers for labels in the corresponding entry of \code{ref}.
 #' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 #' Only used when \code{genes="sd"}.
 #' @param de.method String specifying how DE genes should be detected between pairs of labels.
@@ -166,57 +166,55 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 {
     de.method <- match.arg(de.method)
 
-    if (!.is_list(ref)) {
-        ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
-        labels <- as.character(labels)
+    if (solo <- !.is_list(ref)) {
+        ref <- list(ref)
+        labels <- list(labels)
+        if (!is.character(genes)) {
+            genes <- list(genes)
+        }
+    }
 
-        gene.info <- .identify_genes(ref, labels, genes=genes, sd.thresh=sd.thresh, 
-            de.method=de.method, de.n=de.n, de.args=de.args)
+    ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
+        check.missing=check.missing, msg="ref")
 
-        .build_trained_index(ref, labels, common=gene.info$common, aggr.ref=aggr.ref, 
-            aggr.args=aggr.args, search.info=gene.info, BNPARAM=BNPARAM)
+    gns <- lapply(ref, rownames)
+    if (length(unique(gns))!=1L) {
+        stop("row names are not identical across references")
+    }
 
+    labels <- lapply(labels, as.character)
+    if (length(labels)!=length(ref)) {
+        stop("lists in 'labels' and 'ref' should be of the same length")
+    }
+
+    if (isSingleString(genes)) {
+        genes <- rep(genes, length(ref))
+    } else if (length(genes)!=length(ref)) {
+        stop("list-like 'genes' should be the same length as 'ref'")
+    }
+
+    gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
+        MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args),
+        SIMPLIFY=FALSE)
+
+    common <- lapply(gene.info, function(x) x$common)
+    args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM)
+
+    if (recompute || solo) {
+        output <- mapply(FUN=.build_trained_index, 
+            ref=ref, labels=labels, common=common, search.info=gene.info,
+            MoreArgs=args, SIMPLIFY=FALSE)
     } else {
-        ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
-            check.missing=check.missing, msg="ref")
+        # Setting the common set across all references to the union of all genes.
+        all.common <- Reduce(union, common)
+        output <- mapply(FUN=.build_trained_index, 
+            ref=ref, labels=labels, search.info=gene.info,
+            MoreArgs=c(list(common=all.common), args), SIMPLIFY=FALSE)
+    }
 
-        gns <- lapply(ref, rownames)
-        if (length(unique(gns))!=1L) {
-            stop("row names are not identical across references")
-        }
-
-        labels <- lapply(labels, as.character)
-        if (length(labels)!=length(ref)) {
-            stop("lists in 'labels' and 'ref' should be of the same length")
-        }
-
-        if (length(genes)!=length(ref)) {
-            if (isSingleString(genes)) {
-                genes <- rep(genes, length(ref))
-            } else {
-                stop("list-like 'genes' should be the same length as 'ref'")
-            }
-        }
-
-        gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
-            MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args),
-            SIMPLIFY=FALSE)
-
-        common <- lapply(gene.info, function(x) x$common)
-        args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM)
-
-        if (recompute) {
-            output <- mapply(FUN=.build_trained_index, 
-                ref=ref, labels=labels, common=common, search.info=gene.info,
-                MoreArgs=args, SIMPLIFY=FALSE)
-        } else {
-            # Setting the common set across all references to the union of all genes.
-            all.common <- Reduce(union, common)
-            output <- mapply(FUN=.build_trained_index, 
-                ref=ref, labels=labels, search.info=gene.info,
-                MoreArgs=c(list(common=all.common), args), SIMPLIFY=FALSE)
-        }
-
+    if (solo) {
+        output[[1]]
+    } else {
         final <- List(output)
         metadata(final)$recompute <- recompute
         final

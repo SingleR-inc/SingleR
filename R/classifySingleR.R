@@ -119,22 +119,24 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
         on.exit(bpstop(BPPARAM))
     }
 
-    if (is.character(trained$common.genes)) { # can't test for List, because each trained structure is also a list.
-        .classify_internals(test=test, trained=trained, quantile=quantile,
-            fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
-            prune=prune, BPPARAM=BPPARAM)
-    } else {
-        results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
-            fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
-            prune=prune, BPPARAM=BPPARAM)
-
-        if (isTRUE(metadata(trained)$recompute)) {
-            combineRecomputedResults(results, test=test, trained=trained, 
-                check.missing=FALSE, quantile=quantile, BPPARAM=BPPARAM)
-        } else {
-            combineCommonResults(results)
-        } 
+    # Unfortunately, we can't test for List, because each trained structure is
+    # also a list; so we just check whether the 'common.genes' field exists.
+    if (solo <- is.character(trained$common.genes)) { 
+        trained <- list(trained)
     }
+
+    results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
+        fine.tune=fine.tune, tune.thresh=tune.thresh, sd.thresh=sd.thresh,
+        prune=prune, BPPARAM=BPPARAM)
+
+    if (solo) {
+        results[[1]]
+    } else if (isTRUE(metadata(trained)$recompute)) {
+        combineRecomputedResults(results, test=test, trained=trained, 
+            check.missing=FALSE, quantile=quantile, BPPARAM=BPPARAM)
+    } else {
+        combineCommonResults(results)
+    } 
 }
 
 #' @importFrom BiocParallel bplapply

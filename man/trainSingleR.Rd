@@ -15,6 +15,7 @@ trainSingleR(
   aggr.ref = FALSE,
   aggr.args = list(),
   recompute = TRUE,
+  restrict = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
   BNPARAM = KmknnParam()
@@ -43,9 +44,9 @@ Alternatively, if \code{ref} is \emph{not} a list, \code{genes} can be either:
 \item A list of character vectors containing marker genes for each label.
 }
 
-If \code{ref} is a list, 
-\code{genes} can be a list of lists of (lists of) character vectors, i.e., either of the two above choices.
-Each element of the outer-most list should contain markers for labels in the corresponding entry of \code{ref}.}
+If \code{ref} \emph{is} a list, \code{genes} can be a list of length equal to \code{ref}.
+Each element of the list should be one of the two above choices described for non-list \code{ref},
+containing markers for labels in the corresponding entry of \code{ref}.}
 
 \item{sd.thresh}{A numeric scalar specifying the minimum threshold on the standard deviation per gene.
 Only used when \code{genes="sd"}.}
@@ -68,6 +69,9 @@ Otherwise, defaults to 10.}
 \item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
 when \code{ref} contains multiple references from which the individual results are to be combined.
 (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
+
+\item{restrict}{A character vector of gene names to use to restrict training.
+Genes are only considered if they are in \code{restrict} and \code{rownames(ref)}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
