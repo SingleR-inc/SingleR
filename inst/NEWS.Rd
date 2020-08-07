@@ -6,6 +6,8 @@
 \item Migrated all of the dataset getter functions to the \pkg{celldex} package.
 
 \item Streamlined the vignette to point to the book at \url{https://ltla.github.io/SingleRBook/}.
+
+\item Added a \code{restrict=} argument to \code{trainSingleR()} and \code{SingleR()} to easily restrict to a subset of features.
 }}
 
 \section{Version 1.2.0}{\itemize{
