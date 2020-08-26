@@ -8,7 +8,7 @@ SingleR(
   test,
   ref,
   labels,
-  method = c("single", "cluster"),
+  method = NULL,
   clusters = NULL,
   genes = "de",
   sd.thresh = 1,
@@ -46,11 +46,10 @@ Row names may be different across entries but only the intersection will be used
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
 Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
 
-\item{method}{String specifying whether annotation should be performed on single cells in \code{test},
-or whether they should be aggregated into cluster-level profiles prior to annotation.}
+\item{method}{Deprecated.}
 
 \item{clusters}{A character vector or factor of cluster identities for each cell in \code{test}.
-Only used if \code{method="cluster"}.}
+If set, annotation is performed on the aggregated cluster profiles, otherwise it defaults to per-cell annotation.}
 
 \item{genes, sd.thresh, de.method, de.n, de.args}{Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.}
 
@@ -78,7 +77,7 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.}
 }
 \value{
-A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 This is identical to the output of \code{\link{classifySingleR}}.
 }
 \description{
@@ -86,14 +85,17 @@ Returns the best annotation for each cell in a test dataset,
 given a labelled reference dataset in the same feature space.
 }
 \details{
-If \code{method="single"}, this function is effectively just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
+This function is just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
+The function will automatically restrict the analysis to the intersection of the genes in both \code{ref} and \code{test}.
+If this intersection is empty (e.g., because the two datasets use different gene annotations), an error will be raised.
 
-If \code{method="cluster"}, per-cell profiles are summed to obtain per-cluster profiles and annotation is performed on these clusters.
+If \code{clusters} is specified, per-cell profiles are summed to obtain per-cluster profiles.
+Annotation is then performed by running \code{\link{classifySingleR}} on these profiles.
+This yields a DataFrame with one row per level of \code{clusters}.
 
-The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
-If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
-
-\code{ref} can contain both single-cell or bulk data, but in the case of the former, read the Note in \code{?\link{trainSingleR}}.
+The default settings of this function are based on the assumption that \code{ref} contains or bulk data.
+If it contains single-cell data, this usually requires a different \code{de.method} choice.
+Read the Note in \code{?\link{trainSingleR}} for more details.
 }
 \examples{
 # Mocking up data with log-normalized expression values:
@@ -108,8 +110,7 @@ pred <- SingleR(test, ref, labels=ref$label)
 table(predicted=pred$labels, truth=test$label)
 
 k.out<- kmeans(t(assay(test, "logcounts")), center=5) # mock up a clustering
-pred2 <- SingleR(test, ref, labels=ref$label, 
-    method="cluster", clusters=k.out$cluster) 
+pred2 <- SingleR(test, ref, labels=ref$label, clusters=k.out$cluster) 
 table(predicted=pred2$labels, cluster=rownames(pred2))
 
 }

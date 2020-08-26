@@ -8,6 +8,8 @@
 \item Streamlined the vignette to point to the book at \url{https://ltla.github.io/SingleRBook/}.
 
 \item Added a \code{restrict=} argument to \code{trainSingleR()} and \code{SingleR()} to easily restrict to a subset of features.
+
+\item Deprecated the \code{method=} argument in \code{SingleR()}.
 }}
 
 \section{Version 1.2.0}{\itemize{

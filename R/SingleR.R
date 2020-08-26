@@ -12,10 +12,9 @@
 #'
 #' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
 #' Row names may be different across entries but only the intersection will be used, see Details.
-#' @param method String specifying whether annotation should be performed on single cells in \code{test},
-#' or whether they should be aggregated into cluster-level profiles prior to annotation.
+#' @param method Deprecated.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
-#' Only used if \code{method="cluster"}.
+#' If set, annotation is performed on the aggregated cluster profiles, otherwise it defaults to per-cell annotation.
 #' @param genes,sd.thresh,de.method,de.n,de.args Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.
 #' @param aggr.ref,aggr.args Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.
 #' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
@@ -27,18 +26,21 @@
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
 #'
-#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
 #'
 #' @details
-#' If \code{method="single"}, this function is effectively just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
-#' 
-#' If \code{method="cluster"}, per-cell profiles are summed to obtain per-cluster profiles and annotation is performed on these clusters.
+#' This function is just a convenient wrapper around \code{\link{trainSingleR}} and \code{\link{classifySingleR}}.
+#' The function will automatically restrict the analysis to the intersection of the genes in both \code{ref} and \code{test}.
+#' If this intersection is empty (e.g., because the two datasets use different gene annotations), an error will be raised.
 #'
-#' The function will automatically restrict the analysis to the intersection of the genes available in both \code{ref} and \code{test}.
-#' If this intersection is empty (e.g., because the two datasets use different annotation in their row names), an error will be raised.
+#' If \code{clusters} is specified, per-cell profiles are summed to obtain per-cluster profiles.
+#' Annotation is then performed by running \code{\link{classifySingleR}} on these profiles.
+#' This yields a DataFrame with one row per level of \code{clusters}.
 #'
-#' \code{ref} can contain both single-cell or bulk data, but in the case of the former, read the Note in \code{?\link{trainSingleR}}.
+#' The default settings of this function are based on the assumption that \code{ref} contains or bulk data.
+#' If it contains single-cell data, this usually requires a different \code{de.method} choice.
+#' Read the Note in \code{?\link{trainSingleR}} for more details.
 #' 
 #' @references
 #' Aran D, Looney AP, Liu L et al. (2019).
@@ -59,8 +61,7 @@
 #' table(predicted=pred$labels, truth=test$label)
 #'
 #' k.out<- kmeans(t(assay(test, "logcounts")), center=5) # mock up a clustering
-#' pred2 <- SingleR(test, ref, labels=ref$label, 
-#'     method="cluster", clusters=k.out$cluster) 
+#' pred2 <- SingleR(test, ref, labels=ref$label, clusters=k.out$cluster) 
 #' table(predicted=pred2$labels, cluster=rownames(pred2))
 #'
 #' @export
@@ -71,7 +72,7 @@
 #' @importFrom DelayedArray colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(test, ref, 
-    labels, method = c("single", "cluster"), clusters = NULL, 
+    labels, method = NULL, clusters = NULL, 
     genes = "de", sd.thresh=1, de.method ="classic", de.n = NULL, de.args = list(),
     aggr.ref = FALSE, aggr.args = list(), recompute=TRUE, restrict=NULL,
     quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, prune=TRUE, 
@@ -112,12 +113,11 @@ SingleR <- function(test, ref,
         aggr.ref = aggr.ref, aggr.args = aggr.args, recompute=recompute,
         restrict = restrict, check.missing=FALSE, BNPARAM=BNPARAM)
 
-    method <- match.arg(method)
-    if (method=="cluster") {
-        if (is.null(clusters)) {
-            stop("'clusters' must be specified when 'method=\"cluster\"'")
-        }
+    if (!is.null(method)) {
+        .Deprecated(msg="'method=\"cluster\"' is no longer necessary when 'cluster=' is specified")
+    }
 
+    if (!is.null(clusters)) {
         oldp <- getAutoBPPARAM()
         setAutoBPPARAM(BPPARAM)
         on.exit(setAutoBPPARAM(oldp), add=TRUE)

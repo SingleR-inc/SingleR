@@ -51,8 +51,8 @@ test_that("SingleR works with non-ordinary matrices", {
     ref <- SingleR(test=test, ref=training, labels=training$label)
     expect_identical(out, ref)
 
-    out <- SingleR(test=test.s, ref=training.s, labels=training.s$label, clusters=test.s$label, method="cluster")
-    ref <- SingleR(test=test, ref=training, labels=training$label, clusters=test$label, method="cluster")
+    out <- SingleR(test=test.s, ref=training.s, labels=training.s$label, clusters=test.s$label)
+    ref <- SingleR(test=test, ref=training, labels=training$label, clusters=test$label)
     expect_identical(out, ref)
 })
 
