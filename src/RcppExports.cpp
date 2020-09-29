@@ -6,11 +6,11 @@
 using namespace Rcpp;
 
 // fine_tune_label_de
-Rcpp::List fine_tune_label_de(SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
+Rcpp::List fine_tune_label_de(Rcpp::RObject Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
 RcppExport SEXP _SingleR_fine_tune_label_de(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP marker_genesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type Exprs(ExprsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type Exprs(ExprsSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type scores(scoresSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type References(ReferencesSEXP);
     Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);

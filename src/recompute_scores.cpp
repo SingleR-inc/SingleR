@@ -1,5 +1,5 @@
 #include "Rcpp.h"
-#include "beachmat/numeric_matrix.h"
+#include "beachmat3/beachmat.h"
 #include "compute_scores.h"
 
 #include <vector>
@@ -11,7 +11,7 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
     Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
     Rcpp::List References, Rcpp::List Genes, double quantile) 
 {
-    auto mat=beachmat::create_numeric_matrix(Exprs);
+    auto mat = beachmat::read_lin_block(Exprs);
     const size_t ncells=mat->get_ncol();
     const size_t ngenes=mat->get_nrow();
     Rcpp::NumericVector tmp(ngenes);
@@ -28,7 +28,7 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
         auto& currefs=references[i];
 
         for (size_t j=0; j<nmore; ++j) {
-            currefs.push_back(beachmat::create_numeric_matrix(more_references[j]));
+            currefs.push_back(beachmat::read_lin_block(more_references[j]));
             if (currefs.back()->get_nrow()!=ngenes) {
                 throw std::runtime_error("each entry of 'References' must have number of rows equal to 'Exprs'");
             }
@@ -92,14 +92,22 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
             scaled_right_set.resize(ncells);
 
             for (size_t c=0; c<ncells; ++c) {
-                current->get_col(c, holder_right.begin());
+                double* hptr = holder_right.begin();
+                auto ptr = current->get_col(c, hptr);
+                if (ptr!=hptr) {
+                    std::copy(ptr, ptr + ngenes, hptr);
+                }
                 scaled_ranks(holder_right.begin(), universe, collected, scaled_right_set[c]);
             }
         }
 
         // Looping through the cells and computing the scores. 
         for (size_t t=0; t<cursize; ++t) {
-            mat->get_col(curgroup[t], holder_left.begin());
+            double* hptr = holder_left.begin();
+            auto ptr = mat->get_col(curgroup[t], hptr);
+            if (ptr!=hptr) {
+                std::copy(ptr, ptr + ngenes, hptr);
+            }
             scaled_ranks(holder_left.begin(), universe, collected, scaled_left);
             auto outcol=output.column(curgroup[t]);
 

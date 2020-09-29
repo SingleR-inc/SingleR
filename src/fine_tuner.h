@@ -1,5 +1,5 @@
 #include "Rcpp.h"
-#include "beachmat/numeric_matrix.h"
+#include "beachmat3/beachmat.h"
 #include "compute_scores.h"
 
 #include <vector>
@@ -16,13 +16,19 @@ public:
         scaled_left(ngenes), scaled_right(ngenes), collected(ngenes) {}
 
     template<class PICKER> 
-    tuned_stats assign(int i, beachmat::numeric_matrix* exprs, Rcpp::NumericMatrix scores,
+    tuned_stats assign(int i, beachmat::lin_matrix* exprs, Rcpp::NumericMatrix scores,
         const matrix_list& references, double quantile, double tune_thresh, const PICKER& commonFUN) 
     {
-        exprs->get_col(i, holder_left.begin());
         auto cur_scores=scores.column(i);
         if (cur_scores.size()==0) {
             return tuned_stats(NA_INTEGER, R_NaReal, R_NaReal);
+        }
+
+        // TODO: take better advantage of sparsity at this point.
+        double * hptr = holder_left.begin();
+        auto ptr = exprs->get_col(i, hptr);
+        if (ptr != hptr) {
+            std::copy(ptr, ptr + exprs->get_nrow(), hptr);
         }
 
         size_t topI=std::max_element(cur_scores.begin(), cur_scores.end()) - cur_scores.begin();
@@ -89,7 +95,11 @@ private:
             all_correlations.reserve(ncells);
 
             for (size_t c=0; c<ncells; ++c) {
-                current->get_col(c, holder_right.begin());
+                double * hptr = holder_right.begin();
+                auto ptr = current->get_col(c, hptr);
+                if (ptr != hptr) {
+                    std::copy(ptr, ptr + current->get_nrow(), hptr);
+                }
                 scaled_ranks(holder_right.begin(), genes_in_use, collected, scaled_right);
 
                 double dist=0;

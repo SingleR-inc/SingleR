@@ -2,13 +2,13 @@
 #define COMPUTE_SCORES_H
 
 #include "Rcpp.h"
-#include "beachmat/numeric_matrix.h"
+#include "beachmat3/beachmat.h"
 #include "scaled_ranks.h"
 
 #include <vector>
 #include <algorithm>
 
-typedef std::vector<std::unique_ptr<beachmat::numeric_matrix> > matrix_list;
+typedef std::vector<std::unique_ptr<beachmat::lin_matrix> > matrix_list;
 
 inline double correlations_to_scores (std::vector<double>& all_correlations, double quantile) {
     const size_t ncells=all_correlations.size();

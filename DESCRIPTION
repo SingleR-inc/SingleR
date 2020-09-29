@@ -24,7 +24,8 @@ Imports:
     BiocSingular,
     stats,
     utils,
-    Rcpp
+    Rcpp,
+    beachmat
 LinkingTo:
     Rcpp,
     beachmat
@@ -33,7 +34,6 @@ Suggests:
     knitr,
     rmarkdown,
     BiocStyle,
-    beachmat,
     SingleCellExperiment,
     scuttle,
     scater,
