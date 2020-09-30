@@ -48,3 +48,16 @@
     }
     paste0(front, value.name)
 }
+
+#' @importFrom DelayedArray is_sparse
+#' @importFrom methods as
+#' @importClassesFrom Matrix dgCMatrix
+.realize_references <- function(ref) {
+    lapply(ref, function(x) {
+        if (is_sparse(x)) {
+            as(x, "dgCMatrix")
+        } else {
+            as.matrix(x)
+        }
+    })
+}

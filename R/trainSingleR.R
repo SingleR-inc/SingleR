@@ -303,24 +303,19 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         labels <- aggr$label
     }
 
+    common <- as.character(common)
     indices <- original <- List()
     ulabels <- .get_levels(labels)
+
     for (u in ulabels) {
-        # Don't subset by 'common' here, as this loses genes for fine-tuning when genes='sd'.
         current <- ref[,labels==u,drop=FALSE] 
-
-        # Coerce to double to make life easier for the C++ code later.
-        if (!is.double(current[0,])) {
-            current <- current + 0
-        }
-
         original[[u]] <- current
         sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE])
         indices[[u]] <- buildIndex(sr.out, BNPARAM=BNPARAM)
     }
 
     List(
-        common.genes=as.character(common),
+        common.genes=common,
         original.exprs=original,
         nn.indices=indices,
         search=List(mode=search.info$genes, args=search.info$args, extra=search.info$extra)
@@ -397,7 +392,8 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     colnames(output) <- ulabels
 
     for (u in ulabels) {
-        output[,u] <- rowMedians(DelayedArray(mat), cols=u==labels)
+        # Disambiguate from Biobase::rowMedians.
+        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
     }
     output
 }

@@ -88,8 +88,9 @@
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
-#' @importFrom BiocParallel bpiterate SerialParam
+#' @importFrom BiocParallel SerialParam
 #' @importFrom BiocNeighbors KmknnParam buildIndex
+#' @importFrom beachmat colBlockApply
 combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
     assay.type.test="logcounts", check.missing=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
@@ -134,16 +135,15 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     # Preparing expression values: subsetting them down to 
     # improve cache efficiency later on.
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test")
-    all.ref <- lapply(trained, function(x) as.list(x$original.exprs))
 
     universe <- unique(unlist(markers))
     test <- test[universe,,drop=FALSE]
+
+    all.ref <- vector("list", length(trained))
     for (i in seq_along(all.ref)) {
-        current <- all.ref[[i]]
-        for (j in seq_along(current)) {
-            current[[j]] <- current[[j]][universe,,drop=FALSE]
-        }
-        all.ref[[i]] <- current
+        current <- trained[[i]]$original.exprs
+        current <- lapply(current, function(x) x[universe,,drop=FALSE])
+        all.ref[[i]] <- .realize_references(current)
     }
 
     # Preparing genes (part 2).
@@ -164,12 +164,8 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     ##############################################
 
-    M <- .prep_for_parallel(test, BPPARAM, use.grid=is(test, "DelayedMatrix"))
-    S <- .cofragment_matrix(M, all.labels)
-
-    bp.out <- bpmapply(exprs=M, labels=S, FUN=.nonred_recompute_scores,
-        MoreArgs=list(all.ref=all.ref, markers=markers, quantile=quantile),
-        BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
+    bp.out <- colBlockApply(test, FUN=.nonred_recompute_scores, BPPARAM=BPPARAM,
+        labels=all.labels, all.ref=all.ref, markers=markers, quantile=quantile)
     scores <- do.call(rbind, bp.out)
 
     base.scores <- vector("list", length(results))
@@ -191,9 +187,11 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
 #' @importFrom S4Vectors DataFrame selfmatch
 #' @importFrom BiocNeighbors buildIndex KmknnParam
-.nonred_recompute_scores <- function(exprs, labels, all.ref, markers, quantile) {
-    if (is(exprs, "DelayedMatrix")) {
-        exprs <- as.matrix(exprs)
+.nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile) {
+    vp <- attr(block, "from_grid")[[attr(block, "block_id")]]
+    idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
+    if (!is.null(idx)) {
+        labels <- labels[,idx,drop=FALSE]
     }
 
     # Finding groups of cells with the same combination of per-reference assigned labels.
@@ -203,7 +201,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     scores <- recompute_scores(
         Groups=by.group,
-        Exprs=exprs,
+        Exprs=block,
         Labels=labels - 1L,
         References=all.ref,
         Genes=markers,

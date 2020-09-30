@@ -1,4 +1,4 @@
-#include "beachmat/numeric_matrix.h"
+#include "beachmat3/beachmat.h"
 #include "fine_tuner.h"
 
 struct de_markers {
@@ -32,14 +32,14 @@ private:
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 // [[Rcpp::export(rng=false)]]
-Rcpp::List fine_tune_label_de (SEXP Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
+Rcpp::List fine_tune_label_de (Rcpp::RObject Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, 
     double quantile, double tune_thresh, Rcpp::List marker_genes) 
 {
-    auto mat=beachmat::create_numeric_matrix(Exprs);
+    auto mat = beachmat::read_lin_block(Exprs);
     
     matrix_list references; 
     for (size_t i=0; i<References.size(); ++i) {
-        references.push_back(beachmat::create_numeric_matrix(References[i]));
+        references.push_back(beachmat::read_lin_block(References[i]));
     }
 
     fine_tuner tuner(mat->get_nrow());

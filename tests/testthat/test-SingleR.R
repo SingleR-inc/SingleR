@@ -85,3 +85,21 @@ test_that("SingleR works with multiple references", {
     out$reference <- ref$reference <- NULL # basically tied anyway.
     expect_identical(out, ref)
 })
+
+test_that("SingleR handles changes to the block size", {
+    ref1 <- SingleR(test=test, ref=training, labels=training$label, genes="de")
+    set.seed(10)
+    ref2 <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
+
+    oldb <- DelayedArray::getAutoBlockSize()
+    DelayedArray::setAutoBlockSize(100)
+
+    out1 <- SingleR(test=test, ref=training, labels=training$label, genes="de")
+    set.seed(10)
+    out2 <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
+
+    expect_identical(ref1, out1)
+    expect_identical(ref2, out2)
+    
+    DelayedArray::setAutoBlockSize(oldb)
+})
