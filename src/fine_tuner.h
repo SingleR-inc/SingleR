@@ -24,13 +24,6 @@ public:
             return tuned_stats(NA_INTEGER, R_NaReal, R_NaReal);
         }
 
-        // TODO: take better advantage of sparsity at this point.
-        double * hptr = holder_left.begin();
-        auto ptr = exprs->get_col(i, hptr);
-        if (ptr != hptr) {
-            std::copy(ptr, ptr + exprs->get_nrow(), hptr);
-        }
-
         size_t topI=std::max_element(cur_scores.begin(), cur_scores.end()) - cur_scores.begin();
         int best_label=topI;
         double max_score=cur_scores[topI];
@@ -53,11 +46,13 @@ public:
             }
         }
 
+        auto leftptr = exprs->get_col(i, holder_left.begin());
+
         // Check if it's unchanged, to avoid an infinite loop if the correlations are still close after fine tuning.
         bool unchanged=false;
         while (labels_in_use.size() > 1 && !unchanged) {
             commonFUN(labels_in_use, genes_in_use);
-            fill_new_scores(references, quantile);
+            fill_new_scores(leftptr, references, quantile);
 
             size_t topI=std::max_element(new_scores.begin(), new_scores.end()) - new_scores.begin();
             best_label=labels_in_use[topI];
@@ -84,8 +79,8 @@ public:
         return tuned_stats(best_label, max_score, next_score);
     }
 private:
-    void fill_new_scores(const matrix_list& references, double quantile) {
-        scaled_ranks(holder_left.begin(), genes_in_use, collected, scaled_left);
+    void fill_new_scores(const double* leftptr, const matrix_list& references, double quantile) {
+        scaled_ranks(leftptr, genes_in_use, collected, scaled_left);
         new_scores.resize(labels_in_use.size());
 
         for (size_t l=0; l<labels_in_use.size(); ++l) {
@@ -95,12 +90,8 @@ private:
             all_correlations.reserve(ncells);
 
             for (size_t c=0; c<ncells; ++c) {
-                double * hptr = holder_right.begin();
-                auto ptr = current->get_col(c, hptr);
-                if (ptr != hptr) {
-                    std::copy(ptr, ptr + current->get_nrow(), hptr);
-                }
-                scaled_ranks(holder_right.begin(), genes_in_use, collected, scaled_right);
+                auto rightptr = current->get_col(c, holder_right.begin());
+                scaled_ranks(rightptr, genes_in_use, collected, scaled_right);
 
                 double dist=0;
                 for (size_t j=0; j<scaled_left.size(); ++j) {

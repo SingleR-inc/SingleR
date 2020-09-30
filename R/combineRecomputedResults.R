@@ -141,7 +141,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     all.ref <- vector("list", length(trained))
     for (i in seq_along(all.ref)) {
-        current <- trained.ref[[i]]$original.exprs
+        current <- trained[[i]]$original.exprs
         current <- lapply(current, function(x) x[universe,,drop=FALSE])
         all.ref[[i]] <- .realize_references(current)
     }
