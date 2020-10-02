@@ -37,9 +37,9 @@
     do.call(mapply, c(bp.out, list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE)))
 }
 
-#' @importFrom DelayedArray makeNindexFromArrayViewport
+#' @importFrom DelayedArray makeNindexFromArrayViewport currentViewport
 .fine_tune_de0 <- function(block, scores, ...) {
-    vp <- attr(block, "from_grid")[[attr(block, "block_id")]]
+    vp <- currentViewport()
     idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
     if (!is.null(idx)) {
         scores <- scores[,idx,drop=FALSE]
@@ -62,9 +62,9 @@
     do.call(mapply, c(bp.out, list(FUN=c, SIMPLIFY=FALSE, USE.NAMES=FALSE)))
 }
 
-#' @importFrom DelayedArray makeNindexFromArrayViewport
+#' @importFrom DelayedArray makeNindexFromArrayViewport currentViewport
 .fine_tune_sd0 <- function(block, scores, ...) {
-    vp <- attr(block, "from_grid")[[attr(block, "block_id")]]
+    vp <- currentViewport()
     idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
     if (!is.null(idx)) {
         scores <- scores[,idx,drop=FALSE]

@@ -187,8 +187,9 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
 #' @importFrom S4Vectors DataFrame selfmatch
 #' @importFrom BiocNeighbors buildIndex KmknnParam
+#' @importFrom DelayedArray currentViewport makeNindexFromArrayViewport
 .nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile) {
-    vp <- attr(block, "from_grid")[[attr(block, "block_id")]]
+    vp <- currentViewport()
     idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
     if (!is.null(idx)) {
         labels <- labels[,idx,drop=FALSE]
