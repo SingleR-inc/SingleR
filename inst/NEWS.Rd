@@ -10,6 +10,8 @@
 \item Added a \code{restrict=} argument to \code{trainSingleR()} and \code{SingleR()} to easily restrict to a subset of features.
 
 \item Deprecated the \code{method=} argument in \code{SingleR()}.
+
+\item Protect against accidental data.frames in \code{ref=} or \code{test=} in all functions.
 }}
 
 \section{Version 1.2.0}{\itemize{

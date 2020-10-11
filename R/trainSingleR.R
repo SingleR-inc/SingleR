@@ -232,12 +232,6 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 }
 
-#' @importFrom methods is
-#' @importClassesFrom S4Vectors List
-.is_list <- function(val) {
-    is.list(val) || is(val, "List")
-}
-
 .identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.method="classic", de.n=NULL, de.args=list()) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")

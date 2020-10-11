@@ -103,3 +103,17 @@ test_that("SingleR handles changes to the block size", {
     
     DelayedArray::setAutoBlockSize(oldb)
 })
+
+test_that("SingleR handles data.frame inputs", {
+    set.seed(10)
+    ref1 <- SingleR(test=test, ref=training, labels=training$label)
+    set.seed(10)
+    ref2 <- SingleR(test=data.frame(logcounts(test)), ref=data.frame(logcounts(training)), labels=training$label)
+    
+    rownames(ref2) <- NULL # as the data.frame coercion changes the cell's names.
+    expect_identical(ref1, ref2)
+
+    tmp <- data.frame(logcounts(test))
+    tmp[,1] <- as.character(tmp[,1])
+    expect_error(SingleR(test=tmp, ref=data.frame(logcounts(training)), labels=training$label, genes="de"), "numeric")
+})
