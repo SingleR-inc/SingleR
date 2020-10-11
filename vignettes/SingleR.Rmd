@@ -37,7 +37,7 @@ for the reference dataset, and this biological knowledge can be propagated to ne
 To keep things brief, this vignette only provides a brief summary of the basic capabilities of `r Biocpkg("SingleR")`.
 However, the package also provides more advanced functionality that includes the use of multiple references simultaneously,
 manipulating the cell ontology and improving performance on big datasets.
-Readers are referred to the [book](https://ltla.github.io/SingleRBook/) for more details. 
+Readers are referred to the [book](http://bioconductor.org/books/devel/SingleRBook/) for more details. 
 
 # Using built-in references
 

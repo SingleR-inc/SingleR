@@ -5,7 +5,7 @@
 \section{Version 1.4.0}{\itemize{
 \item Migrated all of the dataset getter functions to the \pkg{celldex} package.
 
-\item Streamlined the vignette to point to the book at \url{https://ltla.github.io/SingleRBook/}.
+\item Streamlined the vignette to point to the book at \url{http://bioconductor.org/books/devel/SingleRBook/}.
 
 \item Added a \code{restrict=} argument to \code{trainSingleR()} and \code{SingleR()} to easily restrict to a subset of features.
 
