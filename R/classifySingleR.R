@@ -140,7 +140,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
 }
 
 #' @importFrom BiocParallel bplapply
-#' @importFrom S4Vectors DataFrame metadata metadata<-
+#' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune,
     tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, BPPARAM) 
 {
