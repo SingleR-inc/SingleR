@@ -27,7 +27,7 @@
         lapply(markers, function(x) match(x, universe) - 1L)
     })
 
-    references <- .realize_references(references)
+    references <- lapply(references, .realize_reference)
 
     # We assume that classifySingleR() has already set up the backend.
     bp.out <- colBlockApply(exprs, FUN=.fine_tune_de0, BPPARAM=BPPARAM,
@@ -53,7 +53,7 @@
 .fine_tune_sd <- function(exprs, scores, references, quantile, tune.thresh, median.mat, sd.thresh, BPPARAM=SerialParam()) {
     stopifnot(identical(names(references), colnames(scores)))
 
-    references <- .realize_references(references)
+    references <- lapply(references, .realize_reference)
 
     bp.out <- colBlockApply(exprs, FUN=.fine_tune_sd0, BPPARAM=BPPARAM, 
         scores=t(scores), References=references, quantile=quantile, 

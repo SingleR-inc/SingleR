@@ -92,7 +92,7 @@
 #' @importFrom BiocNeighbors KmknnParam buildIndex
 #' @importFrom beachmat colBlockApply
 combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
-    assay.type.test="logcounts", check.missing=TRUE,
+    assay.type.test="logcounts", check.missing=TRUE, allow.lost=FALSE, warn.lost=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
 {
     all.names <- c(list(colnames(test)), lapply(results, rownames))
@@ -107,43 +107,52 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     ##############################################
 
     # Preparing genes (part 1).
-    refnames <- lapply(trained, function(x) rownames(x$original.exprs[[1]]))
-    available <- c(list(rownames(test)), refnames)
-    if (length(unique(available)) != 1) {
-        warning("'test' and 'trained' differ in the universe of available genes")
-    }
-    available <- Reduce(intersect, available)
-
     markers <- vector("list", length(trained)) 
     for (i in seq_along(trained)) {
         current <- trained[[i]]
-
         if (current$search$mode=="de") {
             tmp <- lapply(current$search$extra, unlist, use.names=FALSE)
             tmp <- lapply(tmp, unique)
             stopifnot(identical(names(tmp), names(current$original.exprs)))
-            tmp <- lapply(tmp, intersect, y=available)
             markers[[i]] <- tmp
-
         } else {
             nlabs <- length(current$original.exprs)
-            tmp <- intersect(current$common.genes, available)
+            tmp <- current$common.genes
             markers[[i]] <- rep(list(tmp), nlabs)
         }
     }
 
+    universe <- unique(unlist(markers))
+    if (!all(universe %in% rownames(test))) {
+        stop("all markers stored in 'results' should be present in 'test'")
+    }
+
+    refnames <- lapply(trained, function(x) rownames(x$original.exprs[[1]]))
+    refnames <- Reduce(intersect, refnames)
+    if (has.lost <- !all(universe %in% refnames)) {
+        if (warn.lost) {
+            stop("not all markers are present across all 'results'")
+        }
+        if (!allow.lost) {
+            universe <- intersect(universe, refnames)
+            for (i in seq_along(markers)) {
+                markers[[i]] <- lapply(markers[[i]], intersect, y=refnames)
+            }
+        }
+    }
+
+    ##############################################
+
     # Preparing expression values: subsetting them down to 
     # improve cache efficiency later on.
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test")
-
-    universe <- unique(unlist(markers))
     test <- test[universe,,drop=FALSE]
 
     all.ref <- vector("list", length(trained))
     for (i in seq_along(all.ref)) {
         current <- trained[[i]]$original.exprs
-        current <- lapply(current, function(x) x[universe,,drop=FALSE])
-        all.ref[[i]] <- .realize_references(current)
+        current <- lapply(current, FUN=.subset_with_NAs, universe=universe)
+        all.ref[[i]] <- current
     }
 
     # Preparing genes (part 2).
@@ -156,16 +165,17 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     }
 
     # Preparing labels.
-    collated <- mapply(results, all.ref, FUN=function(x, y) {
-        match(x$labels, names(y))
-    }, SIMPLIFY=FALSE, USE.NAMES=FALSE)
+    collated <- vector("list", length(results))
+    for (i in seq_along(collated)) {
+        collated[[i]] <- match(results[[i]]$labels, names(all.ref[[i]]))
+    }
     all.labels <- do.call(rbind, collated)
     stopifnot(!any(is.na(all.labels)))
 
     ##############################################
 
     bp.out <- colBlockApply(test, FUN=.nonred_recompute_scores, BPPARAM=BPPARAM,
-        labels=all.labels, all.ref=all.ref, markers=markers, quantile=quantile)
+        labels=all.labels, all.ref=all.ref, markers=markers, quantile=quantile, has.lost=has.lost)
     scores <- do.call(rbind, bp.out)
 
     base.scores <- vector("list", length(results))
@@ -188,7 +198,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 #' @importFrom S4Vectors DataFrame selfmatch
 #' @importFrom BiocNeighbors buildIndex KmknnParam
 #' @importFrom DelayedArray currentViewport makeNindexFromArrayViewport
-.nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile) {
+.nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile, has.lost) {
     vp <- currentViewport()
     idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
     if (!is.null(idx)) {
@@ -210,4 +220,22 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     )
 
     t(scores)
+}
+
+.subset_with_NAs <- function(x, universe) {
+    if (all(universe %in% rownames(x))) {
+        .realize_reference(x[universe,,drop=FALSE])
+    } else if (nrow(x)==0) {
+        # Impossible in practice, but just in case...
+        matrix(NA_real_, length(universe), ncol(x), dimnames=list(universe, colnames(x)))
+    } else {
+        # A little song and dance because some matrix formats don't take well to NA indices.
+        m <- match(universe, rownames(x))
+        lost <- is.na(m)
+        m[lost] <- 1L
+        output <- x[m,,drop=FALSE]
+        output <- .realize_reference(output)
+        output[lost,] <- NA_real_
+        output
+    }
 }
