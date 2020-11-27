@@ -72,7 +72,7 @@
 #' @importFrom DelayedArray is_sparse
 #' @importFrom methods as
 #' @importClassesFrom Matrix dgCMatrix
-.realize_reference <- function(ref) {
+.realize_reference <- function(x) {
     if (is_sparse(x)) {
         as(x, "dgCMatrix")
     } else {

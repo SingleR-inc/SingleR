@@ -17,3 +17,7 @@ recompute_scores <- function(Groups, Exprs, Labels, References, Genes, quantile)
     .Call('_SingleR_recompute_scores', PACKAGE = 'SingleR', Groups, Exprs, Labels, References, Genes, quantile)
 }
 
+recompute_scores_with_na <- function(Groups, Exprs, Labels, References, Genes, quantile) {
+    .Call('_SingleR_recompute_scores_with_na', PACKAGE = 'SingleR', Groups, Exprs, Labels, References, Genes, quantile)
+}
+

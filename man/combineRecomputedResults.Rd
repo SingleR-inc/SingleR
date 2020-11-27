@@ -11,6 +11,8 @@ combineRecomputedResults(
   quantile = 0.8,
   assay.type.test = "logcounts",
   check.missing = TRUE,
+  allow.lost = FALSE,
+  warn.lost = TRUE,
   BNPARAM = KmknnParam(),
   BPPARAM = SerialParam()
 )

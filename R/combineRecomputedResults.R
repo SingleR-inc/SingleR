@@ -210,7 +210,13 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     groups <- selfmatch(collated)
     by.group <- split(seq_along(groups) - 1L, groups)
 
-    scores <- recompute_scores(
+    if (has.lost) {
+        RECOMPFUN <- recompute_scores_with_na
+    } else {
+        RECOMPFUN <- recompute_scores
+    }
+
+    scores <- RECOMPFUN(
         Groups=by.group,
         Exprs=block,
         Labels=labels - 1L,
@@ -223,14 +229,14 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 }
 
 .subset_with_NAs <- function(x, universe) {
-    if (all(universe %in% rownames(x))) {
-        .realize_reference(x[universe,,drop=FALSE])
+    m <- match(universe, rownames(x))
+    if (!anyNA(m)) {
+        .realize_reference(x[m,,drop=FALSE])
     } else if (nrow(x)==0) {
         # Impossible in practice, but just in case...
         matrix(NA_real_, length(universe), ncol(x), dimnames=list(universe, colnames(x)))
     } else {
         # A little song and dance because some matrix formats don't take well to NA indices.
-        m <- match(universe, rownames(x))
         lost <- is.na(m)
         m[lost] <- 1L
         output <- x[m,,drop=FALSE]
