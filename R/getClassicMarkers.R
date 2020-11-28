@@ -49,7 +49,12 @@
 #' @export
 #' @importFrom S4Vectors selfmatch DataFrame
 #' @importFrom utils head
-getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL) { 
+getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, BPPARAM=SerialParam()) { 
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     if (!.is_list(ref)) { 
         ref <- list(ref)
         labels <- list(labels)
@@ -63,8 +68,8 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
 
     for (i in seq_along(ref)) {
         current <- ref[[i]][common,,drop=FALSE]
-        current <- .to_clean_matrix(current, assay.type, check.missing, msg="ref")
-        ref[[i]] <- .median_by_label(current, labels[[i]])
+        current <- .to_clean_matrix(current, assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+        ref[[i]] <- .median_by_label(current, labels[[i]], BPPARAM=BPPARAM)
     }
 
     # Identify all label combinations within each reference.

@@ -18,7 +18,8 @@ trainSingleR(
   restrict = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
-  BNPARAM = KmknnParam()
+  BNPARAM = KmknnParam(),
+  BPPARAM = SerialParam()
 )
 }
 \arguments{
@@ -79,6 +80,8 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.}
 }
 \value{
 For a single reference, a \linkS4class{List} is returned containing:

@@ -44,6 +44,7 @@
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
 #'
@@ -168,7 +169,7 @@
 trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
     de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
     aggr.ref=FALSE, aggr.args=list(), recompute=TRUE, restrict=NULL,
-    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam()) 
+    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
     de.method <- match.arg(de.method)
 
@@ -180,8 +181,13 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         }
     }
 
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
-        check.missing=check.missing, msg="ref")
+        check.missing=check.missing, msg="ref", BPPARAM=BPPARAM)
 
     gns <- lapply(ref, rownames)
     if (length(unique(gns))!=1L) {
@@ -205,11 +211,11 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
-        MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args),
+        MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args, BPPARAM=BPPARAM),
         SIMPLIFY=FALSE)
 
     common <- lapply(gene.info, function(x) x$common)
-    args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM)
+    args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM, BPPARAM=BPPARAM)
 
     if (recompute || solo) {
         output <- mapply(FUN=.build_trained_index, 
@@ -232,7 +238,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 }
 
-.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.method="classic", de.n=NULL, de.args=list()) {
+.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=BPPARAM) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")
     }
@@ -265,12 +271,12 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     } else if (is.character(genes)) {
         genes <- match.arg(genes, c("de", "sd", "all"))
         if (genes=="sd") {
-            sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh)
+            sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
             common <- sd.out$genes
             extra <- sd.out$mat
             args$sd.thresh <- sd.thresh
         } else {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args)
+            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
             if (genes=="de") {
                 common <- unique(unlist(extra))
             } else {
@@ -286,13 +292,18 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 #' @importFrom S4Vectors List
 #' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
 #' @importFrom SummarizedExperiment assay
-.build_trained_index <- function(ref, labels, common, aggr.ref, aggr.args, search.info, BNPARAM=KmknnParam()) {
+.build_trained_index <- function(ref, labels, common, aggr.ref, aggr.args, search.info, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) {
     if (bndistance(BNPARAM)!="Euclidean") {
         stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
     }
 
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     if (aggr.ref) {
-        aggr <- do.call(aggregateReference, c(list(ref=ref, label=labels, check.missing=FALSE), aggr.args))
+        aggr <- do.call(aggregateReference, c(list(ref=ref, label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
         ref <- assay(aggr)
         labels <- aggr$label
     }
@@ -304,7 +315,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     for (u in ulabels) {
         current <- ref[,labels==u,drop=FALSE] 
         original[[u]] <- current
-        sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE])
+        sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE], BPPARAM=BPPARAM)
         indices[[u]] <- buildIndex(sr.out, BNPARAM=BNPARAM)
     }
 
@@ -319,9 +330,9 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 .get_levels <- function(labels) sort(unique(labels))
 
 #' @importFrom utils head
-.get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list()) {
+.get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=SerialParam()) {
     if (de.method=="classic") {
-        getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE)
+        getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE, BPPARAM=BPPARAM)
     } else {
         if (de.method=="t") {
             FUN <- scran::pairwiseTTests
@@ -329,7 +340,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
             FUN <- scran::pairwiseWilcox
         }
 
-        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up"), de.args))
+        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up", BPPARAM=BPPARAM), de.args))
         if (is.null(de.n)) {
             de.n <- 10
         }
@@ -340,8 +351,10 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 }
 
 #' @importFrom DelayedMatrixStats rowSds
-.get_genes_by_sd <- function(ref, labels, sd.thresh=1) {
-    mat <- .median_by_label(ref, labels)
+.get_genes_by_sd <- function(ref, labels, sd.thresh=1, BPPARAM=SerialParam()) {
+    mat <- .median_by_label(ref, labels, BPPARAM=BPPARAM)
+
+
     sd <- rowSds(mat)
     list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
 }
@@ -379,7 +392,16 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
 #' @importFrom DelayedMatrixStats rowMedians
 #' @importFrom DelayedArray DelayedArray
-.median_by_label <- function(mat, labels) {
+.median_by_label <- function(mat, labels, BPPARAM=SerialParam()) {
+    old <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(old))
+
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     ulabels <- .get_levels(labels)
     output <- matrix(0, nrow(mat), length(ulabels))
     rownames(output) <- rownames(mat)
@@ -394,7 +416,16 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
 #' @importFrom DelayedMatrixStats colRanks rowVars
 #' @importFrom DelayedArray DelayedArray
-.scaled_colranks_safe <- function(x) {
+.scaled_colranks_safe <- function(x, BPPARAM=SerialParam()) {
+    old <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(old))
+
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     out <- colRanks(DelayedArray(x), ties.method="average")
     center <- (nrow(x) + 1)/2
     sum.sq <- rowVars(out, center=center) * (nrow(x)-1)

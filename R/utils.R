@@ -1,8 +1,8 @@
 #' @importFrom SummarizedExperiment assay
 #' @importFrom DelayedMatrixStats rowAnyNAs
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom DelayedArray DelayedArray
-.to_clean_matrix <- function(x, assay.type, check.missing, msg="x") {
+#' @importFrom DelayedArray DelayedArray setAutoBPPARAM getAutoBPPARAM
+.to_clean_matrix <- function(x, assay.type, check.missing, msg="x", BPPARAM=SerialParam()) {
     if (is.null(rownames(x)) && nrow(x)) { # zero-length matrices have NULL dimnames.
         stop(sprintf("'%s' must have row names", msg))
     }
@@ -20,7 +20,11 @@
 
     # Stripping out genes with NA's from 'x'.
     if (check.missing) {
+        old <- getAutoBPPARAM()
+        setAutoBPPARAM(BPPARAM)
+        on.exit(setAutoBPPARAM(old))
         discard <- rowAnyNAs(DelayedArray(x))
+
         if (any(discard)) {
             warning(sprintf("'%s' contains rows with missing values", msg))
             x <- x[!discard,,drop=FALSE]

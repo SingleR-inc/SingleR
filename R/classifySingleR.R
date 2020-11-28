@@ -113,11 +113,12 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, 
     assay.type="logcounts", check.missing=TRUE, BPPARAM=SerialParam()) 
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing, msg="test")
     if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
         bpstart(BPPARAM)
         on.exit(bpstop(BPPARAM))
     }
+
+    test <- .to_clean_matrix(test, assay.type, check.missing, msg="test", BPPARAM=BPPARAM)
 
     # Unfortunately, we can't test for List, because each trained structure is
     # also a list; so we just check whether the 'common.genes' field exists.

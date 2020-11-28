@@ -9,7 +9,8 @@ getClassicMarkers(
   labels,
   assay.type = "logcounts",
   check.missing = TRUE,
-  de.n = NULL
+  de.n = NULL,
+  BPPARAM = SerialParam()
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{de.n}{An integer scalar specifying the number of DE genes to use.
 Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.}
 }
 \value{
 A list of lists of character vectors, 

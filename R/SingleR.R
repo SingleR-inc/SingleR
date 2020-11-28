@@ -79,7 +79,11 @@ SingleR <- function(test, ref,
     assay.type.test = "logcounts", assay.type.ref="logcounts", 
     check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
 {
-    test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test")
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+    test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test", BPPARAM=BPPARAM)
 
     # Converting to a common list format for ease of data munging.
     if (single.ref <- !.is_list(ref)) {
@@ -87,7 +91,7 @@ SingleR <- function(test, ref,
     }
 
     ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type.ref, 
-        check.missing=check.missing, msg="ref")
+        check.missing=check.missing, msg="ref", BPPARAM=BPPARAM)
     refnames <- Reduce(intersect, lapply(ref, rownames))
 
     keep <- intersect(rownames(test), refnames)
@@ -111,7 +115,7 @@ SingleR <- function(test, ref,
     trained <- trainSingleR(ref, labels, genes = genes, sd.thresh = sd.thresh, 
         de.method = de.method, de.n = de.n, de.args = de.args,
         aggr.ref = aggr.ref, aggr.args = aggr.args, recompute=recompute,
-        restrict = restrict, check.missing=FALSE, BNPARAM=BNPARAM)
+        restrict = restrict, check.missing=FALSE, BNPARAM=BNPARAM, BPPARAM=BPPARAM)
 
     if (!is.null(method)) {
         .Deprecated(msg="'method=\"cluster\"' is no longer necessary when 'cluster=' is specified")

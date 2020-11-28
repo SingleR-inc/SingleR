@@ -107,6 +107,11 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     assay.type.test="logcounts", check.missing=TRUE, allow.lost=FALSE, warn.lost=TRUE,
     BNPARAM=KmknnParam(), BPPARAM=SerialParam())
 {
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
     all.names <- c(list(colnames(test)), lapply(results, rownames))
     if (length(unique(all.names)) != 1) {
         stop("cell/cluster names in 'results' are not identical")
@@ -157,7 +162,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
 
     # Preparing expression values: subsetting them down to 
     # improve cache efficiency later on.
-    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test")
+    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
     test <- test[universe,,drop=FALSE]
 
     all.ref <- vector("list", length(trained))

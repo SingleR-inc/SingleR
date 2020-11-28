@@ -80,12 +80,17 @@
 aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, assay.type="logcounts", 
     rank=20, subset.row=NULL, check.missing=TRUE, BPPARAM=SerialParam(), BSPARAM=bsparam())
 {
-    output.vals <- output.labs <- list()
-    ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref")
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
 
     oldp <- getAutoBPPARAM()
     setAutoBPPARAM(BPPARAM)
     on.exit(setAutoBPPARAM(oldp), add=TRUE)
+
+    ref <- .to_clean_matrix(ref, assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+    output.vals <- output.labs <- list()
 
     for (u in unique(labels)) {
         chosen <- u==labels
