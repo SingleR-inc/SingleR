@@ -131,7 +131,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     refnames <- Reduce(intersect, refnames)
     if (has.lost <- !all(universe %in% refnames)) {
         if (warn.lost) {
-            stop("not all markers are present across all 'results'")
+            warning("entries of 'trained' differ in the universe of available markers")
         }
         if (!allow.lost) {
             universe <- intersect(universe, refnames)
@@ -240,6 +240,7 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
         lost <- is.na(m)
         m[lost] <- 1L
         output <- x[m,,drop=FALSE]
+        rownames(output) <- universe
         output <- .realize_reference(output)
         output[lost,] <- NA_real_
         output

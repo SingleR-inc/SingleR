@@ -28,7 +28,12 @@ void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& colle
     // Computing tied ranks. 
     size_t cur_rank=0;
     auto cIt=collected.begin();
-    outgoing.resize(slen, na_aware ? R_NaReal : 0);
+    if (na_aware) {
+        outgoing.clear();
+        outgoing.resize(slen, R_NaReal);
+    } else {
+        outgoing.resize(slen);
+    }
 
     while (cIt!=collected.end()) {
         auto copy=cIt;
@@ -51,7 +56,7 @@ void scaled_ranks(IT start, const std::vector<int>& chosen, ranked_vector& colle
 
     // Mean-adjusting and converting to cosine values.
     double sum_squares=0;
-    const double center_rank=static_cast<double>(slen-1)/2;
+    const double center_rank=static_cast<double>(collected.size() - 1)/2; // use collected.size(), not slen, to account for NA's.
     for (auto& o : outgoing) {
         if (na_aware && ISNA(o)) {
             continue;
