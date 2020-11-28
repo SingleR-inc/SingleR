@@ -9,6 +9,8 @@
 #' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
+#' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.
+#' @param allow.lost Logical scalar indicating whether to use lost markers in references where they are available. 
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
@@ -28,8 +30,8 @@
 #' as this function does not use a common set of genes across all references.
 #'
 #' @details
-#' Here, the strategy is to performed classification separately within each reference, 
-#' then collating the results to choose the label with the highest score across references.
+#' Here, the strategy is to perform classification separately within each reference, 
+#' then collate the results to choose the label with the highest score across references.
 #' For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
 #' We also retrieve the marker genes associated with that label and take the union of markers across all references.
 #' This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};
@@ -42,9 +44,19 @@
 #' (compared to the union of markers across all labels, as required by \code{\link{combineCommonResults}}),
 #' so it is likely that the net compute time should be lower.
 #'
-#' It is strongly recommended that the universe of genes be the same across all references.
-#' The intersection of genes across all \code{ref} and \code{test} is used when recomputing scores,
-#' and differences in the availability of genes between references may have unpredictable effects.
+#' @section Dealing with mismatching gene availabilities:
+#' It is strongly recommended that the universe of genes be the same across all references in \code{trained}.
+#' If this is not the case, the intersection of genes across all \code{trained} will be used in the recomputation.
+#' This at least provides a common feature space for comparing correlations, 
+#' though differences in the availability of markers between references may have unpredictable effects on the results
+#' (and so a warning will be emitted by default, when when \code{warn.lost=TRUE}).
+#'
+#' That said, the intersection may be too string when dealing with many references with diverse feature annotations. 
+#' In such cases, we can set \code{allow.lost=TRUE} so that the recomputation for each reference will use all available markers in that reference.
+#' The idea here is to avoid penalizing all references by removing an informative marker when it is only absent in a single reference.
+#' We hope that the recomputed scores are still roughly comparable if the number of lost markers is relatively low,
+#' coupled with the use of ranks in the calculation of the Spearman-based scores to reduce the influence of individual markers.
+#' This is perhaps as reliable as one might imagine, so setting \code{allow.lost=TRUE} should be considered a last resort.
 #' 
 #' @author Aaron Lun
 #'

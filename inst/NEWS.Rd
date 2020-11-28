@@ -2,6 +2,10 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 1.6.0}{\itemize{
+\item Relaxed the requirements for consistent row names in \code{combineRecomputedResults()}.
+}}
+
 \section{Version 1.4.0}{\itemize{
 \item Migrated all of the dataset getter functions to the \pkg{celldex} package.
 
