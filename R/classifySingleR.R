@@ -140,32 +140,44 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     } 
 }
 
+#' @importFrom beachmat colBlockApply
 #' @importFrom BiocParallel bplapply
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune,
     tune.thresh=0.05, sd.thresh=NULL, prune=TRUE, BPPARAM) 
 {
-    # Don't globally subset 'x', as fine-tuning requires all genes
-    # when search.mode='sd'.
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
+    # Don't globally subset 'test' at this point, as fine-tuning requires all
+    # genes when search.mode='sd'.
     ref.genes <- trained$common.genes
     if (!all(ref.genes %in% rownames(test))) {
         stop("'rownames(test)' does not contain all genes used in 'trained'")
     }
 
-    # Initial search in rank space.
-    ranked <- .scaled_colranks_safe(test[ref.genes,,drop=FALSE])
-    all.indices <- trained$nn.indices
+    # Initial search in rank space. We do some grid processing to avoid realizing
+    # the entire rank matrix into memory. Parallelizing across labels rather than
+    # cells, as we often have few cells but many labels, and the serialization
+    # of each label's 'trained' content to each worker is lighter anyway.
+    scores <- colBlockApply(test, FUN=function(block) {
+        ranked <- .scaled_colranks_safe(block[ref.genes,,drop=FALSE])
+        output <- bplapply(trained$nn.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
+        if (length(output)) { 
+            do.call(cbind, output)
+        } else {
+            matrix(0, ncol(block), 0) 
+        }
+    }, grid=TRUE, BPPARAM=SerialParam())
 
-    # Parallelizing across labels rather than cells, as we often have few cells but many labels.
-    scores <- bplapply(all.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
-    if (length(scores)) { 
-        scores <- do.call(cbind, scores)
+    scores <- do.call(rbind, scores)
+    if (ncol(scores)) {
         labels <- colnames(scores)[max.col(scores)]
     } else {
-        scores <- matrix(0, ncol(test), 0) 
         labels <- rep(NA_character_, ncol(test))
     }
-    rownames(scores) <- rownames(ranked)
 
     # Fine-tuning with an iterative search in lower dimensions.
     search.mode <- trained$search$mode
