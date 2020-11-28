@@ -26,7 +26,7 @@ inline double correlations_to_scores (std::vector<double>& all_correlations, dou
         std::nth_element(all_correlations.begin(), all_correlations.begin()+qn, all_correlations.end());
         const double rightval=all_correlations[qn];
 
-        // Do NOT be tempted to do the second nth_element with the end at end()+qn;
+        // Do NOT be tempted to do the second nth_element with the end at begin()+qn;
         // this does not handle ties properly.
         std::nth_element(all_correlations.begin(), all_correlations.begin()+qn-1, all_correlations.end());
         const double leftval=all_correlations[qn-1];

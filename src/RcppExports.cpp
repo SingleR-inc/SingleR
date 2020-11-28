@@ -51,11 +51,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// recompute_scores_with_na
+Rcpp::RObject recompute_scores_with_na(Rcpp::List Groups, Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, Rcpp::List References, Rcpp::List Genes, double quantile);
+RcppExport SEXP _SingleR_recompute_scores_with_na(SEXP GroupsSEXP, SEXP ExprsSEXP, SEXP LabelsSEXP, SEXP ReferencesSEXP, SEXP GenesSEXP, SEXP quantileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type Groups(GroupsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type Exprs(ExprsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type Labels(LabelsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type References(ReferencesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type Genes(GenesSEXP);
+    Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
+    rcpp_result_gen = Rcpp::wrap(recompute_scores_with_na(Groups, Exprs, Labels, References, Genes, quantile));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_fine_tune_label_de", (DL_FUNC) &_SingleR_fine_tune_label_de, 6},
     {"_SingleR_fine_tune_label_sd", (DL_FUNC) &_SingleR_fine_tune_label_sd, 7},
     {"_SingleR_recompute_scores", (DL_FUNC) &_SingleR_recompute_scores, 6},
+    {"_SingleR_recompute_scores_with_na", (DL_FUNC) &_SingleR_recompute_scores_with_na, 6},
     {NULL, NULL, 0}
 };
 

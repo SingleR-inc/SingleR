@@ -6,22 +6,12 @@
 #include <stdexcept>
 #include <set>
 
-// [[Rcpp::export(rng=false)]]
-Rcpp::RObject recompute_scores(Rcpp::List Groups, 
-    Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
-    Rcpp::List References, Rcpp::List Genes, double quantile) 
+void preflight(std::vector<matrix_list>& references, 
+    std::vector<std::vector<Rcpp::IntegerVector> >& genes,
+    Rcpp::List& References, Rcpp::IntegerMatrix& Labels, Rcpp::List& Genes,
+    size_t ngenes, size_t ncells)  
 {
-    auto mat = beachmat::read_lin_block(Exprs);
-    const size_t ncells=mat->get_ncol();
-    const size_t ngenes=mat->get_nrow();
-    Rcpp::NumericVector tmp(ngenes);
-
-    /* Preparing a whole bunch of sanity checks. */
-
-    const size_t ngroups=Groups.size();
     const size_t nref=References.size();
-    std::vector<matrix_list> references(nref);
-
     for (size_t i=0; i<nref; ++i) {
         Rcpp::List more_references=References[i];
         const size_t nmore=more_references.size();
@@ -45,7 +35,6 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
     if (Genes.size()!=nref) {
         throw std::runtime_error("'Genes' and 'References' must be of the same length");
     }
-    std::vector<std::vector<Rcpp::IntegerVector> > genes(nref);
     for (size_t i=0; i<nref; ++i) {
         Rcpp::List current_from=Genes[i];
         const size_t nlab=current_from.size();
@@ -57,8 +46,38 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
         }
     }
 
-    /* Computing the scores. */
+    return;
+}
 
+std::vector<int> identify_genes (Rcpp::IntegerMatrix::Column& all_labels, 
+    const std::vector<std::vector<Rcpp::IntegerVector> >& genes,
+    size_t nref)
+{
+    std::set<int> tmp;
+    for (size_t i=0; i<nref; ++i) {
+        Rcpp::IntegerVector current=genes[i][all_labels[i]];
+        tmp.insert(current.begin(), current.end());
+    }
+    return std::vector<int>(tmp.begin(), tmp.end()); // switch to a more cache-efficient vector.
+}
+
+// [[Rcpp::export(rng=false)]]
+Rcpp::RObject recompute_scores(Rcpp::List Groups, 
+    Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
+    Rcpp::List References, Rcpp::List Genes, double quantile) 
+{
+    auto mat = beachmat::read_lin_block(Exprs);
+    const size_t ncells=mat->get_ncol();
+    const size_t ngenes=mat->get_nrow();
+
+    /* Preparing a whole bunch of sanity checks. */
+    const size_t nref=References.size();
+    const size_t ngroups=Groups.size();
+    std::vector<matrix_list> references(nref);
+    std::vector<std::vector<Rcpp::IntegerVector> > genes(nref);
+    preflight(references, genes, References, Labels, Genes, ngenes, ncells);
+
+    /* Computing the scores. */
     Rcpp::NumericVector holder_left(ngenes), holder_right(ngenes);
     ranked_vector collected(ngenes);
     std::vector<double> scaled_left(ngenes);
@@ -75,40 +94,27 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
         }
 
         // Finding all of the genes of interest.
-        std::set<int> tmp;
         auto all_labels=Labels.column(curgroup[0]);
-        for (size_t i=0; i<nref; ++i) {
-            Rcpp::IntegerVector current=genes[i][all_labels[i]];
-            tmp.insert(current.begin(), current.end());
-        }
-        std::vector<int> universe(tmp.begin(), tmp.end()); // switch to a more cache-efficient vector.
+        auto universe=identify_genes(all_labels, genes, nref);
 
         // Computing the references.
         for (size_t i=0; i<nref; ++i) {
             auto current=references[i][all_labels[i]].get();
-            const size_t ncells=current->get_ncol();
+            const size_t curncells=current->get_ncol();
 
             auto& scaled_right_set=scaled_rights[i];
-            scaled_right_set.resize(ncells);
+            scaled_right_set.resize(curncells);
 
-            for (size_t c=0; c<ncells; ++c) {
-                double* hptr = holder_right.begin();
-                auto ptr = current->get_col(c, hptr);
-                if (ptr!=hptr) {
-                    std::copy(ptr, ptr + ngenes, hptr);
-                }
-                scaled_ranks(holder_right.begin(), universe, collected, scaled_right_set[c]);
+            for (size_t c=0; c<curncells; ++c) {
+                auto ptr = current->get_col(c, holder_right.begin());
+                scaled_ranks(ptr, universe, collected, scaled_right_set[c]);
             }
         }
 
         // Looping through the cells and computing the scores. 
         for (size_t t=0; t<cursize; ++t) {
-            double* hptr = holder_left.begin();
-            auto ptr = mat->get_col(curgroup[t], hptr);
-            if (ptr!=hptr) {
-                std::copy(ptr, ptr + ngenes, hptr);
-            }
-            scaled_ranks(holder_left.begin(), universe, collected, scaled_left);
+            auto ptr = mat->get_col(curgroup[t], holder_left.begin());
+            scaled_ranks(ptr, universe, collected, scaled_left);
             auto outcol=output.column(curgroup[t]);
 
             for (size_t i=0; i<nref; ++i) {
@@ -117,10 +123,95 @@ Rcpp::RObject recompute_scores(Rcpp::List Groups,
                 for (size_t c=0; c<cur_set.size(); ++c) {
                     const auto& curright=cur_set[c];
 
+                    double dist = 0;
+                    auto crIt = curright.begin();
+                    for (auto slIt = scaled_left.begin(); slIt != scaled_left.end(); ++slIt, ++crIt) {
+                        const double tmp = (*slIt) - (*crIt);
+                        dist += tmp*tmp;
+                    }
+                    all_correlations.push_back(1 - 2*dist);
+                }
+
+                outcol[i]=correlations_to_scores(all_correlations, quantile);
+            }
+        }
+    }
+
+    return output;
+}
+
+/* A slightly less efficient version that is NA aware. */
+
+// [[Rcpp::export(rng=false)]]
+Rcpp::RObject recompute_scores_with_na(Rcpp::List Groups, 
+    Rcpp::RObject Exprs, Rcpp::IntegerMatrix Labels, 
+    Rcpp::List References, Rcpp::List Genes, double quantile) 
+{
+    auto mat = beachmat::read_lin_block(Exprs);
+    const size_t ncells=mat->get_ncol();
+    const size_t ngenes=mat->get_nrow();
+
+    /* Preparing a whole bunch of sanity checks. */
+    const size_t nref=References.size();
+    const size_t ngroups=Groups.size();
+    std::vector<matrix_list> references(nref);
+    std::vector<std::vector<Rcpp::IntegerVector> > genes(nref);
+    preflight(references, genes, References, Labels, Genes, ngenes, ncells);
+
+    /* Computing the scores. */
+    Rcpp::NumericVector holder_left(ngenes), holder_right(ngenes);
+    std::vector<double> copy_left(ngenes);
+    ranked_vector collected(ngenes);
+    std::vector<double> scaled_left(ngenes), scaled_right(ngenes);
+    std::vector<double> all_correlations;
+
+    Rcpp::NumericMatrix output(nref, ncells);
+
+    for (size_t g=0; g<ngroups; ++g) {
+        Rcpp::IntegerVector curgroup=Groups[g];
+        const size_t cursize=curgroup.size();
+        if (cursize==0) { 
+            continue;
+        }
+
+        // Finding all of the genes of interest.
+        auto all_labels=Labels.column(curgroup[0]);
+        auto universe=identify_genes(all_labels, genes, nref);
+
+        // Looping through the cells and computing the scores. 
+        for (size_t t=0; t<cursize; ++t) {
+            auto lptr = mat->get_col(curgroup[t], holder_left.begin());
+            auto outcol=output.column(curgroup[t]);
+
+            for (size_t i=0; i<nref; ++i) {
+                auto current=references[i][all_labels[i]].get();
+                const size_t curncells=current->get_ncol();
+                std::copy(lptr, lptr + ngenes, copy_left.begin());
+                all_correlations.clear();
+
+                for (size_t c=0; c<curncells; ++c) {
+                    auto rptr = current->get_col(c, holder_right.begin());
+                    scaled_ranks(rptr, universe, collected, scaled_right, true);
+
+                    if (c==0) {
+                        // Infect copy_left with the same pattern of NA's,
+                        // under the assumption that the reference's NAs are
+                        // the same for all its cells.
+                        for (auto& u : universe) {
+                            if (ISNA(rptr[u])) {
+                                copy_left[u]=R_NaReal;
+                            }
+                        }
+                        scaled_ranks(copy_left.begin(), universe, collected, scaled_left, true);
+                    }
+
                     double dist=0;
-                    for (size_t j=0; j<scaled_left.size(); ++j) {
-                        const double tmp=scaled_left[j] - curright[j];
-                        dist+=tmp*tmp;
+                    auto srIt=scaled_right.begin();
+                    for (auto slIt=scaled_left.begin(); slIt != scaled_left.end(); ++slIt, ++srIt) {
+                        if (!ISNA(*slIt)) {
+                            const double tmp = (*slIt) - (*srIt);
+                            dist+=tmp*tmp;
+                        }
                     }
                     all_correlations.push_back(1 - 2*dist);
                 }

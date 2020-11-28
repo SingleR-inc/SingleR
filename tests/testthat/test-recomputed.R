@@ -1,6 +1,7 @@
 # This tests that combineRecomputedResults works as expected.
 # library(testthat); library(SingleR); source("test-recomputed.R")
 
+library(testthat); library(SingleR); 
 set.seed(10000)
 
 # Making up data (using an uneven distribution to avoid symmetry masking problems).
@@ -163,17 +164,47 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
         trained=list(train1, train2)), "not identical")
     colnames(test) <- NULL
 
-    # Correctly intersects the gene universes.
+    # Correctly reorders the gene universes.
     ref <- combineRecomputedResults(
         results=list(pred1, pred2),
         test=test,
         trained=list(train1, train2))
 
     s <- sample(nrow(test))
-    expect_warning(out <- combineRecomputedResults(
+    out <- combineRecomputedResults(
         results=list(pred1, pred2),
         test=test[s,],
-        trained=list(train1, train2)), "differ in the universe")
+        trained=list(train1, train2))
+    expect_identical(ref, out)
+})
+
+test_that("combineRecomputedResults strict behavior with missing genes is correct", {
+    ref <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2))
+
+    # Spiking in some missing genes.
+    test2 <- test[c(1,seq_len(nrow(test)),1),]
+    rownames(test2)[1] <- "WHEE"
+    rownames(test2)[length(rownames(test2))] <- "BLAH"
+    train1b <- train1
+    train1b$search$extra$A$B <- c(train1b$search$extra$A$B, "WHEE")
+    train2b <- train2
+    train2b$search$extra$e$a <- c(train2b$search$extra$e$a, "BLAH")
+
+    expect_warning(out <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test2,
+        trained=list(train1b, train2b)), "differ in the universe")
+    expect_identical(ref, out)
+
+    # Similar protection at the C++ level, if such genes are allowed.
+    expect_warning(out <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test2,
+        trained=list(train1b, train2b),
+        warn.lost=FALSE, allow.lost=TRUE), NA)
     expect_identical(ref, out)
 })
 
