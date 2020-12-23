@@ -150,7 +150,9 @@ The entry \code{genes$A} represent the genes that are upregulated in \code{A} co
 This allows the function to handle pre-defined marker lists for specific cell populations.
 However, it obviously captures less information than marker sets for the pairwise comparisons.
 
-If \code{genes} explicitly contains gene identities (as character vectors), \code{ref} can be the raw counts or any monotonic transformation thereof.
+If \code{genes} is manually passed, \code{ref} can be the raw counts or any monotonic transformation thereof.
+There is no need to supply (log-)normalized expression values for the benefit of the automatic marker detection.
+Similarly, for manual \code{genes}, \code{de.n} and \code{sd.thresh} have no effect.
 }
 
 \section{Dealing with multiple references}{
