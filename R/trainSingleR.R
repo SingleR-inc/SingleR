@@ -397,7 +397,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 .scaled_colranks_safe <- function(x) {
     out <- colRanks(DelayedArray(x), ties.method="average")
     center <- (nrow(x) + 1)/2
-    sum.sq <- rowVars(out, center=center) * (nrow(x)-1)
+    sum.sq <- rowVars(out) * (nrow(x)-1)
     sum.sq <- pmax(1e-8, sum.sq)
     (out - center)/(sqrt(sum.sq) * 2)
 }
