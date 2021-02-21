@@ -4,6 +4,8 @@
 
 \section{Version 1.6.0}{\itemize{
 \item Relaxed the requirements for consistent row names in \code{combineRecomputedResults()}.
+
+\item Support sparse DelayedArray inputs in \code{classifySingleR()}.
 }}
 
 \section{Version 1.4.0}{\itemize{

@@ -140,7 +140,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     } 
 }
 
-#' @importFrom beachmat colBlockApply
+#' @importFrom beachmat colBlockApply toCsparse
 #' @importFrom BiocParallel bplapply
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune,
@@ -163,6 +163,7 @@ classifySingleR <- function(test, trained, quantile=0.8, fine.tune=TRUE,
     # cells, as we often have few cells but many labels, and the serialization
     # of each label's 'trained' content to each worker is lighter anyway.
     scores <- colBlockApply(test, FUN=function(block) {
+        block <- toCsparse(block)
         ranked <- .scaled_colranks_safe(block[ref.genes,,drop=FALSE])
         output <- bplapply(trained$nn.indices, FUN=.find_nearest_quantile, ranked=ranked, quantile=quantile, BPPARAM=BPPARAM)
         if (length(output)) { 
