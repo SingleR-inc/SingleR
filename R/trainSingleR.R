@@ -191,6 +191,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
         check.missing=check.missing, msg="ref", BPPARAM=BPPARAM)
 
+    # Cleaning the genes.
     gns <- lapply(ref, rownames)
     if (length(unique(gns))!=1L) {
         stop("row names are not identical across references")
@@ -201,15 +202,24 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         ref <- lapply(ref, FUN="[", i=keep, , drop=FALSE)
     }
 
+    if (isSingleString(genes)) {
+        genes <- rep(genes, length(ref))
+    } else if (length(genes)!=length(ref)) {
+        stop("list-like 'genes' should be the same length as 'ref'")
+    }
+
+    # Cleaning the labels.
     labels <- lapply(labels, as.character)
     if (length(labels)!=length(ref)) {
         stop("lists in 'labels' and 'ref' should be of the same length")
     }
 
-    if (isSingleString(genes)) {
-        genes <- rep(genes, length(ref))
-    } else if (length(genes)!=length(ref)) {
-        stop("list-like 'genes' should be the same length as 'ref'")
+    for (l in seq_along(labels)) {
+        keep <- !is.na(labels[[l]])
+        if (!all(keep)) {
+            labels[[l]] <- labels[[l]][keep]
+            ref[[l]] <- ref[[l]][,keep,drop=FALSE]
+        }
     }
 
     gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,

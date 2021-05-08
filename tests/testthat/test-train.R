@@ -354,3 +354,16 @@ test_that("trainSingleR works when restricting", {
     ref <- SingleR::trainSingleR(head(training, 90), training$label)
     expect_identical(out, ref)
 })
+
+test_that("trainSingleR auto-eliminates NA labels", {
+    populate <- rbinom(length(training$label), 1, 0.2)==1
+    training$label[populate] <- NA
+
+    set.seed(200)
+    out <- trainSingleR(training, training$label)
+
+    set.seed(200)
+    ref <- trainSingleR(training[,!populate], training$label[!populate])
+    expect_identical(out, ref)
+})
+

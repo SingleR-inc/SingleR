@@ -117,3 +117,16 @@ test_that("SingleR handles data.frame inputs", {
     tmp[,1] <- as.character(tmp[,1])
     expect_error(SingleR(test=tmp, ref=data.frame(logcounts(training)), labels=training$label, genes="de"), "numeric")
 })
+
+test_that("SingleR handles NAs in the labels", {
+    populate <- rbinom(length(training$label), 1, 0.2)==1
+    training$label[populate] <- NA
+
+    set.seed(10)
+    ref1 <- SingleR(test=test, ref=training, labels=training$label)
+    set.seed(10)
+    ref2 <- SingleR(test=test, ref=training[,!populate], labels=training$label[!populate])
+
+    expect_identical(ref1, ref2)
+})
+
