@@ -9,6 +9,7 @@ aggregateReference(
   labels,
   ncenters = NULL,
   power = 0.5,
+  ntop = 1000,
   assay.type = "logcounts",
   rank = 20,
   subset.row = NULL,
@@ -26,6 +27,8 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 \item{ncenters}{Integer scalar specifying the maximum number of aggregated profiles to produce for each label.}
 
 \item{power}{Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.}
+
+\item{ntop}{Integer scalar specifying the number of highly variable genes to use for the PCA step.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
@@ -66,15 +69,17 @@ This ensures that labels with more cells have more resolved representatives.
 If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
 Setting \code{power=0} will aggregate all cells of a label into a single pseudo-bulk profile.
 
-k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link{runPCA}}.
+In practice, k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link{runPCA}}.
 The use of PCs compacts the data for more efficient operation of \code{\link{kmeans}};
 it also removes some of the high-dimensional noise to highlight major factors of within-label heterogenity.
 Note that the PCs are only used for clustering and the full expression profiles are still used for the final averaging.
 Users can disable the PCA step by setting \code{rank=Inf}.
 
-Setting \code{subset.row} to an appropriate indexing vector will subset the matrix by gene prior to PCA.
-However, again, the aggregation is performed on the full expression profiles.
+By default, we speed things up by only using the top \code{ntop} genes with the largest variances in the PCA.
+More subsetting of the matrix prior to the PCA can be achieved by setting \code{subset.row} to an appropriate indexing vector.
 This option may be useful for clustering based on known genes of interest but retaining all genes in the aggregated results.
+(If both options are set, subsetting by \code{subset.row} is done first, and then the top \code{ntop} genes are selected.)
+In both cases, though, the aggregation is performed on the full expression profiles.
 
 We use the average rather than the sum in order to be compatible with \code{\link{trainSingleR}}'s internal marker detection.
 Moreover, unlike counts, the sum of transformed and normalized expression values generally has little meaning.

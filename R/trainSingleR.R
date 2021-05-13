@@ -315,7 +315,7 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     if (aggr.ref) {
-        aggr <- do.call(aggregateReference, c(list(ref=ref, label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
+        aggr <- do.call(aggregateReference, c(list(ref=quote(ref), label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
         ref <- assay(aggr)
         labels <- aggr$label
     }

@@ -1,7 +1,7 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 1.5.6
-Date: 2021-05-07
+Version: 1.5.7
+Date: 2021-05-13
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
@@ -24,7 +24,8 @@ Imports:
     stats,
     utils,
     Rcpp,
-    beachmat
+    beachmat,
+    parallel
 LinkingTo:
     Rcpp,
     beachmat

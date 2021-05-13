@@ -6,6 +6,9 @@
 \item Relaxed the requirements for consistent row names in \code{combineRecomputedResults()}.
 
 \item Support sparse DelayedArray inputs in \code{classifySingleR()}.
+
+\item Parallelize over labels instead of rows in \code{aggregateReference()}, with minor changes in the setting of the seed.
+Restrict the PCA to the top 1000 most highly variable genes, for speed.
 }}
 
 \section{Version 1.4.0}{\itemize{

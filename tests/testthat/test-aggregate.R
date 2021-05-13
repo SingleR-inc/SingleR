@@ -1,5 +1,5 @@
 # This tests the aggregator function.
-# library(testthat); library(SingleR); source("test-aggregate.R")
+# library(testthat); library(SingleR); source("setup.R"); source("test-aggregate.R")
 
 library(scuttle)
 sce <- mockSCE()
@@ -55,4 +55,56 @@ test_that("aggregateReference works as expected for empty inputs", {
     aggr <- aggregateReference(sce[,0], labels[0])
     expect_identical(nrow(aggr), nrow(sce))
     expect_identical(ncol(aggr), 0L)
+})
+
+test_that("aggregateReference seed setter behaves correctly", {
+    # Seed is different for each set of labels. 
+    set.seed(10)
+    aggr <- aggregateReference(BiocGenerics::cbind(sce[,1:10], sce[,1:10]), rep(1:2, each=10))
+
+    N <- ncol(aggr)/2
+    expect_false(identical(unname(assay(aggr)[,1:N]), unname(assay(aggr)[,N+1:N])))
+
+    # Seed is different for different runs.
+    labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+
+    set.seed(10)
+    X1 <- aggregateReference(sce, labels) # double usage is intentional.
+    X2 <- aggregateReference(sce, labels)
+    expect_false(identical(X1, X2))
+
+    # You get the same results with the same seed, and different results with different seeds.
+    labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+
+    set.seed(20)
+    ref <- aggregateReference(sce, labels)
+
+    set.seed(20)
+    out <- aggregateReference(sce, labels)
+    expect_identical(ref, out)
+
+    set.seed(30)
+    out <- aggregateReference(sce, labels)
+    expect_false(identical(ref, out))
+
+    # You get same results regardless of parallelization. 
+    # Note that SnowParam requires us to disable the failsafes,
+    # otherwise setAutoBPPARAM() doesn't work properly.
+    setAutoBPPARAM(SerialParam())
+
+    set.seed(20)
+    out <- aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(3))
+    expect_identical(ref, out)
+
+    # The seed is unset properly for downstream applications.
+    set.seed(10)
+    aggregateReference(sce, labels)
+    test1 <- runif(10)
+
+    set.seed(10)
+    aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(3))
+    test2 <- runif(10)
+    expect_identical(test1, test2)
+
+    setAutoBPPARAM(FAIL)
 })
