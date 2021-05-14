@@ -57,10 +57,25 @@ test_that("aggregateReference works as expected for empty inputs", {
     expect_identical(ncol(aggr), 0L)
 })
 
+test_that("aggregateReference selects HVGs correctly", {
+    mat <- assay(sce)
+    keep <- sample(nrow(mat), 50)
+    mat[keep,] <-  mat[keep,] * 100
+
+    labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+    set.seed(10)
+    aggr <- aggregateReference(mat, labels, ntop=50)
+
+    set.seed(10)
+    ref <- aggregateReference(mat[keep,], labels, ntop=Inf)
+
+    expect_identical(aggr[keep,], ref)
+})
+
 test_that("aggregateReference seed setter behaves correctly", {
     # Seed is different for each set of labels. 
     set.seed(10)
-    aggr <- aggregateReference(BiocGenerics::cbind(sce[,1:10], sce[,1:10]), rep(1:2, each=10))
+    aggr <- aggregateReference(BiocGenerics::cbind(sce, sce), rep(1:2, each=ncol(sce)))
 
     N <- ncol(aggr)/2
     expect_false(identical(unname(assay(aggr)[,1:N]), unname(assay(aggr)[,N+1:N])))
