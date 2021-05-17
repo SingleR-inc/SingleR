@@ -529,15 +529,20 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 }
 
 .make_heatmap_colors_discrete <- function(show.pruned) {
-    # Creates a default vector of colors with 24*10 (overkill) options.
+    # Creates a default vector of colors with 40*10 (overkill) options.
     annotation.colors <- rep(
-        # DittoSeq-v0.2.10 Colors (based on Okabe-Ito colors)
+        # DittoSeq-v1.4 Colors (based on Okabe-Ito colors)
         c(
-            "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
-            "#D55E00", "#CC79A7", "#666666", "#AD7700", "#1C91D4",
-            "#007756", "#D5C711", "#005685", "#A04700", "#B14380",
-            "#4D4D4D", "#FFBE2D", "#80C7EF", "#00F6B3", "#F4EB71",
-            "#06A5FF", "#FF8320", "#D99BBD", "#8C8C8C"),
+            "#E69F00", "#56B4E9", "#009E73", "#F0E442",
+            "#0072B2", "#D55E00", "#CC79A7", "#666666",
+            "#AD7700", "#1C91D4", "#007756", "#D5C711",
+            "#005685", "#A04700", "#B14380", "#4D4D4D",
+            "#FFBE2D", "#80C7EF", "#00F6B3", "#F4EB71",
+            "#06A5FF", "#FF8320", "#D99BBD", "#8C8C8C",
+            "#FFCB57", "#9AD2F2", "#2CFFC6", "#F6EF8E",
+            "#38B7FF", "#FF9B4D", "#E0AFCA", "#A3A3A3",
+            "#8A5F00", "#1674A9", "#005F45", "#AA9F0D",
+            "#00446B", "#803800", "#8D3666", "#3D3D3D"),
         10)
     if (show.pruned) {
         annotation.colors <- c("white", annotation.colors)
