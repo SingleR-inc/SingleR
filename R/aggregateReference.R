@@ -122,7 +122,7 @@ aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000,
 
 #' @importFrom stats kmeans
 #' @importFrom utils head
-#' @importFrom Matrix rowSums t
+#' @importFrom Matrix t rowMeans
 #' @importFrom BiocSingular runPCA
 #' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom beachmat realizeFileBackedMatrix
