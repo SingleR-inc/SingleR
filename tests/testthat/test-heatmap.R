@@ -292,17 +292,17 @@ test_that("heatmap multi-ref - labels with least calls/calcs are removed by 'max
     combined$scores <- cbind(combined$scores, "rarelyCalc" = NA)
     combined$scores[1,"rarelyCalc"] <- 1 # Needs at least one score to not be removed anyway.
     expect_true(all(c("neverCalled", "rarelyCalc") %in% colnames(combined$scores)))
-    
+
     # Both there with no trimming
     expect_true(all(c("neverCalled", "rarelyCalc") %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
         max.labels = 40)$mat)))
-    
+
     # The rarely picked for calculation "rarelyCalc" label should be removed first
     expect_true("neverCalled" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
         max.labels = 11)$mat))
     expect_false("rarelyCalc" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
         max.labels = 11)$mat))
-    
+
     # The never picked as final label "neverCalled" label should be removed next
     expect_false("neverCalled" %in% rownames(plotScoreHeatmap(results = combined, silent = TRUE, return.data = TRUE, scores.use = 0,
         max.labels = 10)$mat))
@@ -348,4 +348,19 @@ test_that("heatmap - max.labels trim when duplicate labels", {
         test, ref = list(smallRef = ref1, smallRef2 = ref1, largeRef = ref2),
         labels = list(ref1$label, ref1$label, ref2$label))
     expect_s3_class(plotScoreHeatmap(results = pred, max.labels = 10), "pheatmap")
+})
+
+test_that("heatmap - rows.order sets row order of heatmap and warns on missing values", {
+    # Combined
+    expect_s3_class(plotScoreHeatmap(results = combined,
+        rows.order = c("A","a","B","b","C","c","D","d","E","e")),
+        "gtable")
+    # Single (extra labels okay)
+    expect_s3_class(plotScoreHeatmap(results = pred,
+        rows.order = c("A","a","B","b","C","c","D","d","E","e")),
+        "pheatmap")
+    # Warn on missing labels
+    expect_warning(plotScoreHeatmap(results = pred,
+        rows.order = c("A","a","B","b","C","c")),
+        "Label(s) of Scores missing from 'rows.order' will not be plotted: D, E", fixed = TRUE)
 })

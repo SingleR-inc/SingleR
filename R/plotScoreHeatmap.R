@@ -2,7 +2,7 @@
 #'
 #' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 #'
-#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, 
+#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}},
 #' \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.
 #' @param cells.use Integer or string vector specifying the single cells (i.e., rows of \code{results}) to show.
 #' If \code{NULL}, all cells are shown.
@@ -15,7 +15,7 @@
 #' This is only relevant for combined results, see Details.
 #' @param clusters String vector or factor containing cell cluster assignments, to be shown as an annotation bar in the heatmap.
 #' @param show.labels Logical indicating whether the assigned labels should be shown as an annotation bar.
-#' @param show.pruned Logical indicating whether the pruning status of the cell labels, 
+#' @param show.pruned Logical indicating whether the pruning status of the cell labels,
 #' as defined by \code{\link{pruneScores}}, should be shown as an annotation bar.
 #' @param max.labels Integer scalar specifying the maximum number of labels to show.
 #' @param normalize Logical specifying whether correlations should be normalized to lie in [0, 1].
@@ -25,8 +25,11 @@
 #' @param cells.order Integer or String vector specifying how to order the cells/columns of the heatmap.
 #' Regardless of \code{cells.use}, this input should be the the same length as the total number of cells.
 #' Ignored if \code{cluster_cols} is set.
+#' @param rows.order String vector specifying how to order rows of the heatmap.
+#' Contents should be the reference-labels in the order you would like them to appear, from top-to-bottom.
+#' For combined results, include labels for all plots in a single vector and labels relevant to each plot will be extracted.
 #' @param na.color String specifying the color for non-calculated scores of combined \code{results}.
-#' @param annotation_col,cluster_cols,show_colnames,color,silent,... 
+#' @param annotation_col,cluster_cols,show_colnames,color,silent,...
 #' Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' @param grid.vars A named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
 #' used to arrange the multiple plots generated when \code{scores.use} is of length greater than 1.
@@ -42,13 +45,13 @@
 #' a list is returned containing the \code{\link[pheatmap]{pheatmap}} globs for manual display.
 #'
 #' @details
-#' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores 
+#' This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores
 #' for each cell (columns) to each reference label (rows).
 #' Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
 #'
 #' If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap showing the label assigned to each cell.
 #' This is also used to order the columns for a more organized visualization when \code{order.by="label"}.
-#' Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, 
+#' Note that scores shown in the heatmap are initial scores prior to the fine-tuning step,
 #' so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 #'
 #' If \code{max.labels} is less than the total number of unique labels, only the top labels are shown in the plot.
@@ -60,7 +63,7 @@
 #' \item Labels which were suggested most frequently by individual references,
 #' if \code{results} contains combined scores.
 #' }
-#' 
+#'
 #' @section Working with combined results:
 #' For combined results (see \code{?\link{combineRecomputedResults}}),
 #' this function can show both the combined and individual scores or labels.
@@ -69,10 +72,10 @@
 #' For example:
 #' \itemize{
 #' \item If we set \code{scores.use=2} and \code{calls.use=1},
-#' we will plot the scores from the second individual reference 
+#' we will plot the scores from the second individual reference
 #' with the annotation bar containing label assignments from the first reference.
 #' \item If we set \code{scores.use=1:2} and \code{calls.use=1:2},
-#' we will plot the scores from first and second references (in separate plots) 
+#' we will plot the scores from first and second references (in separate plots)
 #' with the annotation bar in each plot containing the corresponding label assignments.
 #' \item By default, the function will create a separate plot the combined scores and each individual reference.
 #' In each plot, the annotation bar contains the combined labels;
@@ -87,7 +90,7 @@
 #' Clustering, pruning and label annotations are automatically generated and appended to \code{annotation_col} when available.
 #'
 #' @section Normalization of colors:
-#' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell 
+#' If \code{normalize=TRUE}, scores will be linearly adjusted for each cell
 #' so that the smallest score is 0 and the largest score is 1.
 #' This is followed by cubing of the adjusted scores to improve dynamic range near 1.
 #' Visually, the color scheme is changed to a blue-green-yellow scale.
@@ -180,7 +183,7 @@
 plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     clusters = NULL, show.labels = TRUE, show.pruned = FALSE,
     max.labels = 40, normalize = TRUE,
-    cells.order = NULL, order.by = c("labels","clusters"),
+    cells.order = NULL, order.by = c("labels","clusters"), rows.order = NULL,
     scores.use = NULL, calls.use = 0, na.color = "gray30",
     cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE,
@@ -240,6 +243,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             clusters=clusters,
             cells.order,
             order.by=order.by,
+            rows.order=rows.order,
             show.labels=show.labels,
             show.pruned=show.pruned,
             scores.title=scores.title,
@@ -276,7 +280,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .plot_score_heatmap <- function(
     scores, labels, prune.calls,
     cells.use, labels.use, max.labels,
-    clusters, cells.order, order.by, show.labels, show.pruned,
+    clusters, cells.order, order.by, rows.order,
+    show.labels, show.pruned,
     scores.title, labels.title,
     show_colnames, cluster_cols, annotation_col, silent,
     color, na.color, normalize, scores.labels, ...)
@@ -296,6 +301,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         cluster_cols=cluster_cols,
         order.by=order.by,
         cells.order=cells.order,
+        rows.order=rows.order,
         labels=labels,
         clusters=clusters,
         scores.labels)
@@ -317,7 +323,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         ...)
 
     if (is.null(args$cluster_rows)) {
-        args$cluster_rows <- ncol(scores)>1
+        args$cluster_rows <- is.null(rows.order) && ncol(scores)>1
     }
     if (is.null(args$main)) {
         args$main <- scores.title
@@ -396,7 +402,8 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .trim_normalize_reorder_scores <- function(
     scores, scores.title,
     labels.use, max.labels, cells.use, normalize,
-    cluster_cols, order.by, cells.order, labels, clusters, scores.labels)
+    cluster_cols, order.by, cells.order, rows.order,
+    labels, clusters, scores.labels)
 {
     scores <- .trim_byLabel_and_normalize_scores(
         scores, labels.use, max.labels, normalize, scores.title, scores.labels)
@@ -413,8 +420,17 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     if (!cluster_cols) {
         # Order: priority = 'cells.order', then 'order.by' which can be labels or clusters.
-        scores <- .order_score_matrix(
+        scores <- .order_score_matrix_cells(
             scores, cluster_cols, order.by, cells.order, labels, clusters)
+    }
+
+    if (!is.null(rows.order)) {
+        if (any(!colnames(scores) %in% rows.order)) {
+            missing <- colnames(scores)[!colnames(scores) %in% rows.order]
+            warning("Label(s) of ", scores.title, " missing from 'rows.order' will not be plotted: ",
+                    paste0(missing, collapse = ", "))
+        }
+        scores <- scores[,rows.order[rows.order %in% colnames(scores)]]
     }
 
     scores
@@ -468,7 +484,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores[,to.keep,drop=FALSE]
 }
 
-.order_score_matrix <- function(
+.order_score_matrix_cells <- function(
     scores, cluster_cols, order.by = c("labels","clusters"),
     cells.order, labels, clusters) {
     # By: cells.order, if provided, else by 'order.by' which = "labels" by default, or "clusters".
