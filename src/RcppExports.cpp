@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // fine_tune_label_de
 Rcpp::List fine_tune_label_de(Rcpp::RObject Exprs, Rcpp::NumericMatrix scores, Rcpp::List References, double quantile, double tune_thresh, Rcpp::List marker_genes);
 RcppExport SEXP _SingleR_fine_tune_label_de(SEXP ExprsSEXP, SEXP scoresSEXP, SEXP ReferencesSEXP, SEXP quantileSEXP, SEXP tune_threshSEXP, SEXP marker_genesSEXP) {
