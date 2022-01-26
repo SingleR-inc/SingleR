@@ -15,6 +15,7 @@ plotScoreHeatmap(
   normalize = TRUE,
   cells.order = NULL,
   order.by = c("labels", "clusters"),
+  rows.order = NULL,
   scores.use = NULL,
   calls.use = 0,
   na.color = "gray30",
@@ -28,7 +29,7 @@ plotScoreHeatmap(
 )
 }
 \arguments{
-\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, 
+\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}},
 \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.}
 
 \item{cells.use}{Integer or string vector specifying the single cells (i.e., rows of \code{results}) to show.
@@ -41,7 +42,7 @@ Defaults to all labels in \code{results}.}
 
 \item{show.labels}{Logical indicating whether the assigned labels should be shown as an annotation bar.}
 
-\item{show.pruned}{Logical indicating whether the pruning status of the cell labels, 
+\item{show.pruned}{Logical indicating whether the pruning status of the cell labels,
 as defined by \code{\link{pruneScores}}, should be shown as an annotation bar.}
 
 \item{max.labels}{Integer scalar specifying the maximum number of labels to show.}
@@ -55,6 +56,10 @@ Ignored if \code{cluster_cols} is set.}
 \item{order.by}{String providing the annotation to be used for cells/columns ordering.
 Can be "labels" (default) or "clusters" (when provided).
 Ignored if \code{cells.order} or \code{cluster_cols} are specified.}
+
+\item{rows.order}{String vector specifying how to order rows of the heatmap.
+Contents should be the reference-labels in the order you would like them to appear, from top-to-bottom.
+For combined results, include labels for all plots in a single vector and labels relevant to each plot will be extracted.}
 
 \item{scores.use}{Integer scalar or vector specifying the individual annotation result from which to take scores.
 This is only relevant for combined results, see Details.}
@@ -84,13 +89,13 @@ a list is returned containing the \code{\link[pheatmap]{pheatmap}} globs for man
 Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 }
 \details{
-This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores 
+This function creates a heatmap containing the \code{\link{SingleR}} initial assignment scores
 for each cell (columns) to each reference label (rows).
 Users can then easily identify the high-scoring labels associated with each cell and/or cluster of cells.
 
 If \code{show.labels=TRUE}, an annotation bar will be added to the heatmap showing the label assigned to each cell.
 This is also used to order the columns for a more organized visualization when \code{order.by="label"}.
-Note that scores shown in the heatmap are initial scores prior to the fine-tuning step, 
+Note that scores shown in the heatmap are initial scores prior to the fine-tuning step,
 so the reported labels may not match up to the visual maximum for each cell in the heatmap.
 
 If \code{max.labels} is less than the total number of unique labels, only the top labels are shown in the plot.
@@ -112,10 +117,10 @@ entries of which refer to columns of \code{results$orig.results} if positive or 
 For example:
 \itemize{
 \item If we set \code{scores.use=2} and \code{calls.use=1},
-we will plot the scores from the second individual reference 
+we will plot the scores from the second individual reference
 with the annotation bar containing label assignments from the first reference.
 \item If we set \code{scores.use=1:2} and \code{calls.use=1:2},
-we will plot the scores from first and second references (in separate plots) 
+we will plot the scores from first and second references (in separate plots)
 with the annotation bar in each plot containing the corresponding label assignments.
 \item By default, the function will create a separate plot the combined scores and each individual reference.
 In each plot, the annotation bar contains the combined labels;
@@ -134,7 +139,7 @@ Clustering, pruning and label annotations are automatically generated and append
 
 \section{Normalization of colors}{
 
-If \code{normalize=TRUE}, scores will be linearly adjusted for each cell 
+If \code{normalize=TRUE}, scores will be linearly adjusted for each cell
 so that the smallest score is 0 and the largest score is 1.
 This is followed by cubing of the adjusted scores to improve dynamic range near 1.
 Visually, the color scheme is changed to a blue-green-yellow scale.
