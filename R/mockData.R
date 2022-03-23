@@ -45,7 +45,7 @@
     }
 
     g <- rep(colnames(means), each=nreps)
-    mat <- matrix(rpois(1000*length(g), lambda=10*2^means[,g]), ncol=length(g))
+    mat <- matrix(rpois(ngenes*length(g), lambda=10*2^means[,g]), ncol=length(g))
     rownames(mat) <- rownames(means)
 
     SummarizedExperiment(
