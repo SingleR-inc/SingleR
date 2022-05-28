@@ -16,7 +16,8 @@ namespace singlepp {
 
 inline void annotate_cells_simple(
     const tatami::Matrix<double, int>* mat,
-    const std::vector<int>& subset,
+    size_t num_subset,
+    const int* subset,
     const std::vector<Reference>& ref,
     const Markers& markers,
     double quantile,
@@ -27,11 +28,13 @@ inline void annotate_cells_simple(
     double* delta) 
 {
     size_t first = 0, last = 0;
-    if (subset.size()) {
-        // Assumes that 'subset' is sorted.
-        first = subset.front();
-        last = subset.back() + 1;
+    if (num_subset) {
+        // Technically, subset is sorted in some cases, so we could
+        // just take the first and last elements; but better to be safe.
+        first = *std::min_element(subset, subset + num_subset);
+        last = *std::max_element(subset, subset + num_subset) + 1;
     }
+
     const size_t NC = mat->ncol();
 
     // Figuring out how many neighbors to keep and how to compute the quantiles.
@@ -58,8 +61,8 @@ inline void annotate_cells_simple(
         std::vector<double> buffer(last - first);
         auto wrk = mat->new_workspace(false);
 
-        RankedVector<double, int> vec(subset.size());
-        std::vector<double> scaled(subset.size());
+        RankedVector<double, int> vec(num_subset);
+        std::vector<double> scaled(num_subset);
 
         FineTuner ft;
         std::vector<double> curscores(NL);
@@ -67,7 +70,7 @@ inline void annotate_cells_simple(
         #pragma omp for
         for (size_t c = 0; c < NC; ++c) {
             auto ptr = mat->column(c, buffer.data(), first, last, wrk.get());
-            fill_ranks(subset, ptr, vec, first);
+            fill_ranks(num_subset, subset, ptr, vec, first);
             scaled_ranks(vec, scaled.data());
 
             curscores.resize(NL);

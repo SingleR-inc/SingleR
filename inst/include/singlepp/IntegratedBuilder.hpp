@@ -52,19 +52,30 @@ class IntegratedBuilder {
     std::vector<std::unordered_map<int, int> > gene_mapping;
 
 private:
-    void add(const tatami::Matrix<double, int>* ref, const int* labels, const Markers& old_markers, const std::vector<int>& subset) {
+    void add(const tatami::Matrix<double, int>* ref, const int* labels) {
         stored_matrices.push_back(ref);
         stored_labels.push_back(labels);
         references.resize(references.size() + 1);
+        gene_mapping.resize(gene_mapping.size() + 1); 
+    }
 
-        // Adding the markers for each label.
+    void add(const tatami::Matrix<double, int>* ref, const int* labels, const Markers& old_markers, const std::vector<int>& subset) {
+        add(ref, labels);
+
+        // Adding the markers for each label, indexed according to their
+        // position in the test matrix. This assumes that 'subset' is
+        // appropriately specified to contain the test's row indices. Note that
+        // these are positions in the test, not the ref; IntegratedScorer will
+        // use the gene_mapping to convert them to row indices of 'ref'.
         auto& new_markers = references.back().markers;
+        new_markers.reserve(old_markers.size());
+
         for (size_t i = 0; i < old_markers.size(); ++i) {
             const auto& cur_old_markers = old_markers[i];
 
             std::unordered_set<int> unified;
             for (const auto& x : cur_old_markers) {
-                unified.insert(x.begin(), x.end());                
+                unified.insert(x.begin(), x.end());
             }
 
             new_markers.emplace_back(unified.begin(), unified.end());
@@ -73,8 +84,6 @@ private:
                 y = subset[y];
             }
         }
-
-        gene_mapping.resize(gene_mapping.size() + 1); 
         return;
     }
 
@@ -96,7 +105,6 @@ public:
         return;
     }
 
-public:
     /**
      * @tparam Id Type of the gene identifier for each row.
      *
@@ -114,6 +122,7 @@ public:
      * @return The reference dataset is registered for later use in `finish()`.
      *
      * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     template<typename Id>
     void add(size_t mat_nrow,
@@ -127,6 +136,73 @@ public:
         references.back().check_availability = true;
 
         auto intersection = intersect_features(mat_nrow, mat_id, ref->nrow(), ref_id);
+        auto& mapping = gene_mapping.back();
+        for (const auto& i : intersection) {
+            mapping[i.first] = i.second;
+        }
+        return;
+    }
+
+    /**
+     * @tparam Id Type of the gene identifier for each row.
+     *
+     * @param mat_nrow Number of rows (genes) in the test dataset.
+     * @param[in] mat_id Pointer to an array of identifiers of length equal to `mat_nrow`.
+     * This should contain a unique identifier for each row of `mat` (typically a gene name or index).
+     * @param ref An expression matrix for the reference expression profiles, where rows are genes and columns are cells.
+     * This should have non-zero columns.
+     * @param[in] ref_id Pointer to an array of identifiers of length equal to the number of rows of any `ref`.
+     * This should contain a unique identifier for each row in `ref`, and should be comparable to `mat_id`.
+     * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
+     * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
+     * @param built The built reference created by running `SinglePP::build()` on `ref` and `labels`.
+     *
+     * @return The reference dataset is registered for later use in `finish()`.
+     *
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
+     */
+    template<typename Id>
+    void add(size_t mat_nrow,
+        const Id* mat_id,
+        const tatami::Matrix<double, int>* ref, 
+        const Id* ref_id,
+        const int* labels, 
+        const SinglePP::Prebuilt& built) 
+    {
+        add(ref, labels);
+
+        auto intersection = intersect_features(mat_nrow, mat_id, ref->nrow(), ref_id);
+
+        // Manually constructing the markers, removing those that aren't present in the mat.
+        std::unordered_map<int, int> reverse_map;
+        for (const auto& i : intersection) {
+            reverse_map[i.second] = i.first;
+        }
+
+        auto& new_markers = references.back().markers;
+        new_markers.resize(built.markers.size());
+
+        for (size_t i = 0; i < built.markers.size(); ++i) {
+            const auto& cur_old_markers = built.markers[i];
+
+            std::unordered_set<int> unified;
+            for (const auto& x : cur_old_markers) {
+                unified.insert(x.begin(), x.end());
+            }
+
+            auto& cur_new_markers = new_markers[i];
+            cur_new_markers.reserve(unified.size());
+            for (auto y : unified) {
+                auto it = reverse_map.find(built.subset[y]);
+                if (it != reverse_map.end()) {
+                    cur_new_markers.push_back(it->second);
+                }
+            }
+        }
+
+        // Constructing the mapping.
+        references.back().check_availability = true;
         auto& mapping = gene_mapping.back();
         for (const auto& i : intersection) {
             mapping[i.first] = i.second;

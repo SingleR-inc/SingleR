@@ -131,6 +131,9 @@ public:
      * @param t Number of top markers to use from each pairwise comparison between labels.
      * Larger values improve the stability of the correlations at the cost of increasing noise and computational work.
      *
+     * Setting it to a negative value will instruct `run()` to use all supplied markers.
+     * This is useful in situations where the supplied markers have already been curated.
+     *
      * @return A reference to this `SinglePP` object.
      */
     SinglePP& set_top(int t = Defaults::top) {
@@ -170,7 +173,7 @@ private:
 
 public:
     /**
-     * @brief Prebuilt references that can be directly used for annotation.
+     * @brief Prebuilt reference that can be directly used for annotation.
      */
     struct Prebuilt {
         /**
@@ -194,6 +197,14 @@ public:
          * Values are row indices into the relevant matrices.
          */
         std::vector<int> subset;
+
+
+        /**
+         * @return Number of labels in this reference.
+         */
+        size_t num_labels() const {
+            return references.size();
+        }
 
         /**
          * @cond
@@ -222,7 +233,44 @@ public:
 public:
     /**
      * @param mat Expression matrix of the test dataset, where rows are genes and columns are cells.
-     * This should have the same identity of genes as the reference matrices used in `build()`.
+     * This may have a different ordering of genes compared to the reference matrix used to create `built`,
+     * provided that all genes corresponding to `built.subset` are present.
+     * @param built An object produced by `build()`.
+     * @param[in] mat_subset Pointer to an array of length equal to that of `built.subset`,
+     * containing the index of the row of `mat` corresponding to each gene in `built.subset`.
+     * That is, row `mat_subset[i]` in `mat` should be the same gene as row `built.subset[i]` in the reference matrix.
+     * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
+     * This is filled with the index of the assigned label for each cell.
+     * @param[out] scores Vector of pointers to arrays of length equal to the number of columns in `mat`.
+     * This is filled with the (non-fine-tuned) score for each label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
+     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * This may also be `NULL` in which case the deltas are not reported.
+     * @param already_subset Whether the rows of `mat` have already been subsetted to match `built.subset`.
+     *
+     * @return `best`, `scores` and `delta` are filled with their output values.
+     */
+    void run(const tatami::Matrix<double, int>* mat, const Prebuilt& built, const int* mat_subset, int* best, std::vector<double*>& scores, double* delta) {
+        annotate_cells_simple(
+            mat, 
+            built.subset.size(), 
+            mat_subset, 
+            built.references, 
+            built.markers, 
+            quantile, 
+            fine_tune, 
+            fine_tune_threshold, 
+            best, 
+            scores, 
+            delta
+        );
+        return;
+    }
+
+    /**
+     * @param mat Expression matrix of the test dataset, where rows are genes and columns are cells.
+     * This should have the same order and identity of genes as the reference matrix used to create `built`.
      * @param built An object produced by `build()`.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
      * This is filled with the index of the assigned label for each cell.
@@ -232,11 +280,12 @@ public:
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
      * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
+     * @param already_subset Whether the rows of `mat` have already been subsetted to match `built.subset`.
      *
      * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(const tatami::Matrix<double, int>* mat, const Prebuilt& built, int* best, std::vector<double*>& scores, double* delta) {
-        annotate_cells_simple(mat, built.subset, built.references, built.markers, quantile, fine_tune, fine_tune_threshold, best, scores, delta);
+        run(mat, built, built.subset.data(), best, scores, delta);
         return;
     }
 
@@ -309,7 +358,8 @@ public:
 
     /**
      * @param mat Expression matrix of the test dataset, where rows are genes and columns are cells.
-     * This should have the same identity of genes as the reference matrices used in `build()`.
+     * If `already_subset = false`, this should have the same identity of genes as the reference matrices used in `build()`;
+     * otherwise, each row should correspond to an element of `built.subset`.
      * @param built An object produced by `build()`.
      *
      * @return A `Results` object containing the assigned labels and scores.
@@ -319,6 +369,24 @@ public:
         Results output(mat->ncol(), nlabels);
         auto scores = output.scores_to_pointers();
         run(mat, built, output.best.data(), scores, output.delta.data());
+        return output;
+    }
+
+    /**
+     * @param mat Expression matrix of the test dataset, where rows are genes and columns are cells.
+     * This may have a different ordering of genes compared to the reference matrix used in `build()`,
+     * provided that all genes corresponding to `built.subset` are present.
+     * @param built An object produced by `build()`.
+     * @param[in] mat_subset Pointer to an array of length equal to that of `built.subset`,
+     * containing the index of the row of `mat` corresponding to each gene in `built.subset`.
+     *
+     * @return A `Results` object containing the assigned labels and scores.
+     */
+    Results run(const tatami::Matrix<double, int>* mat, const Prebuilt& built, const int* mat_subset) {
+        size_t nlabels = built.references.size();
+        Results output(mat->ncol(), nlabels);
+        auto scores = output.scores_to_pointers();
+        run(mat, built, mat_subset, output.best.data(), scores, output.delta.data());
         return output;
     }
 
@@ -339,7 +407,7 @@ public:
 
 public:
     /**
-     * @brief Prebuilt references requiring an intersection of features. 
+     * @brief Prebuilt reference requiring an intersection of features. 
      */
     struct PrebuiltIntersection {
         /**
@@ -369,6 +437,13 @@ public:
          * This has the same length as `mat_indices`.
          */
         std::vector<int> ref_subset;
+
+        /**
+         * @return Number of labels in this reference.
+         */
+        size_t num_labels() const {
+            return references.size();
+        }
 
         /**
          * @cond
@@ -483,7 +558,8 @@ public:
         double* delta) 
     {
         annotate_cells_simple(mat, 
-            built.mat_subset, 
+            built.mat_subset.size(), 
+            built.mat_subset.data(), 
             built.references, 
             built.markers, 
             quantile, 

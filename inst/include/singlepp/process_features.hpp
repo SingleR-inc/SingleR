@@ -55,16 +55,17 @@ inline void subset_markers(Intersection& intersection, Markers& markers, int top
             }
 
             auto& current = markers[i][j];
-            std::vector<int> replacement;
-            replacement.reserve(top);
 
-            for (size_t k = 0; k < current.size() && replacement.size() < static_cast<size_t>(top); ++k) {
+            std::vector<int> replacement;
+            size_t upper_bound = static_cast<size_t>(top >= 0 ? top : -1); // in effect, no upper bound if top = -1.
+            replacement.reserve(top >= 0 ? static_cast<size_t>(top) : current.size());
+
+            for (size_t k = 0; k < current.size() && replacement.size() < upper_bound; ++k) {
                 if (available.find(current[k]) != available.end()) {
                     all_markers.insert(current[k]);
                     replacement.push_back(current[k]);
                 }
             }
-
             current.swap(replacement);
         }
     }
@@ -111,7 +112,9 @@ inline std::vector<int> subset_markers(Markers& markers, int top) {
                 continue;
             }
             auto& current = markers[i][j];
-            current.resize(std::min(current.size(), static_cast<size_t>(top)));
+            if (top >= 0) {
+                current.resize(std::min(current.size(), static_cast<size_t>(top)));
+            }
             available.insert(current.begin(), current.end());
         }
     }
