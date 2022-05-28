@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 
+//' @importFrom Rcpp sourceCpp
+//' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate) {
     singlepp::SinglePP runner;
@@ -33,4 +35,10 @@ SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List ma
 
     // Moving it into the external pointer.
     return PrebuiltXPtr(new singlepp::SinglePP::Prebuilt(std::move(built)), true);
+}
+
+//[[Rcpp::export(rng=false)]]
+Rcpp::IntegerVector get_subset(SEXP built) {
+    PrebuiltXPtr ptr(built);
+    return Rcpp::IntegerVector(ptr->subset.begin(), ptr->subset.end());
 }

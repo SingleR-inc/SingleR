@@ -9,10 +9,18 @@ integrate_run <- function(test, results, integrated_build) {
     .Call('_SingleR_integrate_run', PACKAGE = 'SingleR', test, results, integrated_build)
 }
 
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib SingleR
 prebuild <- function(ref, labels, markers, approximate) {
     .Call('_SingleR_prebuild', PACKAGE = 'SingleR', ref, labels, markers, approximate)
 }
 
+get_subset <- function(built) {
+    .Call('_SingleR_get_subset', PACKAGE = 'SingleR', built)
+}
+
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib SingleR
 run <- function(test, subset, prebuilt, quantile, use_fine_tune, fine_tune_threshold) {
     .Call('_SingleR_run', PACKAGE = 'SingleR', test, subset, prebuilt, quantile, use_fine_tune, fine_tune_threshold)
 }

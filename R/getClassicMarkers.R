@@ -121,3 +121,27 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
 
     output
 }
+
+#' @importFrom DelayedMatrixStats rowMedians
+#' @importFrom DelayedArray DelayedArray
+.median_by_label <- function(mat, labels, BPPARAM=SerialParam()) {
+    old <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(old))
+
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
+    ulabels <- .get_levels(labels)
+    output <- matrix(0, nrow(mat), length(ulabels))
+    rownames(output) <- rownames(mat)
+    colnames(output) <- ulabels
+
+    for (u in ulabels) {
+        # Disambiguate from Biobase::rowMedians.
+        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
+    }
+    output
+}

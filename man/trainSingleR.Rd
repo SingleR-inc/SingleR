@@ -18,6 +18,7 @@ trainSingleR(
   restrict = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
+  approximate = FALSE,
   BNPARAM = KmknnParam(),
   BPPARAM = SerialParam()
 )

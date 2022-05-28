@@ -168,10 +168,24 @@
 #' @export
 #' @importFrom BiocNeighbors KmknnParam 
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
-trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
-    de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
-    aggr.ref=FALSE, aggr.args=list(), recompute=TRUE, restrict=NULL,
-    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
+#' @importFrom BiocParallel SerialParam bpisup bpstart bpstop
+trainSingleR <- function(
+    ref, 
+    labels, 
+    genes="de", 
+    sd.thresh=1, 
+    de.method=c("classic", "wilcox", "t"), 
+    de.n=NULL, 
+    de.args=list(),
+    aggr.ref=FALSE, 
+    aggr.args=list(), 
+    recompute=TRUE, 
+    restrict=NULL,
+    assay.type="logcounts", 
+    check.missing=TRUE,
+    approximate = FALSE,
+    BNPARAM=KmknnParam(), 
+    BPPARAM=SerialParam()) 
 {
     de.method <- match.arg(de.method)
 
@@ -226,20 +240,12 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args, BPPARAM=BPPARAM),
         SIMPLIFY=FALSE)
 
-    common <- lapply(gene.info, function(x) x$common)
-    args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM, BPPARAM=BPPARAM)
-
-    if (recompute || solo) {
-        output <- mapply(FUN=.build_trained_index, 
-            ref=ref, labels=labels, common=common, search.info=gene.info,
-            MoreArgs=args, SIMPLIFY=FALSE)
-    } else {
-        # Setting the common set across all references to the union of all genes.
-        all.common <- Reduce(union, common)
-        output <- mapply(FUN=.build_trained_index, 
-            ref=ref, labels=labels, search.info=gene.info,
-            MoreArgs=c(list(common=all.common), args), SIMPLIFY=FALSE)
+    if (!solo && !recompute) {
+        .Deprecated("'recompute = FALSE'")
     }
+    output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, markers=gene.info,
+        MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate), 
+        SIMPLIFY=FALSE)
 
     if (solo) {
         output[[1]]
@@ -255,9 +261,6 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         stop("number of labels must be equal to number of cells")
     }
 
-    # Choosing the gene sets of interest. 
-    args <- list()
-
     if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)
         if (all(is.char)) {
@@ -268,74 +271,57 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
         genes <- .validate_de_gene_set(genes, labels)
-        common <- unique(unlist(genes))
 
         # Ensure that the user hasn't supplied genes that aren't available.
         rn <- rownames(ref)
-        if (!all(common %in% rn)) {
-            genes <- lapply(genes, function(l) lapply(l, intersect, rn))
-            common <- intersect(common, rn)
-        }
-
-        extra <- genes
-        genes <- "de"
-
-    } else if (is.character(genes)) {
+        genes <- lapply(genes, function(l) lapply(l, intersect, rn))
+    } else { 
         genes <- match.arg(genes, c("de", "sd", "all"))
-        if (genes=="sd") {
-            sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
-            common <- sd.out$genes
-            extra <- sd.out$mat
-            args$sd.thresh <- sd.thresh
-        } else {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
-            if (genes=="de") {
-                common <- unique(unlist(extra))
-            } else {
-                genes <- "de"
-                common <- rownames(ref)
-            }
-        }
+        if (genes != "de") {
+            .Deprecated(old="genes = \"", genes, "\"")
+        } 
+        genes <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
     }
 
-    list(genes=genes, common=common, extra=extra, args=args)
+    genes
 }
 
 #' @importFrom S4Vectors List
-#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
 #' @importFrom SummarizedExperiment assay
-.build_trained_index <- function(ref, labels, common, aggr.ref, aggr.args, search.info, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) {
-    if (bndistance(BNPARAM)!="Euclidean") {
-        stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
-    }
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
+.build_trained_index <- function(ref, labels, markers, aggr.ref, aggr.args, search.info, approximate = FALSE, BPPARAM = SerialParam()) {
     if (aggr.ref) {
         aggr <- do.call(aggregateReference, c(list(ref=quote(ref), label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
         ref <- assay(aggr)
         labels <- aggr$label
     }
 
-    common <- as.character(common)
-    indices <- original <- List()
+    if (anyNA(labels)) {
+        keep <- !is.na(labels)
+        ref <- ref[,keep,drop=FALSE]
+        labels <- labels[keep]
+    }
     ulabels <- .get_levels(labels)
 
-    for (u in ulabels) {
-        current <- ref[,labels==u,drop=FALSE] 
-        original[[u]] <- current
-        sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE], BPPARAM=BPPARAM)
-        indices[[u]] <- buildIndex(sr.out, BNPARAM=BNPARAM)
+    original.markers <- markers
+    for (m in seq_along(markers)) {
+        current <- markers[[m]]
+        for (n in seq_along(current)) {
+            idx <- match(current[[n]], rownames(ref))
+            if (anyNA(idx)) {
+                stop("could not find '", current[[n]][which(is.na(idx))[1]], "' in 'rownames(ref)'")
+            }
+            current[[n]] <- idx - 1L
+        }
+        markers[[m]] <- current
     }
 
+    built <- prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate)
+
     List(
-        common.genes=common,
-        original.exprs=original,
-        nn.indices=indices,
-        search=List(mode=search.info$genes, args=search.info$args, extra=search.info$extra)
+        built = built,
+        ref = ref,
+        labels = list(full = labels, unique = ulabels),
+        markers = list(full = original.markers, unique = rownames(ref)[get_subset(built) + 1])
     )
 }
 
@@ -360,15 +346,6 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n)
         lapply(collected, as.list)
     }
-}
-
-#' @importFrom DelayedMatrixStats rowSds
-.get_genes_by_sd <- function(ref, labels, sd.thresh=1, BPPARAM=SerialParam()) {
-    mat <- .median_by_label(ref, labels, BPPARAM=BPPARAM)
-
-
-    sd <- rowSds(mat)
-    list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
 }
 
 .convert_per_label_set <- function(genes) {
@@ -400,47 +377,4 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     genes
-}
-
-#' @importFrom DelayedMatrixStats rowMedians
-#' @importFrom DelayedArray DelayedArray
-.median_by_label <- function(mat, labels, BPPARAM=SerialParam()) {
-    old <- getAutoBPPARAM()
-    setAutoBPPARAM(BPPARAM)
-    on.exit(setAutoBPPARAM(old))
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
-    ulabels <- .get_levels(labels)
-    output <- matrix(0, nrow(mat), length(ulabels))
-    rownames(output) <- rownames(mat)
-    colnames(output) <- ulabels
-
-    for (u in ulabels) {
-        # Disambiguate from Biobase::rowMedians.
-        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
-    }
-    output
-}
-
-#' @importFrom DelayedMatrixStats colRanks rowVars
-#' @importFrom DelayedArray DelayedArray
-.scaled_colranks_safe <- function(x, BPPARAM=SerialParam()) {
-    old <- getAutoBPPARAM()
-    setAutoBPPARAM(BPPARAM)
-    on.exit(setAutoBPPARAM(old))
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
-    out <- colRanks(DelayedArray(x), ties.method="average")
-    center <- (nrow(x) + 1)/2
-    sum.sq <- rowVars(out) * (nrow(x)-1)
-    sum.sq <- pmax(1e-8, sum.sq)
-    (out - center)/(sqrt(sum.sq) * 2)
 }

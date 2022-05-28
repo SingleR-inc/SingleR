@@ -3,6 +3,8 @@
 #include "utils.h"
 #include <vector>
 
+//' @importFrom Rcpp sourceCpp
+//' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold) {
     auto ptr = tatamize_input(test);

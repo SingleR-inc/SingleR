@@ -49,6 +49,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_subset
+Rcpp::IntegerVector get_subset(SEXP built);
+RcppExport SEXP _SingleR_get_subset(SEXP builtSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type built(builtSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_subset(built));
+    return rcpp_result_gen;
+END_RCPP
+}
 // run
 SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold);
 RcppExport SEXP _SingleR_run(SEXP testSEXP, SEXP subsetSEXP, SEXP prebuiltSEXP, SEXP quantileSEXP, SEXP use_fine_tuneSEXP, SEXP fine_tune_thresholdSEXP) {
@@ -69,6 +79,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_integrate_build", (DL_FUNC) &_SingleR_integrate_build, 5},
     {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 3},
     {"_SingleR_prebuild", (DL_FUNC) &_SingleR_prebuild, 4},
+    {"_SingleR_get_subset", (DL_FUNC) &_SingleR_get_subset, 1},
     {"_SingleR_run", (DL_FUNC) &_SingleR_run, 6},
     {NULL, NULL, 0}
 };
