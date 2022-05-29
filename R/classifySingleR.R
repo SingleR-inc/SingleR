@@ -147,6 +147,7 @@ classifySingleR <- function(
     }
 
     out <- run(test, m - 1L, trained$built, quantile, fine.tune, tune.thresh)
+    colnames(out$scores) <- trained$labels$unique
     output <- DataFrame(
         scores = I(out$scores), 
         labels = trained$labels$unique[out$best + 1L],

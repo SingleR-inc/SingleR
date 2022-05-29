@@ -100,18 +100,17 @@
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
-#' @importFrom BiocParallel SerialParam
-#' @importFrom BiocNeighbors KmknnParam buildIndex
-#' @importFrom beachmat colBlockApply
-combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
-    assay.type.test="logcounts", check.missing=TRUE, allow.lost=FALSE, warn.lost=TRUE,
-    BNPARAM=KmknnParam(), BPPARAM=SerialParam())
+combineRecomputedResults <- function(
+    results, 
+    test, 
+    trained, 
+    quantile=0.8, 
+    assay.type.test="logcounts", 
+    check.missing=TRUE, 
+    allow.lost=FALSE, 
+    warn.lost=TRUE,
+    BPPARAM=SerialParam())
 {
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
     all.names <- c(list(colnames(test)), lapply(results, rownames))
     if (length(unique(all.names)) != 1) {
         stop("cell/cluster names in 'results' are not identical")
@@ -121,85 +120,31 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
         stop("numbers of cells/clusters in 'results' are not identical")
     }
 
-    ##############################################
+    # Applying the integration.
+    universe <- Reduce(union, c(list(rownames(test)), lapply(trained, function(x) rownames(x$ref))))
+    ibuilt <- integrate_build(
+        match(rownames(test), universe) - 1L,
+        lapply(trained, function(x) x$ref),
+        lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
+        lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
+        lapply(trained, function(x) x$built)
+    )
 
-    # Preparing genes (part 1).
-    markers <- vector("list", length(trained)) 
-    for (i in seq_along(trained)) {
-        current <- trained[[i]]
-        if (current$search$mode=="de") {
-            tmp <- lapply(current$search$extra, unlist, use.names=FALSE)
-            tmp <- lapply(tmp, unique)
-            stopifnot(identical(names(tmp), names(current$original.exprs)))
-            markers[[i]] <- tmp
-        } else {
-            nlabs <- length(current$original.exprs)
-            tmp <- current$common.genes
-            markers[[i]] <- rep(list(tmp), nlabs)
-        }
-    }
-
-    universe <- unique(unlist(markers))
-    if (!all(universe %in% rownames(test))) {
-        stop("all markers stored in 'results' should be present in 'test'")
-    }
-
-    refnames <- lapply(trained, function(x) rownames(x$original.exprs[[1]]))
-    refnames <- Reduce(intersect, refnames)
-    if (has.lost <- !all(universe %in% refnames)) {
-        if (warn.lost) {
-            warning("entries of 'trained' differ in the universe of available markers")
-        }
-        if (!allow.lost) {
-            universe <- intersect(universe, refnames)
-            for (i in seq_along(markers)) {
-                markers[[i]] <- lapply(markers[[i]], intersect, y=refnames)
-            }
-        }
-    }
-
-    ##############################################
-
-    # Preparing expression values: subsetting them down to 
-    # improve cache efficiency later on.
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
-    test <- test[universe,,drop=FALSE]
-
-    all.ref <- vector("list", length(trained))
-    for (i in seq_along(all.ref)) {
-        current <- trained[[i]]$original.exprs
-        current <- lapply(current, FUN=.subset_with_NAs, universe=universe)
-        all.ref[[i]] <- current
-    }
-
-    # Preparing genes (part 2).
-    for (i in seq_along(markers)) {
-        current <- markers[[i]]
-        for (j in seq_along(current)) {
-            current[[j]] <- match(current[[j]], universe) - 1L
-        }
-        markers[[i]] <- current
-    }
-
-    # Preparing labels.
-    collated <- vector("list", length(results))
+    collated <- vector("list", length(trained))
     for (i in seq_along(collated)) {
-        collated[[i]] <- match(results[[i]]$labels, names(all.ref[[i]]))
+        collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
-    all.labels <- do.call(rbind, collated)
-    stopifnot(!any(is.na(all.labels)))
 
-    ##############################################
+    irun <- integrate_run(test, collated, ibuilt) 
+    scores <- irun$scores
 
-    bp.out <- colBlockApply(test, FUN=.nonred_recompute_scores, BPPARAM=BPPARAM,
-        labels=all.labels, all.ref=all.ref, markers=markers, quantile=quantile, has.lost=has.lost)
-    scores <- do.call(rbind, bp.out)
-
+    # Organizing the outputs.
     base.scores <- vector("list", length(results))
     for (r in seq_along(base.scores)) {
         mat <- results[[r]]$scores   
         mat[] <- NA_real_
-        idx <- cbind(seq_len(nrow(mat)), all.labels[r,]) 
+        idx <- cbind(seq_len(nrow(mat)), collated[[i]] + 1L)
         mat[idx] <- scores[,r]
         base.scores[[r]] <- mat
     }
@@ -208,58 +153,57 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
     metadata(output)$label.origin <- .create_label_origin(base.scores)
 
-    chosen <- max.col(scores, ties.method="first")
+    chosen <- irun$best + 1L
     cbind(output, .combine_result_frames(chosen, results))
 }
 
-#' @importFrom S4Vectors DataFrame selfmatch
-#' @importFrom BiocNeighbors buildIndex KmknnParam
-#' @importFrom DelayedArray currentViewport makeNindexFromArrayViewport
-.nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile, has.lost) {
-    vp <- currentViewport()
-    idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
-    if (!is.null(idx)) {
-        labels <- labels[,idx,drop=FALSE]
+#' @importFrom S4Vectors DataFrame
+.combine_result_frames <- function(chosen, results) {
+    has.first <- !is.null(results[[1]]$first.labels)
+    has.pruned <- !is.null(results[[1]]$pruned.labels)
+
+    # Organizing the statistics based on the chosen results.
+    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, nrow(results[[1]]))
+
+    for (u in unique(chosen)) {
+        current <- chosen==u
+        res <- results[[u]]
+        chosen.label[current] <- res$labels[current]
+
+        if (has.first) { # assume that either everyone has 'first', or no-one does.
+            chosen.first[current] <- res$first.labels[current]
+        }
+
+        if (has.pruned) { # same for pruned.
+            chosen.pruned[current] <- res$pruned.labels[current]
+        }
     }
 
-    # Finding groups of cells with the same combination of per-reference assigned labels.
-    collated <- DataFrame(t(labels))
-    groups <- selfmatch(collated)
-    by.group <- split(seq_along(groups) - 1L, groups)
+    output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
 
-    if (has.lost) {
-        RECOMPFUN <- recompute_scores_with_na
-    } else {
-        RECOMPFUN <- recompute_scores
+    if (has.first) {
+        output$first.labels <- chosen.first
+        output <- output[,c("first.labels", "labels"),drop=FALSE]
     }
 
-    scores <- RECOMPFUN(
-        Groups=by.group,
-        Exprs=block,
-        Labels=labels - 1L,
-        References=all.ref,
-        Genes=markers,
-        quantile=quantile
-    )
+    if (has.pruned) {
+        output$pruned.labels <- chosen.pruned
+    }
 
-    t(scores)
+    output$reference <- chosen
+
+    if (is.null(names(results))) {
+        names(results) <- sprintf("ref%i", seq_along(results))
+    }
+    output$orig.results <- do.call(DataFrame, lapply(results, I))
+
+    output
 }
 
-.subset_with_NAs <- function(x, universe) {
-    m <- match(universe, rownames(x))
-    if (!anyNA(m)) {
-        .realize_reference(x[m,,drop=FALSE])
-    } else if (nrow(x)==0) {
-        # Impossible in practice, but just in case...
-        matrix(NA_real_, length(universe), ncol(x), dimnames=list(universe, colnames(x)))
-    } else {
-        # A little song and dance because some matrix formats don't take well to NA indices.
-        lost <- is.na(m)
-        m[lost] <- 1L
-        output <- x[m,,drop=FALSE]
-        rownames(output) <- universe
-        output <- .realize_reference(output)
-        output[lost,] <- NA_real_
-        output
-    }
+#' @importFrom S4Vectors DataFrame
+.create_label_origin <- function(collected.scores) {
+    DataFrame(
+        label=unlist(lapply(collected.scores, colnames)),
+        reference=rep(seq_along(collected.scores), vapply(collected.scores, ncol, 0L))
+    )
 }
