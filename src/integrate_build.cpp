@@ -1,4 +1,5 @@
 #include "Rcpp.h"
+#include "custom_parallel.h" // must be before other singlepp-related includes.
 #include "singlepp/IntegratedBuilder.hpp"
 #include "raticate/raticate.hpp"
 #include "utils.h"
@@ -6,7 +7,8 @@
 #include <memory>
 
 //[[Rcpp::export(rng=false)]]
-SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt) {
+SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt, int nthreads) {
+    num_threads = nthreads;
     singlepp::IntegratedBuilder builder;
 
     size_t nrefs = references.size();

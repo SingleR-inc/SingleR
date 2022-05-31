@@ -110,13 +110,11 @@ public:
             gene_subset.reserve(input.size()); // known maximum.
             for (auto l : labels_in_use) {
                 for (auto l2 : labels_in_use){ 
-                    if (l != l2) {
-                        const auto& current = markers[l][l2];
-                        for (auto c : current) {
-                            if (gene_subset.find(c) == gene_subset.end()) {
-                                const int counter = gene_subset.size();
-                                gene_subset[c] = counter;
-                            }
+                    const auto& current = markers[l][l2];
+                    for (auto c : current) {
+                        if (gene_subset.find(c) == gene_subset.end()) {
+                            const int counter = gene_subset.size();
+                            gene_subset[c] = counter;
                         }
                     }
                 }

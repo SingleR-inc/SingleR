@@ -169,8 +169,13 @@ public:
         size_t NR = mat->nrow();
         size_t NC = mat->ncol();
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
         #pragma omp parallel
         {
+#else
+        SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
+#endif
+            
             std::vector<double> buffer(NR);
             auto wrk = mat->new_workspace(false);
 
@@ -187,8 +192,13 @@ public:
             std::unordered_map<int, int> mapping;
             std::vector<double> all_correlations;
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
             #pragma omp for
             for (size_t i = 0; i < NC; ++i) {
+#else
+            for (size_t i = start; i < end; ++i) {
+#endif
+
                 build_universe(i, assigned, references, universe_tmp, universe);
                 fill_ranks(mat, universe, i, buffer, wrk.get(), data_ranked);
 
@@ -243,7 +253,13 @@ public:
                     delta[i] = best_score - next_best;
                 }
             }
+
+#ifndef SINGLEPP_CUSTOM_PARALLEL
         }
+#else
+        });
+#endif
+
         return;
     }
 

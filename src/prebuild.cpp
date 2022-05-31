@@ -1,4 +1,5 @@
 #include "Rcpp.h"
+#include "custom_parallel.h" // must be before other singlepp-related includes.
 #include "singlepp/SinglePP.hpp"
 #include "raticate/raticate.hpp"
 #include "utils.h"
@@ -8,7 +9,8 @@
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
-SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate) {
+SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads) {
+    num_threads = nthreads;
     singlepp::SinglePP runner;
 
     // Use all available markers; assume subsetting was applied on the R side.

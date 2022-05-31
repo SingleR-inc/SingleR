@@ -1,4 +1,5 @@
 #include "Rcpp.h"
+#include "custom_parallel.h" // must be before other singlepp-related includes.
 #include "singlepp/SinglePP.hpp"
 #include "raticate/raticate.hpp"
 #include "utils.h"
@@ -7,7 +8,8 @@
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
-SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold) {
+SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
+    num_threads = nthreads;
     auto parsed = raticate::parse(test);
     PrebuiltXPtr built(prebuilt);
 

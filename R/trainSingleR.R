@@ -184,6 +184,7 @@ trainSingleR <- function(
     assay.type="logcounts", 
     check.missing=TRUE,
     approximate = FALSE,
+    num.threads = 1,
     BNPARAM=KmknnParam(), 
     BPPARAM=SerialParam()) 
 {
@@ -244,7 +245,7 @@ trainSingleR <- function(
         .Deprecated("'recompute = FALSE'")
     }
     output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, markers=gene.info,
-        MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate), 
+        MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate, num.threads = num.threads), 
         SIMPLIFY=FALSE)
 
     if (solo) {
@@ -288,7 +289,7 @@ trainSingleR <- function(
 
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
-.build_trained_index <- function(ref, labels, markers, aggr.ref, aggr.args, search.info, approximate = FALSE, BPPARAM = SerialParam()) {
+.build_trained_index <- function(ref, labels, markers, aggr.ref, aggr.args, search.info, approximate = FALSE, BPPARAM = SerialParam(), num.threads = 1) {
     if (aggr.ref) {
         aggr <- do.call(aggregateReference, c(list(ref=quote(ref), label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
         ref <- assay(aggr)
@@ -315,7 +316,7 @@ trainSingleR <- function(
         markers[[m]] <- current
     }
 
-    built <- prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate)
+    built <- prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
 
     List(
         built = built,

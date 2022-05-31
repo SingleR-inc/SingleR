@@ -198,12 +198,22 @@ public:
          */
         std::vector<int> subset;
 
-
         /**
          * @return Number of labels in this reference.
          */
         size_t num_labels() const {
             return references.size();
+        }
+
+        /**
+         * @return Number of profiles in this reference.
+         */
+        size_t num_profiles() const {
+            size_t n = 0;
+            for (const auto& ref : references) {
+                n += ref.ranked.size();
+            }
+            return n;
         }
 
         /**

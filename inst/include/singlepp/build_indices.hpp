@@ -61,14 +61,24 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
         }
     }
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
     #pragma omp parallel
     {
+#else
+    SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
+#endif
+        
         RankedVector<double, int> ranked(NR);
         std::vector<double> buffer(ref->nrow());
         auto wrk = ref->new_workspace(false);
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
         #pragma omp for
         for (size_t c = 0; c < NC; ++c) {
+#else
+        for (size_t c = start; c < end; ++c) {
+#endif
+
             auto ptr = ref->column(c, buffer.data(), first, last, wrk.get());
             fill_ranks(subset, ptr, ranked, first);
 
@@ -83,17 +93,33 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
             stored_ranks.reserve(ranked.size());
             simplify_ranks(ranked, stored_ranks);
         }
-    }
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
+    }
+#else
+    });
+#endif
+
+#ifndef SINGLEPP_CUSTOM_PARALLEL
     #pragma omp parallel for
     for (size_t l = 0; l < nlabels; ++l) {
+#else
+    SINGLEPP_CUSTOM_PARALLEL(nlabels, [&](size_t start, size_t end) -> void {
+    for (size_t l = start; l < end; ++l) {
+#endif
         nnrefs[l].index = build(NR, label_count[l], nndata[l].data());
 
         // Trying to free the memory as we go along, to offset the copying
         // of nndata into the memory store owned by the knncolle index.
         nndata[l].clear();
         nndata[l].shrink_to_fit();
+
+#ifndef SINGLEPP_CUSTOM_PARALLEL
     }
+#else
+    }
+    });
+#endif
 
     return nnrefs;
 }

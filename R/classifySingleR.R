@@ -117,7 +117,8 @@ classifySingleR <- function(
     sd.thresh=NULL, 
     prune=TRUE, 
     assay.type="logcounts", 
-    check.missing=TRUE, 
+    check.missing=TRUE,
+    num.threads = 1,
     BPPARAM=SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing, msg="test", BPPARAM=BPPARAM)
@@ -129,7 +130,7 @@ classifySingleR <- function(
     }
 
     results <- lapply(trained, FUN=.classify_internals, test=test, quantile=quantile, 
-        fine.tune=fine.tune, tune.thresh=tune.thresh, prune=prune)
+        fine.tune=fine.tune, tune.thresh=tune.thresh, prune=prune, num.threads=num.threads)
 
     if (solo) {
         results[[1]]
@@ -140,13 +141,13 @@ classifySingleR <- function(
 }
 
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
-.classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE) {
+.classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
     m <- match(trained$markers$unique, rownames(test))
     if (anyNA(m)) {
         stop("'rownames(test)' does not contain all genes used in 'trained'")
     }
 
-    out <- run(test, m - 1L, trained$built, quantile, fine.tune, tune.thresh)
+    out <- run(test, m - 1L, trained$built, quantile, fine.tune, tune.thresh, nthreads = num.threads)
     colnames(out$scores) <- trained$labels$unique
     output <- DataFrame(
         scores = I(out$scores), 

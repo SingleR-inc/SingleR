@@ -56,8 +56,13 @@ inline void annotate_cells_simple(
         coeffs[r].second = prod - static_cast<double>(k - 2);
     }
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
     #pragma omp parallel
     {
+#else
+    SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
+#endif
+
         std::vector<double> buffer(last - first);
         auto wrk = mat->new_workspace(false);
 
@@ -67,8 +72,13 @@ inline void annotate_cells_simple(
         FineTuner ft;
         std::vector<double> curscores(NL);
 
+#ifndef SINGLEPP_CUSTOM_PARALLEL
         #pragma omp for
         for (size_t c = 0; c < NC; ++c) {
+#else
+        for (size_t c = start; c < end; ++c) {
+#endif
+
             auto ptr = mat->column(c, buffer.data(), first, last, wrk.get());
             fill_ranks(num_subset, subset, ptr, vec, first);
             scaled_ranks(vec, scaled.data());
@@ -113,7 +123,12 @@ inline void annotate_cells_simple(
                 }
             }
         }
+
+#ifndef SINGLEPP_CUSTOM_PARALLEL
     }
+#else
+    });
+#endif
 
     return;
 }

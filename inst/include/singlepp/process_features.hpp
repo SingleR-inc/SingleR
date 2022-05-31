@@ -48,12 +48,9 @@ inline void subset_markers(Intersection& intersection, Markers& markers, int top
     // Figuring out the top markers to retain, that are _also_ in the intersection.
     std::unordered_set<int> all_markers;
     all_markers.reserve(intersection.size());
+
     for (size_t i = 0; i < markers.size(); ++i) {
         for (size_t j = 0; j < markers[i].size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-
             auto& current = markers[i][j];
 
             std::vector<int> replacement;
@@ -88,10 +85,6 @@ inline void subset_markers(Intersection& intersection, Markers& markers, int top
     // Reindexing the markers.
     for (size_t i = 0; i < markers.size(); ++i) {
         for (size_t j = 0; j < markers[i].size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-
             auto& current = markers[i][j];
             for (size_t k = 0; k < current.size(); ++k) {
                 auto it = mapping.find(current[k]);
@@ -108,9 +101,6 @@ inline std::vector<int> subset_markers(Markers& markers, int top) {
     std::unordered_set<int> available;
     for (size_t i = 0; i < markers.size(); ++i) {
         for (size_t j = 0; j < markers[i].size(); ++j) {
-            if (i == j) {
-                continue;
-            }
             auto& current = markers[i][j];
             if (top >= 0) {
                 current.resize(std::min(current.size(), static_cast<size_t>(top)));
@@ -131,10 +121,6 @@ inline std::vector<int> subset_markers(Markers& markers, int top) {
     // Reindexing the markers.
     for (size_t i = 0; i < markers.size(); ++i) {
         for (size_t j = 0; j < markers[i].size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-
             auto& current = markers[i][j];
             for (size_t k = 0; k < current.size(); ++k) {
                 auto it = mapping.find(current[k]);

@@ -1,11 +1,13 @@
 #include "Rcpp.h"
+#include "custom_parallel.h" // must be before other singlepp-related includes.
 #include "singlepp/IntegratedScorer.hpp"
 #include "raticate/raticate.hpp"
 #include "utils.h"
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
-SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated_build) {
+SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated_build, int nthreads) {
+    num_threads = nthreads;
     auto curtest = raticate::parse(test);
     IntegratedXPtr iptr(integrated_build);
 

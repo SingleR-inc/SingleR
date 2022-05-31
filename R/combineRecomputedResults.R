@@ -109,6 +109,7 @@ combineRecomputedResults <- function(
     check.missing=TRUE, 
     allow.lost=FALSE, 
     warn.lost=TRUE,
+    num.threads=1,
     BPPARAM=SerialParam())
 {
     all.names <- c(list(colnames(test)), lapply(results, rownames))
@@ -127,7 +128,8 @@ combineRecomputedResults <- function(
         lapply(trained, function(x) x$ref),
         lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
         lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
-        lapply(trained, function(x) x$built)
+        lapply(trained, function(x) x$built),
+        nthreads = num.threads
     )
 
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
@@ -136,7 +138,7 @@ combineRecomputedResults <- function(
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
-    irun <- integrate_run(test, collated, ibuilt) 
+    irun <- integrate_run(test, collated, ibuilt, nthreads = num.threads) 
     scores <- irun$scores
 
     # Organizing the outputs.
