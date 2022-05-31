@@ -1,7 +1,6 @@
 #include "Rcpp.h"
 #include "singlepp/SinglePP.hpp"
-#include "tatami/tatami.hpp"
-#include "tatami/ext/ArrayView.hpp"
+#include "raticate/raticate.hpp"
 #include "utils.h"
 #include <vector>
 #include <memory>
@@ -30,8 +29,8 @@ SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List ma
     }
 
     // Building the indices.
-    auto ptr = tatamize_input(ref);
-    auto built = runner.build(ptr.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
+    auto parsed = raticate::parse(ref);
+    auto built = runner.build(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.
     return PrebuiltXPtr(new singlepp::SinglePP::Prebuilt(std::move(built)), true);

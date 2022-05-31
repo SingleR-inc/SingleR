@@ -1,5 +1,6 @@
 #include "Rcpp.h"
 #include "singlepp/SinglePP.hpp"
+#include "raticate/raticate.hpp"
 #include "utils.h"
 #include <vector>
 
@@ -7,11 +8,11 @@
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold) {
-    auto ptr = tatamize_input(test);
+    auto parsed = raticate::parse(test);
     PrebuiltXPtr built(prebuilt);
 
     // Setting up outputs.
-    size_t ncells = ptr->ncol();
+    size_t ncells = parsed.matrix->ncol();
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
@@ -29,7 +30,7 @@ SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, do
     singlepp::SinglePP runner;
     runner.set_quantile(quantile).set_fine_tune(use_fine_tune).set_fine_tune_threshold(fine_tune_threshold);
     runner.run(
-        ptr.get(), 
+        parsed.matrix.get(), 
         *built, 
         static_cast<const int*>(subset.begin()),
         static_cast<int*>(best.begin()),

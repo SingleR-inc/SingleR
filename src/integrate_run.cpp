@@ -1,11 +1,12 @@
 #include "Rcpp.h"
 #include "singlepp/IntegratedScorer.hpp"
+#include "raticate/raticate.hpp"
 #include "utils.h"
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
 SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated_build) {
-    auto curtest = tatamize_input(test);
+    auto curtest = raticate::parse(test);
     IntegratedXPtr iptr(integrated_build);
 
     // Setting up the previous results.
@@ -22,7 +23,7 @@ SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated
     }
 
     // Setting up outputs.
-    size_t ncells = curtest->ncol();
+    size_t ncells = curtest.matrix->ncol();
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
@@ -38,7 +39,8 @@ SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated
 
     // Running the integrated scoring.
     singlepp::IntegratedScorer scorer;
-    scorer.run(curtest.get(), 
+    scorer.run(
+        curtest.matrix.get(), 
         previous_results, 
         *iptr, 
         static_cast<int*>(best.begin()),
