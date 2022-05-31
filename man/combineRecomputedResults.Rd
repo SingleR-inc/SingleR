@@ -13,7 +13,7 @@ combineRecomputedResults(
   check.missing = TRUE,
   allow.lost = FALSE,
   warn.lost = TRUE,
-  BNPARAM = KmknnParam(),
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -36,9 +36,10 @@ if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.}
 
-\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+\item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.}
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
@@ -51,7 +52,7 @@ scores are not recomputed for the other labels.
 \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
-It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+It may also contain \code{pruned.labels} if these were also present in \code{results}.
 
 The \code{\link{metadata}} contains \code{label.origin}, 
 a DataFrame specifying the reference of origin for each label in \code{scores}.

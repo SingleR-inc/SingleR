@@ -22,7 +22,7 @@
 #' \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
-#' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+#' It may also contain \code{pruned.labels} if these were also present in \code{results}.
 #'
 #' The \code{\link{metadata}} contains \code{label.origin}, 
 #' a DataFrame specifying the reference of origin for each label in \code{scores}.
@@ -109,7 +109,7 @@ combineRecomputedResults <- function(
     check.missing=TRUE, 
     allow.lost=FALSE, 
     warn.lost=TRUE,
-    num.threads=1,
+    num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
     all.names <- c(list(colnames(test)), lapply(results, rownames))
@@ -161,7 +161,6 @@ combineRecomputedResults <- function(
 
 #' @importFrom S4Vectors DataFrame
 .combine_result_frames <- function(chosen, results) {
-    has.first <- !is.null(results[[1]]$first.labels)
     has.pruned <- !is.null(results[[1]]$pruned.labels)
 
     # Organizing the statistics based on the chosen results.
@@ -172,21 +171,12 @@ combineRecomputedResults <- function(
         res <- results[[u]]
         chosen.label[current] <- res$labels[current]
 
-        if (has.first) { # assume that either everyone has 'first', or no-one does.
-            chosen.first[current] <- res$first.labels[current]
-        }
-
         if (has.pruned) { # same for pruned.
             chosen.pruned[current] <- res$pruned.labels[current]
         }
     }
 
     output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
-
-    if (has.first) {
-        output$first.labels <- chosen.first
-        output <- output[,c("first.labels", "labels"),drop=FALSE]
-    }
 
     if (has.pruned) {
         output$pruned.labels <- chosen.pruned

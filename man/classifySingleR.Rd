@@ -14,6 +14,7 @@ classifySingleR(
   prune = TRUE,
   assay.type = "logcounts",
   check.missing = TRUE,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -31,8 +32,7 @@ Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multip
 
 \item{tune.thresh}{A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.}
 
-\item{sd.thresh}{A numeric scalar specifying the threshold on the standard deviation, for use in gene selection during fine-tuning.
-This is only used if \code{genes="sd"} when constructing \code{trained} and defaults to the value used in \code{\link{trainSingleR}}.}
+\item{sd.thresh}{Deprecated and ignored.}
 
 \item{prune}{A logical scalar indicating whether label pruning should be performed.}
 
@@ -40,47 +40,33 @@ This is only used if \code{genes="sd"} when constructing \code{trained} and defa
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifyign the parallelization scheme to use.}
+\item{num.threads}{Integer scalar specifying the number of threads to use for classification.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.}
 }
 \value{
 A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
 In the case of a single reference, this contains:
 \itemize{
-\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} 
-for each label (column) in each cell (row).
-This will contain \code{NA}s if multiple references were supplied to \code{\link{trainSingleR}} with \code{recompute=TRUE}.
-\item \code{first.labels}, a character vector containing the predicted label \emph{before} fine-tuning.
-Only added if \code{fine.tune=TRUE}.
-\item \code{tuned.scores}, a DataFrame containing \code{first} and \code{second}.
-These are numeric vectors containing the best and next-best scores at the final round of fine-tuning for each cell.
-Only added if \code{fine.tune=TRUE}.
-\item \code{labels}, a character vector containing the predicted label based on the maximum entry in \code{scores}.
-\item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality}.
-els are replaced with \code{NA}s.
+\item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
+This will contain \code{NA}s if multiple references were supplied to \code{\link{trainSingleR}}.
+\item \code{labels}, a character vector containing the predicted label.
+If \code{fine.tune=FALSE}, this is based only on the maximum entry in \code{scores}.
+\item \code{next}, a numeric vector containing the difference between tbe best and next-best score.
+If \code{fine.tune=TRUE}, this is reported for scores after fine-tuning.
+\item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
 Only added if \code{prune=TRUE}.
 }
 
 The \code{\link{metadata}} of the DataFrame contains:
 \itemize{
 \item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
-\item \code{de.genes}, a list of list of genes used to distinguish between each pair of labels.
-Only returned if \code{genes="de"} when constructing \code{trained}, see \code{?\link{trainSingleR}} for more details. 
+\item \code{de.genes}, a list of list of character vectors, containing the genes used to distinguish between each pair of labels.
 }
 
-In the case of multiple references, the output of \code{\link{combineCommonResults}} 
-or \code{\link{combineRecomputedResults}} is returned,
-depending on whether \code{recompute=TRUE} when constructing \code{trained}.
-This is a \linkS4class{DataFrame} containing:
-\itemize{
-\item \code{scores}, a numeric matrix of scores for each cell (row) across all labels in all references (columns).
-This will contain \code{NA}s if recomputation is performed.
-\item \code{labels}, \code{first.labels} (if \code{fine.tune=TRUE}) and \code{pruned.labels} (if \code{prune=TRUE}),
-containing the consolidated labels of varying flavors as described above.
-\item \code{orig.results}, a \linkS4class{DataFrame} of DataFrames containing 
-the results of running \code{\link{classifySingleR}} against each individual reference.
-Each nested DataFrame has the same format as described above.
-}
-See \code{?\link{combineCommonResults}} and \code{?\link{combineRecomputedResults}} for more details.
+If \code{trained} was generated from multiple references, 
+the per-reference statistics are automatically combined into a single DataFrame of results using \code{\link{combineRecomputedResults}}.
+The output of \code{combineRecomputedResults} is then directly returned.
 }
 \description{
 Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.
@@ -106,10 +92,6 @@ Any monotonic transformation will have no effect the calculation of the correlat
 If \code{prune=TRUE}, label pruning is performed as described in \code{\link{pruneScores}} with default arguments.
 This aims to remove low-quality labels that are ambiguous or correspond to misassigned cells.
 However, the default settings can be somewhat aggressive and discard otherwise useful labels in some cases - see \code{?\link{pruneScores}} for details.
-
-If \code{trained} was generated from multiple references, the per-reference statistics are combined into a single DataFrame of results.
-This is done using \code{\link{combineRecomputedResults}} if \code{recompute=TRUE} in \code{\link{trainSingleR}},
-otherwise it is done using \code{\link{combineCommonResults}}.
 }
 \examples{
 # Mocking up data with log-normalized expression values:

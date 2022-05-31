@@ -23,8 +23,10 @@
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
-#' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.
+#' @param num.threads Integer scalar specifying the number of threads to use for index building and classification.
+#' @param BNPARAM Deprecated and ignored.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+#' see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
@@ -65,19 +67,36 @@
 #' table(predicted=pred2$labels, cluster=rownames(pred2))
 #'
 #' @export
-#' @importFrom BiocNeighbors KmknnParam
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
 #' @importFrom DelayedArray colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom BiocParallel SerialParam
-SingleR <- function(test, ref, 
-    labels, method = NULL, clusters = NULL, 
-    genes = "de", sd.thresh=1, de.method ="classic", de.n = NULL, de.args = list(),
-    aggr.ref = FALSE, aggr.args = list(), recompute=TRUE, restrict=NULL,
-    quantile = 0.8, fine.tune = TRUE, tune.thresh = 0.05, prune=TRUE, 
-    assay.type.test = "logcounts", assay.type.ref="logcounts", 
-    check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
+SingleR <- function(
+    test, 
+    ref, 
+    labels, 
+    method = NULL, 
+    clusters = NULL, 
+    genes = "de", 
+    sd.thresh=1, 
+    de.method ="classic", 
+    de.n = NULL, 
+    de.args = list(),
+    aggr.ref = FALSE, 
+    aggr.args = list(), 
+    recompute=TRUE, 
+    restrict=NULL,
+    quantile = 0.8, 
+    fine.tune = TRUE, 
+    tune.thresh = 0.05, 
+    prune=TRUE, 
+    assay.type.test = "logcounts", 
+    assay.type.ref="logcounts", 
+    check.missing=TRUE, 
+    num.threads = bpnworkers(BPPARAM),
+    BNPARAM = NULL,
+    BPPARAM=SerialParam()) 
 {
     if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
         bpstart(BPPARAM)
@@ -112,10 +131,23 @@ SingleR <- function(test, ref,
         ref <- ref[[1]]
     }
 
-    trained <- trainSingleR(ref, labels, genes = genes, sd.thresh = sd.thresh, 
-        de.method = de.method, de.n = de.n, de.args = de.args,
-        aggr.ref = aggr.ref, aggr.args = aggr.args, recompute=recompute,
-        restrict = restrict, check.missing=FALSE, BNPARAM=BNPARAM, BPPARAM=BPPARAM)
+    trained <- trainSingleR(
+        ref, 
+        labels, 
+        genes = genes, 
+        sd.thresh = sd.thresh, 
+        de.method = de.method, 
+        de.n = de.n, 
+        de.args = de.args,
+        aggr.ref = aggr.ref, 
+        aggr.args = aggr.args, 
+        recompute=recompute,
+        restrict = restrict, 
+        check.missing=FALSE, 
+        BNPARAM=BNPARAM, 
+        num.threads = num.threads, 
+        BPPARAM=BPPARAM
+    )
 
     if (!is.null(method)) {
         .Deprecated(msg="'method=\"cluster\"' is no longer necessary when 'cluster=' is specified")
@@ -128,7 +160,15 @@ SingleR <- function(test, ref,
         test <- colsum(DelayedArray(test), clusters)
     }
 
-    # Do not set sd.thresh, use the value from 'trainSingleR'.
-    classifySingleR(test, trained, quantile=quantile, fine.tune=fine.tune,
-        tune.thresh=tune.thresh, prune=prune, check.missing=FALSE, BPPARAM=BPPARAM)
+    classifySingleR(
+        test, 
+        trained, 
+        quantile=quantile, 
+        fine.tune=fine.tune,
+        tune.thresh=tune.thresh, 
+        prune=prune, 
+        check.missing=FALSE, 
+        num.threads = num.threads, 
+        BPPARAM=BPPARAM
+    )
 }

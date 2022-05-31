@@ -18,7 +18,6 @@ Imports:
     S4Vectors,
     DelayedArray,
     DelayedMatrixStats,
-    BiocNeighbors,
     BiocParallel,
     BiocSingular,
     stats,
