@@ -1,4 +1,5 @@
 # This tests the classification *without* fine-tuning.
+# (Tests with fine-tuning are handled by 'test-SingleR.R'.)
 # library(testthat); library(SingleR); source("setup.R"); source("test-classify.R")
 
 trained <- trainSingleR(training, training$label)
@@ -11,7 +12,7 @@ test_that("correlations are computed correctly by classifySingleR", {
     y <- split(seq_along(training$label), training$label)
     collected <- matrix(0, ncol(test), length(y))
     colnames(collected) <- names(y)
-    genes <- trained$common.genes
+    genes <- trained$markers$unique
 
     for (x in seq_along(y)) {
         ref <- cor(assay(training)[genes,y[[x]]], assay(test)[genes,], method="spearman")
@@ -33,7 +34,7 @@ test_that("classifySingleR behaves sensibly with very low 'quantile' settings", 
     y <- split(seq_along(training$label), training$label)
     collected <- matrix(0, ncol(test), length(y))
     colnames(collected) <- names(y)
-    genes <- trained$common.genes
+    genes <- trained$markers$unique
 
     for (x in seq_along(y)) {
         ref <- cor(assay(training)[genes,y[[x]]], assay(test)[genes,], method="spearman")
@@ -53,7 +54,7 @@ test_that("classifySingleR behaves sensibly with very large 'quantile' settings"
     y <- split(seq_along(training$label), training$label)
     collected <- matrix(0, ncol(test), length(y))
     colnames(collected) <- names(y)
-    genes <- trained$common.genes
+    genes <- trained$markers$unique
 
     for (x in seq_along(y)) {
         ref <- cor(assay(training)[genes,y[[x]]], assay(test)[genes,], method="spearman")
@@ -95,15 +96,7 @@ test_that("classifySingleR works with multiple references", {
     training1 <- training1[sample(nrow(training1)),]
     rownames(training1) <- rownames(training)
 
-    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=FALSE)
-    out <- classifySingleR(test, mtrain)
-
-    ref1 <- classifySingleR(test, mtrain[[1]])
-    ref2 <- classifySingleR(test, mtrain[[2]])
-    expect_identical(out, combineCommonResults(list(ref1, ref2)))
-
-    # Alternatively with recomputation.
-    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=TRUE)
+    mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
     out <- classifySingleR(test, mtrain)
 
     ref1 <- classifySingleR(test, mtrain[[1]])
@@ -116,9 +109,4 @@ test_that("classifySingleR behaves with silly inputs", {
     expect_identical(nrow(out$scores), 0L)
     expect_identical(length(out$labels), 0L)
     expect_error(classifySingleR(test[0,], trained, fine.tune=FALSE), "does not contain")
-
-    trained <- trainSingleR(training[,0], training$label[0])
-    pred <- classifySingleR(test, trained, fine.tune=FALSE)
-    expect_identical(ncol(pred$scores), 0L)
-    expect_true(all(is.na(pred$labels)))
 })

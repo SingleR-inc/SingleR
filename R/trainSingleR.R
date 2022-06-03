@@ -231,7 +231,7 @@ trainSingleR <- function(
         SIMPLIFY=FALSE)
 
     if (!solo && !recompute) {
-        .Deprecated("'recompute = FALSE'")
+        .Deprecated(old="recompute = FALSE")
     }
     output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, markers=gene.info,
         MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate, num.threads = num.threads), 

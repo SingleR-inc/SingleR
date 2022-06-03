@@ -148,7 +148,8 @@ classifySingleR <- function(
     output <- DataFrame(
         scores = I(out$scores), 
         labels = trained$labels$unique[out$best + 1L],
-        `next` = out$delta
+        `next` = out$delta,
+        check.names=FALSE
     )
 
     if (prune) {

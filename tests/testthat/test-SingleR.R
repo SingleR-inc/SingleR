@@ -7,12 +7,6 @@ test_that("SingleR works in DE mode", {
     expect_true(sum(diag(tab))/sum(tab) > 0.95)
 })
 
-test_that("SingleR works in SD mode", {
-    out <- SingleR(test=test, ref=training, labels=training$label, genes="sd")
-    tab <- table(out$labels, test$label)
-    expect_true(sum(diag(tab))/sum(tab) > 0.85) # not as good as 'de'.
-})
-
 test_that("SingleR works with custom gene selection", {
     all.labs <- sort(unique(training$label))
     collected <- rep(list(tail(rownames(training), 100)), length(all.labs))
@@ -51,29 +45,17 @@ test_that("SingleR works with non-ordinary matrices", {
     ref <- SingleR(test=test, ref=training, labels=training$label)
     expect_identical(out, ref)
 
+    # Works with clustering mode.
     out <- SingleR(test=test.s, ref=training.s, labels=training.s$label, clusters=test.s$label)
     ref <- SingleR(test=test, ref=training, labels=training$label, clusters=test$label)
     expect_identical(out, ref)
 })
 
 test_that("SingleR works with multiple references", {
-    out <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
-    ref <- SingleR(test, training, training$label)
-    expect_identical(out$scores, cbind(ref$scores, ref$scores))
-
-    # Handles mismatching rownames.
+    # Handles mismatching row names.
     chosen0 <- sample(rownames(training), 900)
     chosen1 <- sample(rownames(training), 900)
     chosen2 <- sample(rownames(training), 900)
-
-    out <- SingleR(test[chosen0,], list(training[chosen1,], training[chosen2,]), 
-        list(training$label, training$label), recompute=FALSE)
-    inter <- Reduce(intersect, list(chosen0, chosen1, chosen2))
-    ref <- SingleR(test[inter,], list(training[inter,], training[inter,]), 
-        list(training$label, training$label), recompute=FALSE)
-
-    out$reference <- ref$reference <- NULL # basically tied anyway.
-    expect_identical(out, ref)
 
     # Works with recomputation.
     out <- SingleR(test[chosen0,], list(training[chosen1,], training[chosen2,]), 
@@ -84,24 +66,6 @@ test_that("SingleR works with multiple references", {
 
     out$reference <- ref$reference <- NULL # basically tied anyway.
     expect_identical(out, ref)
-})
-
-test_that("SingleR handles changes to the block size", {
-    ref1 <- SingleR(test=test, ref=training, labels=training$label, genes="de")
-    set.seed(10)
-    ref2 <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
-
-    oldb <- DelayedArray::getAutoBlockSize()
-    DelayedArray::setAutoBlockSize(100)
-
-    out1 <- SingleR(test=test, ref=training, labels=training$label, genes="de")
-    set.seed(10)
-    out2 <- SingleR(test, list(training, training), list(training$label, training$label), recompute=FALSE)
-
-    expect_identical(ref1, out1)
-    expect_identical(ref2, out2)
-    
-    DelayedArray::setAutoBlockSize(oldb)
 })
 
 test_that("SingleR handles data.frame inputs", {
@@ -129,4 +93,3 @@ test_that("SingleR handles NAs in the labels", {
 
     expect_identical(ref1, ref2)
 })
-

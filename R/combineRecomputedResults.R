@@ -146,7 +146,7 @@ combineRecomputedResults <- function(
     for (r in seq_along(base.scores)) {
         mat <- results[[r]]$scores   
         mat[] <- NA_real_
-        idx <- cbind(seq_len(nrow(mat)), collated[[i]] + 1L)
+        idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
         mat[idx] <- scores[,r]
         base.scores[[r]] <- mat
     }
