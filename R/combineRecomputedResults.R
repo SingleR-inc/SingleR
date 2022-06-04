@@ -124,7 +124,9 @@ combineRecomputedResults <- function(
     all.refnames <- lapply(trained, function(x) rownames(x$ref))
     intersected <- Reduce(intersect, all.refnames)
     for (i in seq_along(trained)) {
-        if (warn.lost && !all(trained[[i]]$markers$unique %in% intersected)) {
+        if (!all(trained[[i]]$markers$unique %in% rownames(test))) {
+            stop("all markers stored in 'results' should be present in 'test'")
+        } else if (warn.lost && !all(trained[[i]]$markers$unique %in% intersected)) {
             warning("entries of 'trained' differ in the universe of available markers")
         }
     }

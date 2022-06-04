@@ -128,6 +128,11 @@ test_that("combineRecomputedResults emits warnings when missing genes are presen
     markers2$A$B <- c(markers2$a$b, "WHEE")
     train2b <- trainSingleR(ref2b, labels=ref2$label, genes=markers2)
 
+    expect_error(out <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1b, train2b)), "should be present")
+
     test2 <- test[c(1,seq_len(nrow(test)),1),]
     rownames(test2)[1] <- "WHEE"
     rownames(test2)[length(rownames(test2))] <- "BLAH"
