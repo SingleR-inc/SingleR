@@ -9,7 +9,7 @@
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
-SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads) {
+SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads) {
     num_threads = nthreads;
     singlepp::SinglePP runner;
 
@@ -32,6 +32,9 @@ SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List ma
 
     // Building the indices.
     auto parsed = raticate::parse(ref);
+    if (parsed.matrix == nullptr) {
+        throw std::runtime_error("failed to parse reference matrix class");
+    }
     auto built = runner.build(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.

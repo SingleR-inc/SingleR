@@ -6,9 +6,12 @@
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
-SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated_build, int nthreads) {
+SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, int nthreads) {
     num_threads = nthreads;
     auto curtest = raticate::parse(test);
+    if (curtest.matrix == nullptr) {
+        throw std::runtime_error("failed to parse reference matrix class");
+    }
     IntegratedXPtr iptr(integrated_build);
 
     // Setting up the previous results.

@@ -26,11 +26,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // integrate_run
-SEXP integrate_run(Rcpp::NumericMatrix test, Rcpp::List results, SEXP integrated_build, int nthreads);
+SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, int nthreads);
 RcppExport SEXP _SingleR_integrate_run(SEXP testSEXP, SEXP resultsSEXP, SEXP integrated_buildSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type test(testSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type test(testSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type results(resultsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type integrated_build(integrated_buildSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
@@ -39,11 +39,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // prebuild
-SEXP prebuild(Rcpp::NumericMatrix ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads);
+SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads);
 RcppExport SEXP _SingleR_prebuild(SEXP refSEXP, SEXP labelsSEXP, SEXP markersSEXP, SEXP approximateSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type ref(refSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type labels(labelsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type markers(markersSEXP);
     Rcpp::traits::input_parameter< bool >::type approximate(approximateSEXP);
@@ -63,11 +63,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // run
-SEXP run(Rcpp::NumericMatrix test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads);
+SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads);
 RcppExport SEXP _SingleR_run(SEXP testSEXP, SEXP subsetSEXP, SEXP prebuiltSEXP, SEXP quantileSEXP, SEXP use_fine_tuneSEXP, SEXP fine_tune_thresholdSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type test(testSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type test(testSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type subset(subsetSEXP);
     Rcpp::traits::input_parameter< SEXP >::type prebuilt(prebuiltSEXP);
     Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
