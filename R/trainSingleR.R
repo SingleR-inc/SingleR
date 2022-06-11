@@ -42,6 +42,7 @@
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BNPARAM Deprecated and ignored.
+#' @param approximate Logical scalar indicating whether a faster approximate method should be used to compute the quantile.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 #' Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.

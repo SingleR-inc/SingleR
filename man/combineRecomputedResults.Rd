@@ -27,6 +27,8 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.}
 
+\item{quantile}{Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.}
+
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 

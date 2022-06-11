@@ -79,6 +79,8 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
+\item{approximate}{Logical scalar indicating whether a faster approximate method should be used to compute the quantile.}
+
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building.}
 
 \item{BNPARAM}{Deprecated and ignored.}
