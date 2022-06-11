@@ -139,6 +139,8 @@
 #'
 #' \code{\link{combineRecomputedResults}}, to combine results from multiple references.
 #'
+#' \code{\link{rebuildIndex}}, to rebuild the index after external memory is invalidated.
+#'
 #' @examples
 #' # Making up some data for a quick demonstration.
 #' ref <- .mockRefData()
@@ -291,9 +293,21 @@ trainSingleR <- function(
         ref <- ref[,keep,drop=FALSE]
         labels <- labels[keep]
     }
+
     ulabels <- .get_levels(labels)
 
-    original.markers <- markers
+    built <- .build_index(ref, markers=markers, labels=labels, ulabels=ulabels, approximate=approximate, num.threads=num.threads)
+
+    List(
+        built = built,
+        ref = ref,
+        labels = list(full = labels, unique = ulabels),
+        markers = list(full = markers, unique = rownames(ref)[get_subset(built) + 1]),
+        options = list(approximate = approximate)
+    )
+}
+
+.build_index <- function(ref, markers, labels, ulabels, approximate, num.threads) {
     for (m in seq_along(markers)) {
         current <- markers[[m]]
         for (n in seq_along(current)) {
@@ -305,18 +319,14 @@ trainSingleR <- function(
         }
         markers[[m]] <- current
     }
-
-    built <- prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
-
-    List(
-        built = built,
-        ref = ref,
-        labels = list(full = labels, unique = ulabels),
-        markers = list(full = original.markers, unique = rownames(ref)[get_subset(built) + 1])
-    )
+    prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
 }
 
 .get_levels <- function(labels) sort(unique(labels))
+
+# Unfortunately, we can't test for List, because each trained structure is
+# also a list; so we just check whether the 'ref' field exists.
+.is_solo <- function(trained) !is.null(trained$ref)
 
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=SerialParam()) {

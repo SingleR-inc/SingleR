@@ -52,7 +52,7 @@ In the case of a single reference, this contains:
 This will contain \code{NA}s if multiple references were supplied to \code{\link{trainSingleR}}.
 \item \code{labels}, a character vector containing the predicted label.
 If \code{fine.tune=FALSE}, this is based only on the maximum entry in \code{scores}.
-\item \code{next}, a numeric vector containing the difference between tbe best and next-best score.
+\item \code{delta.next}, a numeric vector containing the difference between tbe best and next-best score.
 If \code{fine.tune=TRUE}, this is reported for scores after fine-tuning.
 \item \code{pruned.labels}, a character vector containing the pruned labels where \dQuote{low-quality} labels are replaced with \code{NA}s.
 Only added if \code{prune=TRUE}.

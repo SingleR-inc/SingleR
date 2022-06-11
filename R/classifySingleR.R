@@ -103,9 +103,8 @@ classifySingleR <- function(
 {
     test <- .to_clean_matrix(test, assay.type, check.missing, msg="test", BPPARAM=BPPARAM)
 
-    # Unfortunately, we can't test for List, because each trained structure is
-    # also a list; so we just check whether the 'built' field exists.
-    if (solo <- !is.null(trained$built)) { 
+    solo <- .is_solo(trained)
+    if (solo) { 
         trained <- list(trained)
     }
 
@@ -137,6 +136,8 @@ classifySingleR <- function(
     if (anyNA(m)) {
         stop("'rownames(test)' does not contain all genes used in 'trained'")
     }
+
+    trained <- rebuildIndex(trained, num.threads = num.threads)
 
     out <- run(test, m - 1L, trained$built, 
         quantile = quantile, 

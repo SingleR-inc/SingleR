@@ -19,6 +19,10 @@ get_subset <- function(built) {
     .Call('_SingleR_get_subset', PACKAGE = 'SingleR', built)
 }
 
+is_valid_built <- function(built) {
+    .Call('_SingleR_is_valid_built', PACKAGE = 'SingleR', built)
+}
+
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib SingleR
 run <- function(test, subset, prebuilt, quantile, use_fine_tune, fine_tune_threshold, nthreads) {

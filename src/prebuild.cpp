@@ -1,4 +1,5 @@
 #include "Rcpp.h"
+#include "Rinternals.h"
 
 #include "utils.h" // must be before raticate, singlepp includes.
 
@@ -44,4 +45,9 @@ SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers,
 Rcpp::IntegerVector get_subset(SEXP built) {
     PrebuiltXPtr ptr(built);
     return Rcpp::IntegerVector(ptr->subset.begin(), ptr->subset.end());
+}
+
+//[[Rcpp::export(rng=false)]]
+Rcpp::LogicalVector is_valid_built(SEXP built) {
+    return Rf_ScalarLogical(!!R_ExternalPtrAddr(built));
 }

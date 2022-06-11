@@ -62,6 +62,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// is_valid_built
+Rcpp::LogicalVector is_valid_built(SEXP built);
+RcppExport SEXP _SingleR_is_valid_built(SEXP builtSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type built(builtSEXP);
+    rcpp_result_gen = Rcpp::wrap(is_valid_built(built));
+    return rcpp_result_gen;
+END_RCPP
+}
 // run
 SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads);
 RcppExport SEXP _SingleR_run(SEXP testSEXP, SEXP subsetSEXP, SEXP prebuiltSEXP, SEXP quantileSEXP, SEXP use_fine_tuneSEXP, SEXP fine_tune_thresholdSEXP, SEXP nthreadsSEXP) {
@@ -84,6 +94,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 4},
     {"_SingleR_prebuild", (DL_FUNC) &_SingleR_prebuild, 5},
     {"_SingleR_get_subset", (DL_FUNC) &_SingleR_get_subset, 1},
+    {"_SingleR_is_valid_built", (DL_FUNC) &_SingleR_is_valid_built, 1},
     {"_SingleR_run", (DL_FUNC) &_SingleR_run, 7},
     {NULL, NULL, 0}
 };
