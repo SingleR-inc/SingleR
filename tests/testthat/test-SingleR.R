@@ -35,7 +35,7 @@ test_that("SingleR works when genes are not the same between test and training",
 })
 
 library(Matrix)
-test_that("SingleR works with non-ordinary matrices", {
+test_that("SingleR works with sparse matrices", {
     test.s <- test
     training.s <- training
     assay(test.s) <- as(assay(test.s), "dgCMatrix")
@@ -45,10 +45,28 @@ test_that("SingleR works with non-ordinary matrices", {
     ref <- SingleR(test=test, ref=training, labels=training$label)
     expect_identical(out, ref)
 
+    # Also in parallel.
+    ref2 <- SingleR(test=test.s, ref=training.s, labels=training.s$label, num.threads=3)
+    expect_identical(out, ref2)
+
     # Works with clustering mode.
     out <- SingleR(test=test.s, ref=training.s, labels=training.s$label, clusters=test.s$label)
     ref <- SingleR(test=test, ref=training, labels=training$label, clusters=test$label)
     expect_identical(out, ref)
+})
+
+library(DelayedArray)
+test_that("SingleR handles DelayedArray inputs", {
+    ref1 <- SingleR(test=test, ref=training, labels=training$label)
+
+    dtest <- DelayedArray(logcounts(test)) * 10
+    dtrain <- DelayedArray(logcounts(training)) * 10
+    ref2 <- SingleR(test=dtest, ref=dtrain, labels=training$label)
+    expect_identical(ref1, ref2)
+
+    # Also in parallel.
+    ref3 <- SingleR(test=dtest, ref=dtrain, labels=training$label, num.threads=3)
+    expect_identical(ref1, ref3)
 })
 
 test_that("SingleR works with multiple references", {

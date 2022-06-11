@@ -65,25 +65,25 @@ test_that("combineRecomputedResults matrix fragmentation works as expected", {
         BPPARAM=BiocParallel::MulticoreParam(3))
     expect_equal(combined1, combined1x)
 
-#    # Testing that it works for DA's, as well as when the DA
-#    # has memory limits that need to be respected.
-#    library(DelayedArray)
-#    DA <- DelayedArray(assay(test))
-#    combined2a <- combineRecomputedResults(
-#        results=list(pred1, pred2), 
-#        test=DA,
-#        trained=list(train1, train2))
-#    expect_equal(combined1, combined2a)
-#
-#    old <- getAutoBlockSize()
-#    setAutoBlockSize(nrow(DA)*8L)
-#    combined2b <- combineRecomputedResults(
-#        results=list(pred1, pred2),
-#        test=DA,
-#        trained=list(train1, train2))
-#    expect_equal(combined1, combined2b)
-#
-#    setAutoBlockSize(old)
+    # Testing that it works for DA's, as well as when the DA
+    # has memory limits that need to be respected.
+    library(DelayedArray)
+    DA <- DelayedArray(assay(test))
+    combined2a <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=DA,
+        trained=list(train1, train2))
+    expect_equal(combined1, combined2a)
+
+    old <- getAutoBlockSize()
+    setAutoBlockSize(nrow(DA)*8L)
+    combined2b <- combineRecomputedResults(
+        results=list(pred1, pred2),
+        test=DA,
+        trained=list(train1, train2))
+    expect_equal(combined1, combined2b)
+
+    setAutoBlockSize(old)
 })
 
 test_that("combineRecomputedResults handles mismatches to rows and cells", {
