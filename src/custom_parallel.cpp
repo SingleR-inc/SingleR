@@ -1,3 +1,3 @@
-#include "custom_parallel.h"
+#include "utils.h"
 
 int num_threads = 1;

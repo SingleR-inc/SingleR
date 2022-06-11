@@ -1,8 +1,10 @@
 #include "Rcpp.h"
-#include "custom_parallel.h" // must be before other singlepp-related includes.
+
+#include "utils.h" // must be before raticate, singlepp includes.
+
 #include "singlepp/IntegratedBuilder.hpp"
 #include "raticate/raticate.hpp"
-#include "utils.h"
+
 #include <vector>
 #include <memory>
 
