@@ -19,10 +19,7 @@ SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, R
 
     for (size_t r = 0; r < nrefs; ++r) {
         Rcpp::RObject curref(references[r]);
-        auto parsed = raticate::parse(curref);
-        if (parsed.matrix == nullptr) {
-            throw std::runtime_error("failed to parse reference matrix class");
-        }
+        auto parsed = raticate::parse<double, int>(curref, true);
         holding_mats.push_back(std::move(parsed));
 
         Rcpp::IntegerVector curids(ref_ids[r]);

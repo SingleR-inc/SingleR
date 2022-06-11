@@ -10,10 +10,7 @@
 //[[Rcpp::export(rng=false)]]
 SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
     num_threads = nthreads;
-    auto parsed = raticate::parse(test);
-    if (parsed.matrix == nullptr) {
-        throw std::runtime_error("failed to parse test matrix class");
-    }
+    auto parsed = raticate::parse<double, int>(test, true);
     PrebuiltXPtr built(prebuilt);
 
     // Setting up outputs.

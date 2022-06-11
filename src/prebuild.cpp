@@ -31,10 +31,7 @@ SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers,
     }
 
     // Building the indices.
-    auto parsed = raticate::parse(ref);
-    if (parsed.matrix == nullptr) {
-        throw std::runtime_error("failed to parse reference matrix class");
-    }
+    auto parsed = raticate::parse<double, int>(ref, true);
     auto built = runner.build(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.
