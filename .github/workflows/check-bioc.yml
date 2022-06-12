@@ -61,6 +61,7 @@ jobs:
       RSPM: ${{ matrix.config.rspm }}
       NOT_CRAN: true
       TZ: UTC
+      GITHUB_PAT: ${{ secrets.BEACHMAT_PAT }}
 
     steps:
 
