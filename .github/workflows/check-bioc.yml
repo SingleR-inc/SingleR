@@ -47,6 +47,12 @@ jobs:
         BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE, force = TRUE)
       shell: Rscript {0}
 
+    - name: Install remotes to get beachmat
+      if: runner.os != 'Linux'
+      run: |
+        BiocManager::install("remotes")
+      shell: Rscript {0}
+
     - name: Install macOS system dependencies
       if: matrix.config.os == 'macOS-latest'
       run: |
