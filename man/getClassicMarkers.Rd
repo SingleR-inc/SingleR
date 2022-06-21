@@ -10,6 +10,7 @@ getClassicMarkers(
   assay.type = "logcounts",
   check.missing = TRUE,
   de.n = NULL,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -35,6 +36,8 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{de.n}{An integer scalar specifying the number of DE genes to use.
 Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.}
+
+\item{num.threads}{Integer scalar specifying the number of threads to use.}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.}
 }

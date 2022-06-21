@@ -10,6 +10,23 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// find_classic_markers
+Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::IntegerVector left, Rcpp::IntegerVector right, Rcpp::List ref, Rcpp::List available, int de_n, int nthreads);
+RcppExport SEXP _SingleR_find_classic_markers(SEXP nlabelsSEXP, SEXP ngenesSEXP, SEXP leftSEXP, SEXP rightSEXP, SEXP refSEXP, SEXP availableSEXP, SEXP de_nSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< int >::type nlabels(nlabelsSEXP);
+    Rcpp::traits::input_parameter< int >::type ngenes(ngenesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type left(leftSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type right(rightSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type available(availableSEXP);
+    Rcpp::traits::input_parameter< int >::type de_n(de_nSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_classic_markers(nlabels, ngenes, left, right, ref, available, de_n, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // integrate_build
 SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
 RcppExport SEXP _SingleR_integrate_build(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_idsSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
@@ -90,6 +107,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 8},
     {"_SingleR_integrate_build", (DL_FUNC) &_SingleR_integrate_build, 6},
     {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 4},
     {"_SingleR_prebuild", (DL_FUNC) &_SingleR_prebuild, 5},

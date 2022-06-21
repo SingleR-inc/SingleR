@@ -28,11 +28,23 @@ test_that("getClassicMarkers works as expected", {
     out <- getClassicMarkers(logcounts(training), training$label)
     expect_identical(ref, out)
 
+    # Unaffected by monotonic transforms.
     out <- getClassicMarkers(training, training$label, assay.type="logcounts")
     expect_identical(ref, out)
 
+    # Same results if the labels are reversed.
+    shuffle <- rev(seq_len(ncol(training)))
+    out <- getClassicMarkers(training[,shuffle], training$label[shuffle], assay.type="logcounts")
+    expect_identical(ref, out)
+
+    # Responds to a custom de.n=.
     ref <- REF(logcounts(training), training$label, de.n=20)
     out <- getClassicMarkers(training, training$label, assay.type="logcounts", de.n=20)
+    expect_identical(ref, out)
+
+    # Caps out correctly.
+    ref <- REF(logcounts(training), training$label, de.n=1e6)
+    out <- getClassicMarkers(training, training$label, assay.type="logcounts", de.n=1e6)
     expect_identical(ref, out)
 })
 
@@ -42,6 +54,11 @@ test_that("getClassicMarkers works with blocking", {
     out2 <- getClassicMarkers(list(logcounts(training), logcounts(training)), 
         list(training$label, training$label))
     expect_identical(out, out2)
+    
+    # Blocking is robust to training sets that don't have the labels. 
+    out3 <- getClassicMarkers(list(logcounts(training), logcounts(training)[,0]), 
+        list(training$label, training$label[0]))
+    expect_identical(out, out3)
 
     # Blocking actually makes a difference.
     set.seed(100)
