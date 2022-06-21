@@ -65,6 +65,8 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata metadata<-
 combineCommonResults <- function(results) {
+    .Deprecated(new = "combineRecomputedResults")
+
     if (length(unique(lapply(results, rownames))) != 1) {
         stop("cell/cluster names in 'results' are not identical")
     }
@@ -94,55 +96,4 @@ combineCommonResults <- function(results) {
 
     chosen <- max.col(do.call(cbind, collected.best))
     cbind(output, .combine_result_frames(chosen, results))
-}
-
-#' @importFrom S4Vectors DataFrame
-.combine_result_frames <- function(chosen, results) {
-    has.first <- !is.null(results[[1]]$first.labels)
-    has.pruned <- !is.null(results[[1]]$pruned.labels)
-
-    # Organizing the statistics based on the chosen results.
-    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, nrow(results[[1]]))
-
-    for (u in unique(chosen)) {
-        current <- chosen==u
-        res <- results[[u]]
-        chosen.label[current] <- res$labels[current]
-
-        if (has.first) { # assume that either everyone has 'first', or no-one does.
-            chosen.first[current] <- res$first.labels[current]
-        }
-
-        if (has.pruned) { # same for pruned.
-            chosen.pruned[current] <- res$pruned.labels[current]
-        }
-    }
-
-    output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
-
-    if (has.first) {
-        output$first.labels <- chosen.first
-        output <- output[,c("first.labels", "labels"),drop=FALSE]
-    }
-
-    if (has.pruned) {
-        output$pruned.labels <- chosen.pruned
-    }
-
-    output$reference <- chosen
-
-    if (is.null(names(results))) {
-        names(results) <- sprintf("ref%i", seq_along(results))
-    }
-    output$orig.results <- do.call(DataFrame, lapply(results, I))
-
-    output
-}
-
-#' @importFrom S4Vectors DataFrame
-.create_label_origin <- function(collected.scores) {
-    DataFrame(
-        label=unlist(lapply(collected.scores, colnames)),
-        reference=rep(seq_along(collected.scores), vapply(collected.scores, ncol, 0L))
-    )
 }

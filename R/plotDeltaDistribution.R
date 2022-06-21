@@ -122,8 +122,7 @@ plotDeltaDistribution <- function(
         if (show=="delta.med") {
             values <- getDeltaFromMedian(current.results)
         } else if (show=="delta.next") {
-            tuned <- current.results$tuning.scores
-            values <- tuned$first - tuned$second
+            values <- current.results$delta.next
         }
 
         # Pulling out the labels to use in this iteration.

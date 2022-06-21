@@ -10,7 +10,8 @@
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
 #' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.
-#' @param allow.lost Logical scalar indicating whether to use lost markers in references where they are available. 
+#' @param quantile Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.
+#' @param allow.lost Deprecated.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
@@ -22,12 +23,10 @@
 #' \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
-#' It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+#' It may also contain \code{pruned.labels} if these were also present in \code{results}.
 #'
 #' The \code{\link{metadata}} contains \code{label.origin}, 
 #' a DataFrame specifying the reference of origin for each label in \code{scores}.
-#' Note that, unlike \code{\link{combineCommonResults}}, no \code{common.genes} is reported
-#' as this function does not use a common set of genes across all references.
 #'
 #' @details
 #' Here, the strategy is to perform classification separately within each reference, 
@@ -37,26 +36,27 @@
 #' This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};
 #' the label from the reference with the top recomputed score is then reported as the combined annotation for that cell.
 #' 
-#' Unlike \code{\link{combineCommonResults}}, the union of markers is not used for the within-reference calls.
+#' A key aspect of this approach is that each entry of \code{results} is generated with reference-specific markers.
 #' This avoids the inclusion of noise from irrelevant genes in the within-reference assignments.
-#' Obviously, \code{combineRecomputedResults} is slower as it does require recomputation of the scores,
-#' but the within-reference calls are faster as there are fewer genes in the union of markers for assigned labels
-#' (compared to the union of markers across all labels, as required by \code{\link{combineCommonResults}}),
-#' so it is likely that the net compute time should be lower.
+#' Similarly, the common feature space for each cell is defined from the most relevant markers across all references,
+#' analogous to one iteration of fine-tuning using only the best labels from each reference.
+#' Compare this to the alternative approach of creating a common feature space, where we force all per-reference classifications to use the same set of markers;
+#' this would slow down each individual classification as many more genes are involved.
 #'
 #' @section Dealing with mismatching gene availabilities:
-#' It is strongly recommended that the universe of genes be the same across all references in \code{trained}.
-#' If this is not the case, the intersection of genes across all \code{trained} will be used in the recomputation.
-#' This at least provides a common feature space for comparing correlations, 
-#' though differences in the availability of markers between references may have unpredictable effects on the results
-#' (and so a warning will be emitted by default, when when \code{warn.lost=TRUE}).
+#' It is recommended that the universe of genes be the same across all references in \code{trained}.
+#' (Or, at the very least, markers used in one reference are available in the others.)
+#' This ensures that a common feature space can be generated when comparing correlations across references.
+#' Differences in the availability of markers between references will have unpredictable effects on the comparability of correlation scores,
+#' so a warning will be emitted by default when \code{warn.lost=TRUE}.
+#' Callers can protect against this by subsetting each reference to the intersection of features present across all references - this is done by default in \code{\link{SingleR}}.
 #'
-#' That said, the intersection may be too string when dealing with many references with diverse feature annotations. 
-#' In such cases, we can set \code{allow.lost=TRUE} so that the recomputation for each reference will use all available markers in that reference.
+#' That said, this requirement may be too strict when dealing with many references with diverse feature annotations. 
+#' In such cases, the recomputation for each reference will automatically use all available markers in that reference.
 #' The idea here is to avoid penalizing all references by removing an informative marker when it is only absent in a single reference.
 #' We hope that the recomputed scores are still roughly comparable if the number of lost markers is relatively low,
 #' coupled with the use of ranks in the calculation of the Spearman-based scores to reduce the influence of individual markers.
-#' This is perhaps as reliable as one might imagine, so setting \code{allow.lost=TRUE} should be considered a last resort.
+#' This is perhaps as reliable as one might imagine.
 #' 
 #' @author Aaron Lun
 #'
@@ -100,18 +100,18 @@
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
-#' @importFrom BiocParallel SerialParam
-#' @importFrom BiocNeighbors KmknnParam buildIndex
-#' @importFrom beachmat colBlockApply
-combineRecomputedResults <- function(results, test, trained, quantile=0.8, 
-    assay.type.test="logcounts", check.missing=TRUE, allow.lost=FALSE, warn.lost=TRUE,
-    BNPARAM=KmknnParam(), BPPARAM=SerialParam())
+combineRecomputedResults <- function(
+    results, 
+    test, 
+    trained, 
+    quantile=0.8, 
+    assay.type.test="logcounts", 
+    check.missing=TRUE, 
+    allow.lost=FALSE, 
+    warn.lost=TRUE,
+    num.threads = bpnworkers(BPPARAM),
+    BPPARAM=SerialParam())
 {
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
     all.names <- c(list(colnames(test)), lapply(results, rownames))
     if (length(unique(all.names)) != 1) {
         stop("cell/cluster names in 'results' are not identical")
@@ -121,85 +121,43 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
         stop("numbers of cells/clusters in 'results' are not identical")
     }
 
-    ##############################################
-
-    # Preparing genes (part 1).
-    markers <- vector("list", length(trained)) 
+    # Checking the marker consistency.
+    all.refnames <- lapply(trained, function(x) rownames(x$ref))
+    intersected <- Reduce(intersect, all.refnames)
     for (i in seq_along(trained)) {
-        current <- trained[[i]]
-        if (current$search$mode=="de") {
-            tmp <- lapply(current$search$extra, unlist, use.names=FALSE)
-            tmp <- lapply(tmp, unique)
-            stopifnot(identical(names(tmp), names(current$original.exprs)))
-            markers[[i]] <- tmp
-        } else {
-            nlabs <- length(current$original.exprs)
-            tmp <- current$common.genes
-            markers[[i]] <- rep(list(tmp), nlabs)
-        }
-    }
-
-    universe <- unique(unlist(markers))
-    if (!all(universe %in% rownames(test))) {
-        stop("all markers stored in 'results' should be present in 'test'")
-    }
-
-    refnames <- lapply(trained, function(x) rownames(x$original.exprs[[1]]))
-    refnames <- Reduce(intersect, refnames)
-    if (has.lost <- !all(universe %in% refnames)) {
-        if (warn.lost) {
+        if (!all(trained[[i]]$markers$unique %in% rownames(test))) {
+            stop("all markers stored in 'results' should be present in 'test'")
+        } else if (warn.lost && !all(trained[[i]]$markers$unique %in% intersected)) {
             warning("entries of 'trained' differ in the universe of available markers")
         }
-        if (!allow.lost) {
-            universe <- intersect(universe, refnames)
-            for (i in seq_along(markers)) {
-                markers[[i]] <- lapply(markers[[i]], intersect, y=refnames)
-            }
-        }
     }
+    
+    # Applying the integration.
+    universe <- Reduce(union, c(list(rownames(test)), all.refnames))
+    ibuilt <- integrate_build(
+        match(rownames(test), universe) - 1L,
+        lapply(trained, function(x) x$ref),
+        lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
+        lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
+        lapply(trained, function(x) x$built),
+        nthreads = num.threads
+    )
 
-    ##############################################
-
-    # Preparing expression values: subsetting them down to 
-    # improve cache efficiency later on.
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
-    test <- test[universe,,drop=FALSE]
-
-    all.ref <- vector("list", length(trained))
-    for (i in seq_along(all.ref)) {
-        current <- trained[[i]]$original.exprs
-        current <- lapply(current, FUN=.subset_with_NAs, universe=universe)
-        all.ref[[i]] <- current
-    }
-
-    # Preparing genes (part 2).
-    for (i in seq_along(markers)) {
-        current <- markers[[i]]
-        for (j in seq_along(current)) {
-            current[[j]] <- match(current[[j]], universe) - 1L
-        }
-        markers[[i]] <- current
-    }
-
-    # Preparing labels.
-    collated <- vector("list", length(results))
+    collated <- vector("list", length(trained))
     for (i in seq_along(collated)) {
-        collated[[i]] <- match(results[[i]]$labels, names(all.ref[[i]]))
+        collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
-    all.labels <- do.call(rbind, collated)
-    stopifnot(!any(is.na(all.labels)))
 
-    ##############################################
+    irun <- integrate_run(test, collated, ibuilt, nthreads = num.threads) 
+    scores <- irun$scores
 
-    bp.out <- colBlockApply(test, FUN=.nonred_recompute_scores, BPPARAM=BPPARAM,
-        labels=all.labels, all.ref=all.ref, markers=markers, quantile=quantile, has.lost=has.lost)
-    scores <- do.call(rbind, bp.out)
-
+    # Organizing the outputs.
     base.scores <- vector("list", length(results))
     for (r in seq_along(base.scores)) {
         mat <- results[[r]]$scores   
         mat[] <- NA_real_
-        idx <- cbind(seq_len(nrow(mat)), all.labels[r,]) 
+        idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
         mat[idx] <- scores[,r]
         base.scores[[r]] <- mat
     }
@@ -208,58 +166,47 @@ combineRecomputedResults <- function(results, test, trained, quantile=0.8,
     output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
     metadata(output)$label.origin <- .create_label_origin(base.scores)
 
-    chosen <- max.col(scores, ties.method="first")
+    chosen <- irun$best + 1L
     cbind(output, .combine_result_frames(chosen, results))
 }
 
-#' @importFrom S4Vectors DataFrame selfmatch
-#' @importFrom BiocNeighbors buildIndex KmknnParam
-#' @importFrom DelayedArray currentViewport makeNindexFromArrayViewport
-.nonred_recompute_scores <- function(block, labels, all.ref, markers, quantile, has.lost) {
-    vp <- currentViewport()
-    idx <- makeNindexFromArrayViewport(vp, expand.RangeNSBS = TRUE)[[2]]
-    if (!is.null(idx)) {
-        labels <- labels[,idx,drop=FALSE]
+#' @importFrom S4Vectors DataFrame
+.combine_result_frames <- function(chosen, results) {
+    has.pruned <- !is.null(results[[1]]$pruned.labels)
+
+    # Organizing the statistics based on the chosen results.
+    chosen.label <- chosen.first <- chosen.pruned <- rep(NA_character_, nrow(results[[1]]))
+
+    for (u in unique(chosen)) {
+        current <- chosen==u
+        res <- results[[u]]
+        chosen.label[current] <- res$labels[current]
+
+        if (has.pruned) { # same for pruned.
+            chosen.pruned[current] <- res$pruned.labels[current]
+        }
     }
 
-    # Finding groups of cells with the same combination of per-reference assigned labels.
-    collated <- DataFrame(t(labels))
-    groups <- selfmatch(collated)
-    by.group <- split(seq_along(groups) - 1L, groups)
+    output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
 
-    if (has.lost) {
-        RECOMPFUN <- recompute_scores_with_na
-    } else {
-        RECOMPFUN <- recompute_scores
+    if (has.pruned) {
+        output$pruned.labels <- chosen.pruned
     }
 
-    scores <- RECOMPFUN(
-        Groups=by.group,
-        Exprs=block,
-        Labels=labels - 1L,
-        References=all.ref,
-        Genes=markers,
-        quantile=quantile
-    )
+    output$reference <- chosen
 
-    t(scores)
+    if (is.null(names(results))) {
+        names(results) <- sprintf("ref%i", seq_along(results))
+    }
+    output$orig.results <- do.call(DataFrame, lapply(results, I))
+
+    output
 }
 
-.subset_with_NAs <- function(x, universe) {
-    m <- match(universe, rownames(x))
-    if (!anyNA(m)) {
-        .realize_reference(x[m,,drop=FALSE])
-    } else if (nrow(x)==0) {
-        # Impossible in practice, but just in case...
-        matrix(NA_real_, length(universe), ncol(x), dimnames=list(universe, colnames(x)))
-    } else {
-        # A little song and dance because some matrix formats don't take well to NA indices.
-        lost <- is.na(m)
-        m[lost] <- 1L
-        output <- x[m,,drop=FALSE]
-        rownames(output) <- universe
-        output <- .realize_reference(output)
-        output[lost,] <- NA_real_
-        output
-    }
+#' @importFrom S4Vectors DataFrame
+.create_label_origin <- function(collected.scores) {
+    DataFrame(
+        label=unlist(lapply(collected.scores, colnames)),
+        reference=rep(seq_along(collected.scores), vapply(collected.scores, ncol, 0L))
+    )
 }

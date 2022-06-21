@@ -13,7 +13,7 @@ combineRecomputedResults(
   check.missing = TRUE,
   allow.lost = FALSE,
   warn.lost = TRUE,
-  BNPARAM = KmknnParam(),
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -27,20 +27,21 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.}
 
-\item{quantile}{Further arguments to pass to \code{\link{classifySingleR}}.}
+\item{quantile}{Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.}
 
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{allow.lost}{Logical scalar indicating whether to use lost markers in references where they are available.}
+\item{allow.lost}{Deprecated.}
 
 \item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.}
 
-\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+\item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.}
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
@@ -53,12 +54,10 @@ scores are not recomputed for the other labels.
 \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
-It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+It may also contain \code{pruned.labels} if these were also present in \code{results}.
 
 The \code{\link{metadata}} contains \code{label.origin}, 
 a DataFrame specifying the reference of origin for each label in \code{scores}.
-Note that, unlike \code{\link{combineCommonResults}}, no \code{common.genes} is reported
-as this function does not use a common set of genes across all references.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
@@ -73,27 +72,28 @@ We also retrieve the marker genes associated with that label and take the union 
 This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};
 the label from the reference with the top recomputed score is then reported as the combined annotation for that cell.
 
-Unlike \code{\link{combineCommonResults}}, the union of markers is not used for the within-reference calls.
+A key aspect of this approach is that each entry of \code{results} is generated with reference-specific markers.
 This avoids the inclusion of noise from irrelevant genes in the within-reference assignments.
-Obviously, \code{combineRecomputedResults} is slower as it does require recomputation of the scores,
-but the within-reference calls are faster as there are fewer genes in the union of markers for assigned labels
-(compared to the union of markers across all labels, as required by \code{\link{combineCommonResults}}),
-so it is likely that the net compute time should be lower.
+Similarly, the common feature space for each cell is defined from the most relevant markers across all references,
+analogous to one iteration of fine-tuning using only the best labels from each reference.
+Compare this to the alternative approach of creating a common feature space, where we force all per-reference classifications to use the same set of markers;
+this would slow down each individual classification as many more genes are involved.
 }
 \section{Dealing with mismatching gene availabilities}{
 
-It is strongly recommended that the universe of genes be the same across all references in \code{trained}.
-If this is not the case, the intersection of genes across all \code{trained} will be used in the recomputation.
-This at least provides a common feature space for comparing correlations, 
-though differences in the availability of markers between references may have unpredictable effects on the results
-(and so a warning will be emitted by default, when when \code{warn.lost=TRUE}).
+It is recommended that the universe of genes be the same across all references in \code{trained}.
+(Or, at the very least, markers used in one reference are available in the others.)
+This ensures that a common feature space can be generated when comparing correlations across references.
+Differences in the availability of markers between references will have unpredictable effects on the comparability of correlation scores,
+so a warning will be emitted by default when \code{warn.lost=TRUE}.
+Callers can protect against this by subsetting each reference to the intersection of features present across all references - this is done by default in \code{\link{SingleR}}.
 
-That said, the intersection may be too string when dealing with many references with diverse feature annotations. 
-In such cases, we can set \code{allow.lost=TRUE} so that the recomputation for each reference will use all available markers in that reference.
+That said, this requirement may be too strict when dealing with many references with diverse feature annotations. 
+In such cases, the recomputation for each reference will automatically use all available markers in that reference.
 The idea here is to avoid penalizing all references by removing an informative marker when it is only absent in a single reference.
 We hope that the recomputed scores are still roughly comparable if the number of lost markers is relatively low,
 coupled with the use of ranks in the calculation of the Spearman-based scores to reduce the influence of individual markers.
-This is perhaps as reliable as one might imagine, so setting \code{allow.lost=TRUE} should be considered a last resort.
+This is perhaps as reliable as one might imagine.
 }
 
 \examples{

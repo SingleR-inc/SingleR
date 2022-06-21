@@ -26,7 +26,8 @@ SingleR(
   assay.type.test = "logcounts",
   assay.type.ref = "logcounts",
   check.missing = TRUE,
-  BNPARAM = KmknnParam(),
+  num.threads = bpnworkers(BPPARAM),
+  BNPARAM = NULL,
   BPPARAM = SerialParam()
 )
 }
@@ -55,9 +56,7 @@ If set, annotation is performed on the aggregated cluster profiles, otherwise it
 
 \item{aggr.ref, aggr.args}{Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.}
 
-\item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
-when \code{ref} contains multiple references from which the individual results are to be combined.
-(See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
+\item{recompute}{Deprecated and ignored.}
 
 \item{restrict}{A character vector of gene names to use for marker selection.
 By default, all genes in \code{ref} are used.}
@@ -72,9 +71,12 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+\item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed, if any.}
+\item{BNPARAM}{Deprecated and ignored.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).

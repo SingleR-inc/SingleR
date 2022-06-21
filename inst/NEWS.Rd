@@ -2,6 +2,17 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 2.0.0}{\itemize{
+\item The format of the output of \code{trainSingleR()} has changed and is no longer back-compatible.
+\item \code{recompute=FALSE} in \code{trainSingleR()} does nothing; all integrated analyses are now done with \code{recompute=TRUE}.
+To that end, \code{combineCommonResults()} is also deprecated.
+\item \code{genes = "sd"} and its associated options in \code{trainSingleR()} are no longer supported.
+\item \code{first.labels} is no longer reported in \code{classifySingleR()}.
+\item Added another parallelization mechanism via \code{num.threads=} and OpenMP. 
+This should be much more memory efficient than using \pkg{BiocParallel}.
+\item \code{combineRecomputedScores()} will automatically handle mismatches in the input references by default.
+}}
+
 \section{Version 1.6.0}{\itemize{
 \item Relaxed the requirements for consistent row names in \code{combineRecomputedResults()}.
 

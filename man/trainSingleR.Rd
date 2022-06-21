@@ -8,7 +8,7 @@ trainSingleR(
   ref,
   labels,
   genes = "de",
-  sd.thresh = 1,
+  sd.thresh = NULL,
   de.method = c("classic", "wilcox", "t"),
   de.n = NULL,
   de.args = list(),
@@ -18,7 +18,9 @@ trainSingleR(
   restrict = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
-  BNPARAM = KmknnParam(),
+  approximate = FALSE,
+  num.threads = bpnworkers(BPPARAM),
+  BNPARAM = NULL,
   BPPARAM = SerialParam()
 )
 }
@@ -37,7 +39,8 @@ in which case the row names are expected to be the same across all objects.}
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
 Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
 
-\item{genes}{A string specifying the feature selection method to be used, see Details.
+\item{genes}{A string containing \code{"de"}, indicating that markers should be calculated from \code{ref}.
+For back compatibility, other string values are allowed but will be ignored with a deprecation warning.
 
 Alternatively, if \code{ref} is \emph{not} a list, \code{genes} can be either:
 \itemize{
@@ -49,8 +52,7 @@ If \code{ref} \emph{is} a list, \code{genes} can be a list of length equal to \c
 Each element of the list should be one of the two above choices described for non-list \code{ref},
 containing markers for labels in the corresponding entry of \code{ref}.}
 
-\item{sd.thresh}{A numeric scalar specifying the minimum threshold on the standard deviation per gene.
-Only used when \code{genes="sd"}.}
+\item{sd.thresh}{Deprecated and ignored.}
 
 \item{de.method}{String specifying how DE genes should be detected between pairs of labels.
 Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
@@ -67,9 +69,7 @@ Otherwise, defaults to 10.}
 
 \item{aggr.args}{Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.}
 
-\item{recompute}{Logical scalar indicating whether to set up indices for later recomputation of scores,
-when \code{ref} contains multiple references from which the individual results are to be combined.
-(See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)}
+\item{recompute}{Deprecated and ignored.}
 
 \item{restrict}{A character vector of gene names to use for marker selection.
 By default, all genes in \code{ref} are used.}
@@ -79,20 +79,26 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.}
+\item{approximate}{Logical scalar indicating whether a faster approximate method should be used to compute the quantile.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.}
+\item{num.threads}{Integer scalar specifying the number of threads to use for index building.}
+
+\item{BNPARAM}{Deprecated and ignored.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
+Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.}
 }
 \value{
 For a single reference, a \linkS4class{List} is returned containing:
 \describe{
-\item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
-\item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
-\item{\code{original.exprs}:}{A List of numeric matrices where each matrix contains all cells for a particular label.}
-\item{\code{search}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
-This includes \code{mode}, a string containing the selection method;
-\code{args}, method-specific arguments that can be re-used during classification;
-and \code{extras}, method-specific structures that can be re-used during classification.}
+\item{\code{built}:}{An external pointer to various indices in C++ space.
+Note that this cannot be serialized and should be removed prior to any \code{\link{saveRDS}} step.}
+\item{\code{ref}:}{The reference expression matrix.
+This may have fewer columns than the input \code{ref} if \code{aggr.ref = TRUE}.}
+\item{\code{markers}:}{A list containing \code{unique}, a character vector of all marker genes used in training;
+and \code{full}, a list of list of character vectors containing the markers for each pairwise comparison between labels.}
+\item{\code{labels}:}{A list containing \code{unique}, a character vector of all unique reference labels;
+and \code{full}, a character vector containing the assigned label for each column in \code{ref}.}
 }
 
 For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
@@ -105,18 +111,10 @@ This function uses a training data set to select interesting features and constr
 The resulting objects can be re-used across multiple classification steps with different test data sets via \code{\link{classifySingleR}}.
 This improves efficiency by avoiding unnecessary repetition of steps during the downstream analysis.
 
-Several options are available for feature selection:
-\itemize{
-\item \code{genes="de"} identifies genes that are differentially expressed between labels.
+The automatic marker detection (\code{genes="de"}) identifies genes that are differentially expressed between labels.
 This is done by identifying the median expression within each label, and computing differences between medians for each pair of labels.
 For each label, the top \code{de.n} genes with the largest differences compared to another label are chosen as markers to distinguish the two labels.
-The set of all features is defined as the union of markers from all pairwise comparisons.
-\item \code{genes="sd"} identifies genes that are highly variable across labels.
-This is done by identifying the median expression within each label, and computing the standard deviation in the medians across all labels.
-The set of all features is defined as those genes with standard deviations above \code{sd.thresh}.
-\item \code{genes="all"} will not perform any feature selection.
-}
-If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
+The expression values are expected to be log-transformed and normalized.
 
 If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
 Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
@@ -157,18 +155,16 @@ Similarly, for manual \code{genes}, \code{de.n} and \code{sd.thresh} have no eff
 
 \section{Dealing with multiple references}{
 
-The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineRecomputedResults}} for an explanation).
-To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{genes="de"} or \code{"sd"}.
+The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results 
+(see \code{?\link{combineRecomputedResults}} for an explanation).
+To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference if \code{genes = NULL}.
 Rank calculation and index construction is then performed within each reference separately.
+The result is identical to \code{lapply}ing over a list of references and runing \code{trainSingleR} on each reference.
 
 Alternatively, \code{genes} can still be used to explicitly specify marker genes for each label in each of multiple references.
 This is achieved by passing a list of lists to \code{genes},
 where each inner list corresponds to a reference in \code{ref} and can be of any format described in \dQuote{Custom feature specification}.
 Thus, it is possible for \code{genes} to be - wait for it - a list (per reference) of lists (per label) of lists (per label) of character vectors.
-
-If \code{recompute=TRUE}, the output is exactly equivalent to running \code{trainSingleR} on each reference separately.
-If \code{recompute=FALSE}, \code{trainSingleR} is also run each reference but the difference is that the final \code{common} set of genes consists of the union of common genes across all references.
-This is necessary to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineCommonResults}}.
 }
 
 \section{Note on single-cell references}{
@@ -193,20 +189,19 @@ ref <- scuttle::logNormCounts(ref)
 
 trained <- trainSingleR(ref, ref$label)
 trained
-trained$nn.indices
-length(trained$common.genes)
+length(trained$markers$unique)
 
 # Alternatively, computing and supplying a set of label-specific markers.
 by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
 markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
 trained <- trainSingleR(ref, ref$label, genes=markers)
-length(trained$common.genes)
+length(trained$markers$unique)
 
 }
 \seealso{
 \code{\link{classifySingleR}}, where the output of this function gets used.
 
-\code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+\code{\link{combineRecomputedResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.

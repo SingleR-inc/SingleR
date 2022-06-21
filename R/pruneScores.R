@@ -90,10 +90,10 @@
 pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0, get.thresholds=FALSE) {
     delta <- getDeltaFromMedian(results)
     keep <- delta >= min.diff.med
-
-    tune.scores <- results$tuning.scores
-    if (!is.null(tune.scores)) {
-        keep <- keep & (tune.scores$first - tune.scores$second) >= min.diff.next
+    
+    dn <- results$delta.next
+    if (!is.null(dn)) {
+        keep <- keep & dn >= min.diff.next
     }
 
     # Ignoring the fine-tuning when allocating cells to labels.

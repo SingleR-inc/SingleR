@@ -6,6 +6,7 @@
 #' @inheritParams trainSingleR
 #' @param de.n An integer scalar specifying the number of DE genes to use.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 #'
 #' @return
 #' A list of lists of character vectors, 
@@ -119,5 +120,29 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         output[[left]][[right]] <- as.character(names(lfc)[keep]) # to handle NULL rownames upon matrix zero-subsetting.
     }
 
+    output
+}
+
+#' @importFrom DelayedMatrixStats rowMedians
+#' @importFrom DelayedArray DelayedArray
+.median_by_label <- function(mat, labels, BPPARAM=SerialParam()) {
+    old <- getAutoBPPARAM()
+    setAutoBPPARAM(BPPARAM)
+    on.exit(setAutoBPPARAM(old))
+
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
+    }
+
+    ulabels <- .get_levels(labels)
+    output <- matrix(0, nrow(mat), length(ulabels))
+    rownames(output) <- rownames(mat)
+    colnames(output) <- ulabels
+
+    for (u in ulabels) {
+        # Disambiguate from Biobase::rowMedians.
+        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
+    }
     output
 }

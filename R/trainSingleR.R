@@ -14,7 +14,8 @@
 #' 
 #' Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
 #' Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
-#' @param genes A string specifying the feature selection method to be used, see Details.
+#' @param genes A string containing \code{"de"}, indicating that markers should be calculated from \code{ref}.
+#' For back compatibility, other string values are allowed but will be ignored with a deprecation warning.
 #' 
 #' Alternatively, if \code{ref} is \emph{not} a list, \code{genes} can be either:
 #' \itemize{
@@ -25,8 +26,7 @@
 #' If \code{ref} \emph{is} a list, \code{genes} can be a list of length equal to \code{ref}.
 #' Each element of the list should be one of the two above choices described for non-list \code{ref},
 #' containing markers for labels in the corresponding entry of \code{ref}.
-#' @param sd.thresh A numeric scalar specifying the minimum threshold on the standard deviation per gene.
-#' Only used when \code{genes="sd"}.
+#' @param sd.thresh Deprecated and ignored.
 #' @param de.method String specifying how DE genes should be detected between pairs of labels.
 #' Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
 #' Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
@@ -37,27 +37,29 @@
 #' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
 #' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.
 #' @param aggr.args Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.
-#' @param recompute Logical scalar indicating whether to set up indices for later recomputation of scores,
-#' when \code{ref} contains multiple references from which the individual results are to be combined.
-#' (See the difference between \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}.)
+#' @param recompute Deprecated and ignored.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
-#' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying the algorithm to use for building nearest neighbor indices.
+#' @param BNPARAM Deprecated and ignored.
+#' @param approximate Logical scalar indicating whether a faster approximate method should be used to compute the quantile.
+#' @param num.threads Integer scalar specifying the number of threads to use for index building.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
+#' Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
 #'
 #' @return 
 #' For a single reference, a \linkS4class{List} is returned containing:
 #' \describe{
-#' \item{\code{common.genes}:}{A character vector of all genes that were chosen by the designated feature selection method.}
-#' \item{\code{nn.indices}:}{A List of \linkS4class{BiocNeighborIndex} objects containing pre-constructed neighbor search indices.}
-#' \item{\code{original.exprs}:}{A List of numeric matrices where each matrix contains all cells for a particular label.}
-#' \item{\code{search}:}{A List of additional information on the feature selection, for use by \code{\link{classifySingleR}}.
-#' This includes \code{mode}, a string containing the selection method;
-#' \code{args}, method-specific arguments that can be re-used during classification;
-#' and \code{extras}, method-specific structures that can be re-used during classification.}
+#' \item{\code{built}:}{An external pointer to various indices in C++ space.
+#' Note that this cannot be serialized and should be removed prior to any \code{\link{saveRDS}} step.}
+#' \item{\code{ref}:}{The reference expression matrix.
+#' This may have fewer columns than the input \code{ref} if \code{aggr.ref = TRUE}.}
+#' \item{\code{markers}:}{A list containing \code{unique}, a character vector of all marker genes used in training;
+#' and \code{full}, a list of list of character vectors containing the markers for each pairwise comparison between labels.}
+#' \item{\code{labels}:}{A list containing \code{unique}, a character vector of all unique reference labels;
+#' and \code{full}, a character vector containing the assigned label for each column in \code{ref}.}
 #' }
 #'
 #' For multiple references, a List of Lists is returned where each internal List corresponds to a reference in \code{ref} and has the same structure as described above.
@@ -67,18 +69,10 @@
 #' The resulting objects can be re-used across multiple classification steps with different test data sets via \code{\link{classifySingleR}}.
 #' This improves efficiency by avoiding unnecessary repetition of steps during the downstream analysis.
 #' 
-#' Several options are available for feature selection:
-#' \itemize{
-#' \item \code{genes="de"} identifies genes that are differentially expressed between labels.
+#' The automatic marker detection (\code{genes="de"}) identifies genes that are differentially expressed between labels.
 #' This is done by identifying the median expression within each label, and computing differences between medians for each pair of labels.
 #' For each label, the top \code{de.n} genes with the largest differences compared to another label are chosen as markers to distinguish the two labels.
-#' The set of all features is defined as the union of markers from all pairwise comparisons.
-#' \item \code{genes="sd"} identifies genes that are highly variable across labels.
-#' This is done by identifying the median expression within each label, and computing the standard deviation in the medians across all labels.
-#' The set of all features is defined as those genes with standard deviations above \code{sd.thresh}.
-#' \item \code{genes="all"} will not perform any feature selection.
-#' }
-#' If \code{genes="de"} or \code{"sd"}, the expression values are expected to be log-transformed and normalized.
+#' The expression values are expected to be log-transformed and normalized.
 #'
 #' If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
 #' Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
@@ -116,19 +110,17 @@
 #' Similarly, for manual \code{genes}, \code{de.n} and \code{sd.thresh} have no effect.
 #'
 #' @section Dealing with multiple references:
-#' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results (see \code{?\link{combineRecomputedResults}} for an explanation).
-#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference when \code{genes="de"} or \code{"sd"}.
+#' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results 
+#' (see \code{?\link{combineRecomputedResults}} for an explanation).
+#' To this end, if \code{ref} is a list with multiple references, marker genes are identified separately within each reference if \code{genes = NULL}.
 #' Rank calculation and index construction is then performed within each reference separately.
+#' The result is identical to \code{lapply}ing over a list of references and runing \code{trainSingleR} on each reference.
 #'
 #' Alternatively, \code{genes} can still be used to explicitly specify marker genes for each label in each of multiple references.
 #' This is achieved by passing a list of lists to \code{genes},
 #' where each inner list corresponds to a reference in \code{ref} and can be of any format described in \dQuote{Custom feature specification}.
 #' Thus, it is possible for \code{genes} to be - wait for it - a list (per reference) of lists (per label) of lists (per label) of character vectors.
 #'
-#' If \code{recompute=TRUE}, the output is exactly equivalent to running \code{trainSingleR} on each reference separately.
-#' If \code{recompute=FALSE}, \code{trainSingleR} is also run each reference but the difference is that the final \code{common} set of genes consists of the union of common genes across all references.
-#' This is necessary to ensure that correlations are computed from the same set of genes across reference and are thus reasonably comparable in \code{\link{combineCommonResults}}.
-#' 
 #' @section Note on single-cell references:
 #' The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
 #' It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
@@ -145,7 +137,9 @@
 #' @seealso
 #' \code{\link{classifySingleR}}, where the output of this function gets used.
 #'
-#' \code{\link{combineCommonResults}} and \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+#' \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+#'
+#' \code{\link{rebuildIndex}}, to rebuild the index after external memory is invalidated.
 #'
 #' @examples
 #' # Making up some data for a quick demonstration.
@@ -156,22 +150,35 @@
 #'
 #' trained <- trainSingleR(ref, ref$label)
 #' trained
-#' trained$nn.indices
-#' length(trained$common.genes)
+#' length(trained$markers$unique)
 #'
 #' # Alternatively, computing and supplying a set of label-specific markers.
 #' by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
 #' markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
 #' trained <- trainSingleR(ref, ref$label, genes=markers)
-#' length(trained$common.genes)
+#' length(trained$markers$unique)
 #' 
 #' @export
-#' @importFrom BiocNeighbors KmknnParam 
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
-trainSingleR <- function(ref, labels, genes="de", sd.thresh=1, 
-    de.method=c("classic", "wilcox", "t"), de.n=NULL, de.args=list(),
-    aggr.ref=FALSE, aggr.args=list(), recompute=TRUE, restrict=NULL,
-    assay.type="logcounts", check.missing=TRUE, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) 
+#' @importFrom BiocParallel SerialParam bpisup bpstart bpstop
+trainSingleR <- function(
+    ref, 
+    labels, 
+    genes="de", 
+    sd.thresh=NULL, 
+    de.method=c("classic", "wilcox", "t"), 
+    de.n=NULL, 
+    de.args=list(),
+    aggr.ref=FALSE, 
+    aggr.args=list(), 
+    recompute=TRUE, 
+    restrict=NULL,
+    assay.type="logcounts", 
+    check.missing=TRUE,
+    approximate = FALSE,
+    num.threads = bpnworkers(BPPARAM),
+    BNPARAM = NULL,
+    BPPARAM = SerialParam()) 
 {
     de.method <- match.arg(de.method)
 
@@ -223,23 +230,15 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
-        MoreArgs=list(sd.thresh=sd.thresh, de.method=de.method, de.n=de.n, de.args=de.args, BPPARAM=BPPARAM),
+        MoreArgs=list(de.method=de.method, de.n=de.n, de.args=de.args, BPPARAM=BPPARAM),
         SIMPLIFY=FALSE)
 
-    common <- lapply(gene.info, function(x) x$common)
-    args <- list(aggr.ref=aggr.ref, aggr.args=aggr.args, BNPARAM=BNPARAM, BPPARAM=BPPARAM)
-
-    if (recompute || solo) {
-        output <- mapply(FUN=.build_trained_index, 
-            ref=ref, labels=labels, common=common, search.info=gene.info,
-            MoreArgs=args, SIMPLIFY=FALSE)
-    } else {
-        # Setting the common set across all references to the union of all genes.
-        all.common <- Reduce(union, common)
-        output <- mapply(FUN=.build_trained_index, 
-            ref=ref, labels=labels, search.info=gene.info,
-            MoreArgs=c(list(common=all.common), args), SIMPLIFY=FALSE)
+    if (!solo && !recompute) {
+        .Deprecated(old="recompute = FALSE")
     }
+    output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, markers=gene.info,
+        MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate, num.threads = num.threads), 
+        SIMPLIFY=FALSE)
 
     if (solo) {
         output[[1]]
@@ -250,13 +249,10 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 }
 
-.identify_genes <- function(ref, labels, genes="de", sd.thresh=1, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=BPPARAM) {
+.identify_genes <- function(ref, labels, genes="de", de.method="classic", de.n=NULL, de.args=list(), BPPARAM=BPPARAM) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")
     }
-
-    # Choosing the gene sets of interest. 
-    args <- list()
 
     if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)
@@ -268,78 +264,69 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
 
         genes <- lapply(genes, as.list) # to convert from List of Lists.
         genes <- .validate_de_gene_set(genes, labels)
-        common <- unique(unlist(genes))
 
         # Ensure that the user hasn't supplied genes that aren't available.
         rn <- rownames(ref)
-        if (!all(common %in% rn)) {
-            genes <- lapply(genes, function(l) lapply(l, intersect, rn))
-            common <- intersect(common, rn)
-        }
-
-        extra <- genes
-        genes <- "de"
-
-    } else if (is.character(genes)) {
+        genes <- lapply(genes, function(l) lapply(l, intersect, rn))
+    } else { 
         genes <- match.arg(genes, c("de", "sd", "all"))
-        if (genes=="sd") {
-            sd.out <- .get_genes_by_sd(ref, labels, sd.thresh=sd.thresh, BPPARAM=BPPARAM)
-            common <- sd.out$genes
-            extra <- sd.out$mat
-            args$sd.thresh <- sd.thresh
-        } else {
-            extra <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
-            if (genes=="de") {
-                common <- unique(unlist(extra))
-            } else {
-                genes <- "de"
-                common <- rownames(ref)
-            }
-        }
+        if (genes != "de") {
+            .Deprecated(old="genes = \"", genes, "\"")
+        } 
+        genes <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
     }
 
-    list(genes=genes, common=common, extra=extra, args=args)
+    genes
 }
 
 #' @importFrom S4Vectors List
-#' @importFrom BiocNeighbors KmknnParam bndistance buildIndex
 #' @importFrom SummarizedExperiment assay
-.build_trained_index <- function(ref, labels, common, aggr.ref, aggr.args, search.info, BNPARAM=KmknnParam(), BPPARAM=SerialParam()) {
-    if (bndistance(BNPARAM)!="Euclidean") {
-        stop("'bndistance(BNPARAM)' must be 'Euclidean'") # for distances to be convertible to Spearman rank correlations.
-    }
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
+.build_trained_index <- function(ref, labels, markers, aggr.ref, aggr.args, search.info, approximate = FALSE, BPPARAM = SerialParam(), num.threads = 1) {
     if (aggr.ref) {
         aggr <- do.call(aggregateReference, c(list(ref=quote(ref), label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
         ref <- assay(aggr)
         labels <- aggr$label
     }
 
-    common <- as.character(common)
-    indices <- original <- List()
-    ulabels <- .get_levels(labels)
-
-    for (u in ulabels) {
-        current <- ref[,labels==u,drop=FALSE] 
-        original[[u]] <- current
-        sr.out <- .scaled_colranks_safe(current[common,,drop=FALSE], BPPARAM=BPPARAM)
-        indices[[u]] <- buildIndex(sr.out, BNPARAM=BNPARAM)
+    if (anyNA(labels)) {
+        keep <- !is.na(labels)
+        ref <- ref[,keep,drop=FALSE]
+        labels <- labels[keep]
     }
 
+    ulabels <- .get_levels(labels)
+
+    built <- .build_index(ref, markers=markers, labels=labels, ulabels=ulabels, approximate=approximate, num.threads=num.threads)
+
     List(
-        common.genes=common,
-        original.exprs=original,
-        nn.indices=indices,
-        search=List(mode=search.info$genes, args=search.info$args, extra=search.info$extra)
+        built = built,
+        ref = ref,
+        labels = list(full = labels, unique = ulabels),
+        markers = list(full = markers, unique = rownames(ref)[get_subset(built) + 1]),
+        options = list(approximate = approximate)
     )
 }
 
+.build_index <- function(ref, markers, labels, ulabels, approximate, num.threads) {
+    for (m in seq_along(markers)) {
+        current <- markers[[m]]
+        for (n in seq_along(current)) {
+            idx <- match(current[[n]], rownames(ref))
+            if (anyNA(idx)) {
+                stop("could not find '", current[[n]][which(is.na(idx))[1]], "' in 'rownames(ref)'")
+            }
+            current[[n]] <- idx - 1L
+        }
+        markers[[m]] <- current
+    }
+    prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
+}
+
 .get_levels <- function(labels) sort(unique(labels))
+
+# Unfortunately, we can't test for List, because each trained structure is
+# also a list; so we just check whether the 'ref' field exists.
+.is_solo <- function(trained) !is.null(trained$ref)
 
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=SerialParam()) {
@@ -360,15 +347,6 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
         collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n)
         lapply(collected, as.list)
     }
-}
-
-#' @importFrom DelayedMatrixStats rowSds
-.get_genes_by_sd <- function(ref, labels, sd.thresh=1, BPPARAM=SerialParam()) {
-    mat <- .median_by_label(ref, labels, BPPARAM=BPPARAM)
-
-
-    sd <- rowSds(mat)
-    list(mat=mat, genes=as.character(rownames(mat)[sd > sd.thresh]))
 }
 
 .convert_per_label_set <- function(genes) {
@@ -400,47 +378,4 @@ trainSingleR <- function(ref, labels, genes="de", sd.thresh=1,
     }
 
     genes
-}
-
-#' @importFrom DelayedMatrixStats rowMedians
-#' @importFrom DelayedArray DelayedArray
-.median_by_label <- function(mat, labels, BPPARAM=SerialParam()) {
-    old <- getAutoBPPARAM()
-    setAutoBPPARAM(BPPARAM)
-    on.exit(setAutoBPPARAM(old))
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
-    ulabels <- .get_levels(labels)
-    output <- matrix(0, nrow(mat), length(ulabels))
-    rownames(output) <- rownames(mat)
-    colnames(output) <- ulabels
-
-    for (u in ulabels) {
-        # Disambiguate from Biobase::rowMedians.
-        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
-    }
-    output
-}
-
-#' @importFrom DelayedMatrixStats colRanks rowVars
-#' @importFrom DelayedArray DelayedArray
-.scaled_colranks_safe <- function(x, BPPARAM=SerialParam()) {
-    old <- getAutoBPPARAM()
-    setAutoBPPARAM(BPPARAM)
-    on.exit(setAutoBPPARAM(old))
-
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
-    out <- colRanks(DelayedArray(x), ties.method="average")
-    center <- (nrow(x) + 1)/2
-    sum.sq <- rowVars(out) * (nrow(x)-1)
-    sum.sq <- pmax(1e-8, sum.sq)
-    (out - center)/(sqrt(sum.sq) * 2)
 }

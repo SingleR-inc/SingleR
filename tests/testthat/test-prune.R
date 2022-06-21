@@ -27,10 +27,11 @@ test_that("validating per-cell check with finetuning", {
     )
     results <- DataFrame(scores=I(scores), 
         labels=colnames(scores)[max.col(scores)],
-        tuning.scores=I(fine.tune))
+        delta.next = fine.tune$first - fine.tune$second
+    )
 
-    expect_identical(pruneScores(results, min.diff.next=0.2), fine.tune$first < fine.tune$second + 0.2)
-    expect_identical(pruneScores(results, min.diff.next=0.5), fine.tune$first < fine.tune$second + 0.5)
+    expect_identical(pruneScores(results, min.diff.next=0.2), results$delta.next < 0.2)
+    expect_identical(pruneScores(results, min.diff.next=0.5), results$delta.next < 0.5)
 })
 
 test_that("validating per-label check", {

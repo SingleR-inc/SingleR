@@ -111,7 +111,6 @@ To speed up this demonstration, we will subset to the first 100 cells.
 sceG <- GrunPancreasData()
 sceG <- sceG[,colSums(counts(sceG)) > 0] # Remove libraries with no counts.
 sceG <- logNormCounts(sceG) 
-sceG <- sceG[,1:100]
 ```
 
 We then run `SingleR()` as described previously but with a marker detection mode that considers the variance of expression across cells.

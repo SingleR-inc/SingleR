@@ -125,6 +125,7 @@ aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000,
 #' @importFrom Matrix t rowMeans
 #' @importFrom BiocSingular runPCA
 #' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
+#' @importFrom DelayedMatrixStats rowVars
 #' @importFrom beachmat realizeFileBackedMatrix
 .aggregate_internal <- function(current, ncenters, power, rank, ntop, check.missing, BSPARAM, .seed) {
     oldseed <- .get_seed()
