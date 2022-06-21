@@ -202,6 +202,8 @@ length(trained$markers$unique)
 \code{\link{classifySingleR}}, where the output of this function gets used.
 
 \code{\link{combineRecomputedResults}}, to combine results from multiple references.
+
+\code{\link{rebuildIndex}}, to rebuild the index after external memory is invalidated.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.

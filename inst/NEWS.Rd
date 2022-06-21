@@ -8,7 +8,7 @@
 To that end, \code{combineCommonResults()} is also deprecated.
 \item \code{genes = "sd"} and its associated options in \code{trainSingleR()} are no longer supported.
 \item \code{first.labels} is no longer reported in \code{classifySingleR()}.
-\item Added another parallelization mechanism via \code{num.threads=} and OpenMP. 
+\item Added another parallelization mechanism via \code{num.threads=} and C++11 threads.
 This should be much more memory efficient than using \pkg{BiocParallel}.
 \item \code{combineRecomputedScores()} will automatically handle mismatches in the input references by default.
 }}
