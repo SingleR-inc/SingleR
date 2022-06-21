@@ -77,7 +77,6 @@ jobs:
         installs <- unlist(strsplit(deets[,c("Imports", "Depends", "Suggests", "LinkingTo")], ",\\s+"), use.names=FALSE)
         BiocManager::install(installs)
         BiocManager::install("BiocCheck")
-        BiocManager::install('LTLA/beachmat')
         saveRDS(file=".github/dependencies.rds", installs)
 
     - name: Determine the Hub directories
