@@ -1,6 +1,7 @@
-#ifndef SINGLEPP_SINGLEPP_HPP
-#define SINGLEPP_SINGLEPP_HPP
+#ifndef SINGLEPP_CLASSIFIER_HPP
+#define SINGLEPP_CLASSIFIER_HPP
 
+#include "tatami/tatami.hpp"
 #include "knncolle/knncolle.hpp"
 #include "build_indices.hpp"
 #include "annotate_cells.hpp"
@@ -10,9 +11,9 @@
 #include <stdexcept>
 
 /**
- * @file SinglePP.hpp
+ * @file Classifier.hpp
  *
- * @brief Defines the `SinglePP` class.
+ * @brief Defines the `Classifier` class.
  */
 
 namespace singlepp {
@@ -48,7 +49,7 @@ namespace singlepp {
  * Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage.
  * _Nat. Immunol._ 20, 163-172
  */
-class SinglePP {
+class Classifier {
 public:
     /**
      * @brief Default parameters for annotation.
@@ -91,13 +92,13 @@ public:
     /**
      * @param q Quantile to use to compute a per-label score from the correlations.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      *
      * Values of `q` closer to 0.5 focus on the behavior of the majority of a label's reference profiles.
      * Smaller values will be more sensitive to the presence of a subset of profiles that are more similar to the test cell,
      * which can be useful when the reference profiles themselves are heterogeneous.
      */
-    SinglePP& set_quantile(double q = Defaults::quantile) {
+    Classifier& set_quantile(double q = Defaults::quantile) {
         quantile = q;
         return *this;
     }
@@ -106,12 +107,12 @@ public:
      * @param t Threshold to use to select the top-scoring subset of labels during fine-tuning.
      * Larger values increase the chance of recovering the correct label at the cost of computational time.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      *
      * Needless to say, one should not set `t` to a value that is too large.
      * Otherwise, the first fine-tuning iteration would just contain all labels and there would be no reduction of the marker space.
      */
-    SinglePP& set_fine_tune_threshold(double t = Defaults::fine_tune_threshold) {
+    Classifier& set_fine_tune_threshold(double t = Defaults::fine_tune_threshold) {
         fine_tune_threshold = t;
         return *this;
     }
@@ -120,9 +121,9 @@ public:
      * @param f Whether to perform fine-tuning.
      * This can be disabled to improve speed at the cost of accuracy.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      */
-    SinglePP& set_fine_tune(bool f = Defaults::fine_tune) {
+    Classifier& set_fine_tune(bool f = Defaults::fine_tune) {
         fine_tune = f;
         return *this;
     }
@@ -134,9 +135,9 @@ public:
      * Setting it to a negative value will instruct `run()` to use all supplied markers.
      * This is useful in situations where the supplied markers have already been curated.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      */
-    SinglePP& set_top(int t = Defaults::top) {
+    Classifier& set_top(int t = Defaults::top) {
         top = t;
         return *this;
     }
@@ -145,9 +146,9 @@ public:
      * @param a Whether to use an approximate method to quickly find the quantile.
      * This sacrifices some accuracy for speed when labels have many reference profiles.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      */
-    SinglePP& set_approximate(bool a = Defaults::approximate) {
+    Classifier& set_approximate(bool a = Defaults::approximate) {
         approximate = a;
         return *this;
     }
@@ -627,6 +628,15 @@ public:
         return output;
     }
 };
+
+/**
+ * @cond
+ */
+// For back-compatibility.
+typedef Classifier SinglePP;
+/**
+ * @endcond
+ */
 
 }
 

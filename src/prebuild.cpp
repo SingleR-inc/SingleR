@@ -3,7 +3,7 @@
 
 #include "utils.h" // must be before raticate, singlepp includes.
 
-#include "singlepp/SinglePP.hpp"
+#include "singlepp/singlepp.hpp"
 #include "raticate/raticate.hpp"
 
 #include <vector>
@@ -14,7 +14,7 @@
 //[[Rcpp::export(rng=false)]]
 SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads) {
     num_threads = nthreads;
-    singlepp::SinglePP runner;
+    singlepp::Classifier runner;
 
     // Use all available markers; assume subsetting was applied on the R side.
     runner.set_top(-1).set_approximate(approximate);
@@ -38,7 +38,7 @@ SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers,
     auto built = runner.build(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.
-    return PrebuiltXPtr(new singlepp::SinglePP::Prebuilt(std::move(built)), true);
+    return PrebuiltXPtr(new singlepp::Classifier::Prebuilt(std::move(built)), true);
 }
 
 //[[Rcpp::export(rng=false)]]

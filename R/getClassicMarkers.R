@@ -51,6 +51,7 @@
 #' @export
 #' @importFrom S4Vectors selfmatch DataFrame
 #' @importFrom BiocParallel SerialParam bpnworkers
+#' @importFrom utils relist
 getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=bpnworkers(BPPARAM), BPPARAM=SerialParam()) { 
     if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
         bpstart(BPPARAM)
@@ -67,6 +68,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
     if (length(common)==0L && any(vapply(ref, nrow, 0L) > 0L)) {
         stop("no common row names across 'ref'")
     }
+    common <- as.character(common) # avoid problems with NULL rownames for zero-row inputs.
 
     for (i in seq_along(ref)) {
         current <- ref[[i]][common,,drop=FALSE]
@@ -75,38 +77,24 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
     }
     
     ulabels <- .get_levels(unlist(lapply(ref, colnames)))
-    available <- list()
+    labels <- list()
     for (i in seq_along(ref)) {
-        m <- match(ulabels, colnames(ref[[i]]))
-        available[[i]] <- !is.na(m)
-        ref[[i]] <- ref[[i]][,m,drop=FALSE]
-        colnames(ref[[i]]) <- ulabels
+        m <- match(colnames(ref[[i]]), ulabels)
+        labels[[i]] <- m - 1L
     }
-
-    # Identify all label combinations within each reference.
-    collated <- list()
-    for (i in seq_along(ref)) {
-        curavail <- which(available[[i]])
-        pairs <- expand.grid(first=curavail, second=curavail)
-        pairs <- pairs[pairs$first!=pairs$second,]
-        collated[[i]] <- DataFrame(pairs)
-    }
-    collated <- do.call(rbind, collated)
-    choices <- unique(collated)
 
     # Identify top hits based on the average (or sum, it doesn't matter)
     # of the log-fold changes between labels across references.
     if (is.null(de.n)) {
-        de.n <- round(500*(2/3)^log2(length(ulabels)))
+        de.n <- -1L
+    } else {
+        stopifnot(de.n > 0)
     }
-    stopifnot(de.n > 0)
 
     out <- find_classic_markers(nlabels=length(ulabels), 
         ngenes=length(common), 
-        left=choices$first - 1L, 
-        right=choices$second - 1L, 
+        labels=labels,
         ref=ref, 
-        available=available, 
         de_n=de.n,
         nthreads=num.threads
     )

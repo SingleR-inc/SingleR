@@ -2,7 +2,7 @@
 
 #include "utils.h" // must be before raticate, singlepp includes.
 
-#include "singlepp/SinglePP.hpp"
+#include "singlepp/singlepp.hpp"
 #include "raticate/raticate.hpp"
 
 #include <vector>
@@ -31,7 +31,7 @@ SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double q
     }
 
     // Running the analysis.
-    singlepp::SinglePP runner;
+    singlepp::Classifier runner;
     runner.set_quantile(quantile).set_fine_tune(use_fine_tune).set_fine_tune_threshold(fine_tune_threshold);
     runner.run(
         parsed.matrix.get(), 

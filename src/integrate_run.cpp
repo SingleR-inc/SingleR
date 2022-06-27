@@ -2,7 +2,7 @@
 
 #include "utils.h" // must be before raticate, singlepp includes.
 
-#include "singlepp/IntegratedScorer.hpp"
+#include "singlepp/singlepp.hpp"
 #include "raticate/raticate.hpp"
 
 #include <vector>

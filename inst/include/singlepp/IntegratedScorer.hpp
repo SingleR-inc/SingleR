@@ -23,7 +23,7 @@ namespace singlepp {
  * In situations where multiple reference datasets are available,
  * we would like to obtain a single prediction for each cell from all of those references.
  * This is somewhat tricky as the different references are likely to contain strong batch effects,
- * complicating the calculation of marker genes between labels from different references (and thus precluding direct use of the usual `SinglePP::run()`).
+ * complicating the calculation of marker genes between labels from different references (and thus precluding direct use of the usual `Classifier::run()`).
  * The labels themselves also tend to be inconsistent, e.g., different vocabularies and resolutions, making it difficult to define sensible groups in a combined "super-reference".
  *
  * To avoid these issues, we first perform classification within each reference individually.
@@ -32,7 +32,7 @@ namespace singlepp {
  * We then compute the correlation-based score between the test cell's expression profile and its predicted label from each reference, using that common set of genes.
  * The label with the highest score is considered the best representative across all references.
  *
- * This strategy is similar to `SinglePP` without fine-tuning, except that we are choosing between the best labels from each reference rather than all labels from one reference.
+ * This strategy is similar to `Classifier` without fine-tuning, except that we are choosing between the best labels from each reference rather than all labels from one reference.
  * The main idea is to create a common feature set so that the correlations can be reasonably compared across references.
  * Note that differences in the feature sets across references are tolerated by simply ignoring missing genes when computing the correlations.
  * This reduces the comparability of the scores as the effective feature set will vary a little (or a lot, depending) across references;
@@ -45,17 +45,17 @@ namespace singlepp {
  */
 class IntegratedScorer {
 private:
-    double quantile = SinglePP::Defaults::quantile;
+    double quantile = Classifier::Defaults::quantile;
 
 public:
     /**
      * @param q Quantile to use to compute a per-label score from the correlations.
      *
-     * @return A reference to this `SinglePP` object.
+     * @return A reference to this `Classifier` object.
      *
-     * See `SinglePP::set_quantile()` for more details.
+     * See `Classifier::set_quantile()` for more details.
      */
-    IntegratedScorer& set_quantile(double q = SinglePP::Defaults::quantile) {
+    IntegratedScorer& set_quantile(double q = Classifier::Defaults::quantile) {
         quantile = q;
         return *this;
     }
