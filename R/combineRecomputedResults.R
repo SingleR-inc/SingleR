@@ -149,7 +149,7 @@ combineRecomputedResults <- function(
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
-    irun <- integrate_run(test, collated, ibuilt, nthreads = num.threads) 
+    irun <- integrate_run(test, collated, ibuilt, quantile = quantile, nthreads = num.threads) 
     scores <- irun$scores
 
     # Organizing the outputs.

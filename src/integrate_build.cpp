@@ -10,8 +10,8 @@
 
 //[[Rcpp::export(rng=false)]]
 SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt, int nthreads) {
-    num_threads = nthreads;
     singlepp::IntegratedBuilder builder;
+    builder.set_num_threads(nthreads);
 
     size_t nrefs = references.size();
     std::vector<raticate::Parsed<double, int> > holding_mats;

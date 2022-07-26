@@ -8,8 +8,7 @@
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
-SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, int nthreads) {
-    num_threads = nthreads;
+SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads) {
     auto curtest = raticate::parse<double, int>(test, true);
     IntegratedXPtr iptr(integrated_build);
 
@@ -43,6 +42,7 @@ SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build
 
     // Running the integrated scoring.
     singlepp::IntegratedScorer scorer;
+    scorer.set_num_threads(nthreads).set_quantile(quantile);
     scorer.run(
         curtest.matrix.get(), 
         previous_results, 

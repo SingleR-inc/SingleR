@@ -26,7 +26,7 @@ struct Reference {
 };
 
 template<class Builder>
-std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, const int* labels, const std::vector<int>& subset, const Builder& build) {
+std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, const int* labels, const std::vector<int>& subset, const Builder& build, int nthreads) {
     size_t NC = ref->ncol();
     size_t nlabels = get_nlabels(NC, labels);
     std::vector<int> label_count(nlabels);
@@ -62,7 +62,7 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
     }
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-    #pragma omp parallel
+    #pragma omp parallel num_threads(nthreads)
     {
 #else
     SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
@@ -97,11 +97,11 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
 #ifndef SINGLEPP_CUSTOM_PARALLEL
     }
 #else
-    });
+    }, nthreads);
 #endif
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(nthreads)
     for (size_t l = 0; l < nlabels; ++l) {
 #else
     SINGLEPP_CUSTOM_PARALLEL(nlabels, [&](size_t start, size_t end) -> void {
@@ -118,7 +118,7 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
     }
 #else
     }
-    });
+    }, nthreads);
 #endif
 
     return nnrefs;

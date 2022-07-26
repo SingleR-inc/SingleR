@@ -1,8 +1,8 @@
-#ifndef SINGLEPP_INTEGRATOR_HPP
-#define SINGLEPP_INTEGRATOR_HPP
+#ifndef SINGLEPP_INTEGRATED_BUILDER_HPP
+#define SINGLEPP_INTEGRATED_BUILDER_HPP
 
-#include "Classifier.hpp"
 #include "scaled_ranks.hpp"
+#include "BasicBuilder.hpp"
 
 #include <vector>
 #include <unordered_set>
@@ -18,7 +18,7 @@
 namespace singlepp {
 
 /**
- * @brief Reference dataset prepared for integrated classification.
+ * @brief Single reference dataset prepared for integrated classification.
  */
 struct IntegratedReference {
     /**
@@ -54,20 +54,43 @@ struct IntegratedReference {
 /**
  * @brief Factory to prepare multiple references for integrated classification.
  *
- * For each reference dataset, we expect a `Classifier::Prebuilt` or `Classifier::PrebuiltIntersection` object,
+ * For each reference dataset, we expect a `BasicBuilder::Prebuilt` or `BasicBuilder::PrebuiltIntersection` object,
  * as well as the original data structures (matrix, labels, etc.) used to construct that object.
  * These values are passed into `add()` to register that dataset, which can be repeated multiple times for different references.
- * Finally, calling `finish()` will return a vector of `IntegratedReference` objects that can be used in `IntegratedScorer`.
+ * Finally, calling `finish()` will return a vector of integrated references that can be used in `IntegratedScorer::run()`.
  * 
  * The preparation process mostly involves checking that the gene indices are consistent across references.
  * This is especially true when each reference contains a different set of features that must be intersected with the features in the test dataset.
- * See the documentation for `IntegratedScorer` for more details about what the integration process entails.
+ * See the documentation for `IntegratedScorer` for more details on the classification based on the integrated references.
  */
 class IntegratedBuilder {
+private:
     std::vector<const tatami::Matrix<double, int>*> stored_matrices;
     std::vector<const int*> stored_labels;
     std::vector<IntegratedReference> references;
     std::vector<std::unordered_map<int, int> > gene_mapping;
+    int nthreads = Defaults::num_threads;
+
+public:
+    /**
+     * @brief Default parameters.
+     */
+    struct Defaults {
+        /**
+         * See `set_num_threads()` for details.
+         */
+        static constexpr int num_threads = 1;
+    };
+
+    /**
+     * @param n Number of threads to use.
+     *
+     * @return A reference to this `IntegratedBuilder` object.
+     */
+    IntegratedBuilder& set_num_threads(int n = Defaults::num_threads) {
+        nthreads = n;
+        return *this;
+    }
 
 private:
     void add_internal(const tatami::Matrix<double, int>* ref, const int* labels) {
@@ -223,13 +246,13 @@ public:
      * The number and identity of features should be identical to the test dataset to be classified in `IntegratedScorer`.
      * @param[in] labels Pointer to an array of label assignments.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
-     * @param built The built reference created by running `Classifier::build()` on `ref` and `labels`.
+     * @param built The built reference created by running `BasicBuilder::run()` on `ref` and `labels`.
      *
      * @return The reference dataset is registered for later use in `finish()`.
      *
      * `ref` and `labels` are expected to remain valid until `finish()` is called.
      */
-    void add(const tatami::Matrix<double, int>* ref, const int* labels, const Classifier::Prebuilt& built) {
+    void add(const tatami::Matrix<double, int>* ref, const int* labels, const BasicBuilder::Prebuilt& built) {
         add_internal(ref, labels, built.markers, built.subset);
         return;
     }
@@ -246,7 +269,7 @@ public:
      * This should contain a unique identifier for each row in `ref`, and should be comparable to `mat_id`.
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
-     * @param built The built reference created by running `Classifier::build()` on all preceding arguments.
+     * @param built The built reference created by running `BasicBuilder::run()` on all preceding arguments.
      *
      * @return The reference dataset is registered for later use in `finish()`.
      *
@@ -259,7 +282,7 @@ public:
         const tatami::Matrix<double, int>* ref, 
         const Id* ref_id,
         const int* labels, 
-        const Classifier::PrebuiltIntersection& built) 
+        const BasicBuilder::PrebuiltIntersection& built) 
     {
         add_internal(ref, labels, built.markers, built.mat_subset);
         references.back().check_availability = true;
@@ -285,7 +308,7 @@ public:
      * This should contain a unique identifier for each row in `ref`, and should be comparable to `mat_id`.
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
-     * @param built The built reference created by running `Classifier::build()` on `ref` and `labels`.
+     * @param built The built reference created by running `BasicBuilder::run()` on `ref` and `labels`.
      *
      * @return The reference dataset is registered for later use in `finish()`.
      *
@@ -298,19 +321,23 @@ public:
         const tatami::Matrix<double, int>* ref, 
         const Id* ref_id,
         const int* labels, 
-        const Classifier::Prebuilt& built) 
+        const BasicBuilder::Prebuilt& built) 
     {
         add_internal(mat_nrow, mat_id, ref, ref_id, labels, built.markers, built.subset);
     }
 
 public:
     /**
-     * @return A vector of integrated references, for use in `IntegratedScorer::run()`.
+     * @return A vector of `IntegratedReference` objects.
+     * Each object corresponds to the reference used in an `add()` call, in the same order.
      *
      * This function should only be called once, after all reference datasets have been registered with `add()`.
      * Any further invocations of this function will not be valid.
      */
     std::vector<IntegratedReference> finish() {
+        /**
+         * @cond
+         */
         // Identify the global set of all genes that will be in use here.
         std::unordered_set<int> in_use_tmp;
         for (const auto& ref : references) {
@@ -355,7 +382,7 @@ public:
                 }
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-                #pragma omp parallel
+                #pragma omp parallel num_threads(nthreads)
                 {
 #else
                 SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
@@ -388,7 +415,7 @@ public:
 #ifndef SINGLEPP_CUSTOM_PARALLEL
                 }
 #else
-                });
+                }, nthreads);
 #endif
 
             } else {
@@ -418,7 +445,7 @@ public:
                 last = std::max(last + 1, first);
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-                #pragma omp parallel
+                #pragma omp parallel num_threads(nthreads)
                 {
 #else
                 SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
@@ -451,10 +478,13 @@ public:
 #ifndef SINGLEPP_CUSTOM_PARALLEL
                 }
 #else
-                });
+                }, nthreads);
 #endif
             }
         }
+        /**
+         * @endcond
+         */
 
         return std::move(references);
     }

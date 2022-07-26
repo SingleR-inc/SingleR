@@ -13,11 +13,11 @@
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers, bool approximate, int nthreads) {
-    num_threads = nthreads;
-    singlepp::Classifier runner;
+    singlepp::BasicBuilder builder;
+    builder.set_num_threads(nthreads);
 
     // Use all available markers; assume subsetting was applied on the R side.
-    runner.set_top(-1).set_approximate(approximate);
+    builder.set_top(-1).set_approximate(approximate);
     
     // Setting up the markers.
     singlepp::Markers markers2(markers.size());
@@ -35,10 +35,10 @@ SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers,
 
     // Building the indices.
     auto parsed = raticate::parse<double, int>(ref, true);
-    auto built = runner.build(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
+    auto built = builder.run(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.
-    return PrebuiltXPtr(new singlepp::Classifier::Prebuilt(std::move(built)), true);
+    return PrebuiltXPtr(new singlepp::BasicBuilder::Prebuilt(std::move(built)), true);
 }
 
 //[[Rcpp::export(rng=false)]]

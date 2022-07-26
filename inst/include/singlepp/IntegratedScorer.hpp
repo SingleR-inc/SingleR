@@ -3,6 +3,8 @@
 
 #include "compute_scores.hpp"
 #include "scaled_ranks.hpp"
+#include "tatami/tatami.hpp"
+#include "Classifier.hpp"
 #include "IntegratedBuilder.hpp"
 
 #include <vector>
@@ -32,7 +34,8 @@ namespace singlepp {
  * We then compute the correlation-based score between the test cell's expression profile and its predicted label from each reference, using that common set of genes.
  * The label with the highest score is considered the best representative across all references.
  *
- * This strategy is similar to `Classifier` without fine-tuning, except that we are choosing between the best labels from each reference rather than all labels from one reference.
+ * This strategy is similar to using `Classifier::run()` without fine-tuning, 
+ * except that we are choosing between the best labels from all references rather than between all labels from one reference.
  * The main idea is to create a common feature set so that the correlations can be reasonably compared across references.
  * Note that differences in the feature sets across references are tolerated by simply ignoring missing genes when computing the correlations.
  * This reduces the comparability of the scores as the effective feature set will vary a little (or a lot, depending) across references;
@@ -44,21 +47,48 @@ namespace singlepp {
  * by just passing along the existing labels and leaving it to the user's interpretation.
  */
 class IntegratedScorer {
-private:
-    double quantile = Classifier::Defaults::quantile;
-
 public:
+    /**
+     * @brief Default parameters.
+     */
+    struct Defaults {
+        /**
+         * See `set_quantile()` for details.
+         */
+        static constexpr double quantile = Classifier::Defaults::quantile;
+
+        /**
+         * See `set_num_threads()` for details.
+         */
+        static constexpr int num_threads = 1;
+    };
+
     /**
      * @param q Quantile to use to compute a per-label score from the correlations.
      *
-     * @return A reference to this `Classifier` object.
+     * @return A reference to this `IntegratedScorer` object.
      *
      * See `Classifier::set_quantile()` for more details.
      */
-    IntegratedScorer& set_quantile(double q = Classifier::Defaults::quantile) {
+    IntegratedScorer& set_quantile(double q = Defaults::quantile) {
         quantile = q;
         return *this;
     }
+
+    /**
+     * @param n Number of threads to use.
+     * By default, this is inherited from the parent `IntegratedBuilder` object. 
+     *
+     * @return A reference to this `IntegratedScorer` object.
+     */
+    IntegratedScorer& set_num_threads(int n = Defaults::num_threads) {
+        nthreads = n;
+        return *this;
+    }
+
+private:
+    double quantile = Defaults::quantile;
+    int nthreads = Defaults::num_threads;
 
 private:
     /* Here, we've split out some of the functions for easier reading.
@@ -67,7 +97,7 @@ private:
 
     static void build_universe(int cell,
         const std::vector<const int*>& assigned,
-        const std::vector<IntegratedReference>& references, 
+        const std::vector<IntegratedReference>& references,
         std::unordered_set<int>& uset, 
         std::vector<int>& uvec) 
     {
@@ -108,7 +138,7 @@ private:
         return;
     }
 
-    void prepare_mapping(
+    static void prepare_mapping(
         const IntegratedReference& ref, 
         const std::vector<int>& universe,
         std::unordered_map<int, int>& mapping)
@@ -165,12 +195,15 @@ public:
         int* best,
         std::vector<double*>& scores,
         double* delta)
-    {
+    const {
+        /**
+         * @cond
+         */
         size_t NR = mat->nrow();
         size_t NC = mat->ncol();
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-        #pragma omp parallel
+        #pragma omp parallel num_threads(nthreads)
         {
 #else
         SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
@@ -257,8 +290,11 @@ public:
 #ifndef SINGLEPP_CUSTOM_PARALLEL
         }
 #else
-        });
+        }, nthreads);
 #endif
+        /**
+         * @endcond
+         */
 
         return;
     }
@@ -314,11 +350,7 @@ public:
      *
      * @return A `Results` object containing the assigned labels and scores.
      */
-    Results run( 
-        const tatami::Matrix<double, int>* mat,
-        const std::vector<const int*>& assigned,
-        const std::vector<IntegratedReference>& references)
-    {
+    Results run(const tatami::Matrix<double, int>* mat, const std::vector<const int*>& assigned, const std::vector<IntegratedReference>& references) const {
         Results output(mat->ncol(), references.size());
         auto scores = output.scores_to_pointers();
         run(mat, assigned, references, output.best.data(), scores, output.delta.data());

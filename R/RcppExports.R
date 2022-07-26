@@ -9,8 +9,8 @@ integrate_build <- function(test_features, references, ref_ids, labels, prebuilt
     .Call('_SingleR_integrate_build', PACKAGE = 'SingleR', test_features, references, ref_ids, labels, prebuilt, nthreads)
 }
 
-integrate_run <- function(test, results, integrated_build, nthreads) {
-    .Call('_SingleR_integrate_run', PACKAGE = 'SingleR', test, results, integrated_build, nthreads)
+integrate_run <- function(test, results, integrated_build, quantile, nthreads) {
+    .Call('_SingleR_integrate_run', PACKAGE = 'SingleR', test, results, integrated_build, quantile, nthreads)
 }
 
 #' @importFrom Rcpp sourceCpp

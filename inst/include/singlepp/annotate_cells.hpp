@@ -25,7 +25,8 @@ inline void annotate_cells_simple(
     double threshold,
     int* best, 
     std::vector<double*>& scores,
-    double* delta) 
+    double* delta,
+    int nthreads)
 {
     size_t first = 0, last = 0;
     if (num_subset) {
@@ -57,7 +58,7 @@ inline void annotate_cells_simple(
     }
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-    #pragma omp parallel
+    #pragma omp parallel num_threads(nthreads)
     {
 #else
     SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
@@ -127,7 +128,7 @@ inline void annotate_cells_simple(
 #ifndef SINGLEPP_CUSTOM_PARALLEL
     }
 #else
-    });
+    }, nthreads);
 #endif
 
     return;

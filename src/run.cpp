@@ -11,7 +11,6 @@
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
-    num_threads = nthreads;
     auto parsed = raticate::parse<double, int>(test, true);
     PrebuiltXPtr built(prebuilt);
 
@@ -31,7 +30,8 @@ SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double q
     }
 
     // Running the analysis.
-    singlepp::Classifier runner;
+    singlepp::BasicScorer runner;
+    runner.set_num_threads(nthreads);
     runner.set_quantile(quantile).set_fine_tune(use_fine_tune).set_fine_tune_threshold(fine_tune_threshold);
     runner.run(
         parsed.matrix.get(), 

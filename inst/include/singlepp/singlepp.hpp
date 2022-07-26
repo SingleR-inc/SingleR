@@ -14,4 +14,9 @@
 #include "ChooseClassicMarkers.hpp"
 #include "load_references.hpp"
 
+/**
+ * @namespace singlepp
+ * Cell type classification using the SingleR algorithm in C++.
+ */
+
 #endif

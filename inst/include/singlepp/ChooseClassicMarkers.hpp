@@ -37,10 +37,16 @@ public:
          * See `set_number()` for more details.
          */
         static constexpr int number = -1;
+
+        /**
+         * See `set_num_threads()` for more details.
+         */
+        static constexpr int num_threads = 1;
     };
 
 private:
     int number = Defaults::number;
+    int nthreads = Defaults::num_threads;
 
 public:
     /**
@@ -67,12 +73,22 @@ public:
         return std::round(500.0 * std::pow(2.0/3.0, std::log(static_cast<double>(nlabels)) / std::log(2.0)));
     }
 
+    /**
+     * @param n Number of threads to use.
+     *
+     * @return A reference to this `ChooseClassicMarkers` object.
+     */
+    ChooseClassicMarkers& set_num_threads(int n = Defaults::num_threads) {
+        nthreads = n;
+        return *this;
+    }
+
 public:
     /**
      * @tparam Matrix A **tatami** matrix.
      * @tparam Label Integer type for the label identity.
      *
-     * @param references Vector of representative matrices.
+     * @param representatives Vector of representative matrices.
      * Each matrix should contain one column per label; each column should have a representative log-expression profile for that label.
      * All matrices should have the same number of rows, corresponding to the same features.
      * @param labels Vector of pointers of length equal to `representatives`.
@@ -84,6 +100,9 @@ public:
      */
     template<class Matrix, typename Label>
     Markers run(const std::vector<const Matrix*>& representatives, const std::vector<const Label*>& labels) const {
+        /**
+         * @cond
+         */
         size_t nrefs = representatives.size();
         if (nrefs != labels.size()) {
             throw std::runtime_error("'representatives' and 'labels' should have the same length");
@@ -144,12 +163,12 @@ public:
         if (number < 0) {
             actual_number = std::round(500.0 * std::pow(2.0/3.0, std::log(static_cast<double>(nlabels)) / std::log(2.0)));
         } 
-        if (actual_number > ngenes) {
+        if (actual_number > static_cast<int>(ngenes)) {
             actual_number = ngenes;
         }
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
-        #pragma omp parallel
+        #pragma omp parallel num_threads(nthreads)
         {
 #else
         SINGLEPP_CUSTOM_PARALLEL(npairs, [&](size_t start, size_t end) -> void {
@@ -231,8 +250,11 @@ public:
 #ifndef SINGLEPP_CUSTOM_PARALLEL
         }
 #else    
-        });
+        }, nthreads);
 #endif        
+        /**
+         * @endcond
+         */
 
         return output;
     }

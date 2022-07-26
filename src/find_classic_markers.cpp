@@ -37,9 +37,8 @@ Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp
         lab_ptrs.push_back(static_cast<const int*>(lab_vec.back().begin()));
     }
     
-    num_threads = nthreads;
     singlepp::ChooseClassicMarkers mrk;
-    mrk.set_number(de_n);
+    mrk.set_number(de_n).set_num_threads(nthreads);
     auto store = mrk.run(ref_ptrs, lab_ptrs);
 
     // Returning everything in R space.

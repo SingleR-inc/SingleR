@@ -41,15 +41,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // integrate_run
-SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, int nthreads);
-RcppExport SEXP _SingleR_integrate_run(SEXP testSEXP, SEXP resultsSEXP, SEXP integrated_buildSEXP, SEXP nthreadsSEXP) {
+SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads);
+RcppExport SEXP _SingleR_integrate_run(SEXP testSEXP, SEXP resultsSEXP, SEXP integrated_buildSEXP, SEXP quantileSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::RObject >::type test(testSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type results(resultsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type integrated_build(integrated_buildSEXP);
+    Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(integrate_run(test, results, integrated_build, nthreads));
+    rcpp_result_gen = Rcpp::wrap(integrate_run(test, results, integrated_build, quantile, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -107,7 +108,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
     {"_SingleR_integrate_build", (DL_FUNC) &_SingleR_integrate_build, 6},
-    {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 4},
+    {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 5},
     {"_SingleR_prebuild", (DL_FUNC) &_SingleR_prebuild, 5},
     {"_SingleR_get_subset", (DL_FUNC) &_SingleR_get_subset, 1},
     {"_SingleR_is_valid_built", (DL_FUNC) &_SingleR_is_valid_built, 1},
