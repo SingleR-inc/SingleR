@@ -109,7 +109,7 @@ plotScoreDistribution <- function(
     if (!is.null(show)) {
         show <- match.arg(show, c("scores", "delta.med", "delta.next"))
         if (show!="scores") {
-            .Deprecated(new="plotDeltaDistrbiution")
+            .Deprecated(new="plotDeltaDistribution")
             return(plotDeltaDistribution(results, show=show, labels.use=labels.use,
                 references=scores.use, size=size, ncol=ncol, dots.on.top=dots.on.top,
                 this.color=this.color, pruned.color=pruned.color, grid.vars=grid.vars))
