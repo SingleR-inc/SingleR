@@ -171,17 +171,14 @@ public:
         #pragma omp parallel num_threads(nthreads)
         {
 #else
-        SINGLEPP_CUSTOM_PARALLEL(npairs, [&](size_t start, size_t end) -> void {
+        SINGLEPP_CUSTOM_PARALLEL([&](int, size_t start, size_t end) -> void {
 #endif
             
             std::vector<std::pair<double, int> > sorter(ngenes), sorted_copy(ngenes);
-            std::vector<typename Matrix::data_type> rbuffer(ngenes), lbuffer(ngenes);
-
-            std::vector<std::shared_ptr<tatami::Workspace> > rworks(nrefs), lworks(nrefs);
-            for (size_t r = 0; r < nrefs; ++r) {
-                rworks[r] = representatives[r]->new_workspace(false);
-                lworks[r] = representatives[r]->new_workspace(false);
-            }
+            typedef typename  Matrix::value_type Value_;
+            typedef typename  Matrix::index_type Index_;
+            std::vector<Value_> rbuffer(ngenes), lbuffer(ngenes);
+            std::vector<std::shared_ptr<tatami::FullDenseExtractor<Value_, Index_> > > rworks(nrefs), lworks(nrefs);
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
             #pragma omp for
@@ -207,8 +204,18 @@ public:
                         continue;                            
                     }
 
-                    auto lptr = representatives[i]->column(lcol, lbuffer.data(), lworks[i].get());
-                    auto rptr = representatives[i]->column(rcol, rbuffer.data(), rworks[i].get());
+                    // Initialize extractors as needed.
+                    auto& lwrk = lworks[i];
+                    if (!lwrk) {
+                        lwrk = representatives[i]->dense_column();
+                    }
+                    auto lptr = lwrk->fetch(lcol, lbuffer.data());
+
+                    auto& rwrk = rworks[i];
+                    if (!rwrk) {
+                        rwrk = representatives[i]->dense_column();
+                    }
+                    auto rptr = rwrk->fetch(rcol, rbuffer.data());
 
                     auto sIt = sorter.begin();
                     for (int g = 0; g < ngenes; ++g, ++lptr, ++rptr, ++sIt) {
@@ -250,7 +257,7 @@ public:
 #ifndef SINGLEPP_CUSTOM_PARALLEL
         }
 #else    
-        }, nthreads);
+        }, npairs, nthreads);
 #endif        
         /**
          * @endcond

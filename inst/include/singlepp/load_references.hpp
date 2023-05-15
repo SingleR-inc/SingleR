@@ -7,7 +7,7 @@
 
 #include "Markers.hpp"
 #include "byteme/RawFileReader.hpp"
-#include "tatami/base/DenseMatrix.hpp"
+#include "tatami/base/dense/DenseMatrix.hpp"
 
 #ifdef SINGLEPP_USE_ZLIB
 #include "byteme/GzipFileReader.hpp"

@@ -16,13 +16,18 @@ Intersection intersect_features(size_t mat_n, const Id* mat_id, size_t ref_n, co
     std::unordered_map<Id, std::pair<int, int> > intersection;
     intersection.reserve(mat_n);
     for (size_t i = 0; i < mat_n; ++i) {
-        intersection[mat_id[i]] = std::make_pair<int, int>(i, -1);
+        if (intersection.find(mat_id[i]) == intersection.end()) { // only using the first occurrence of each ID in mat_id.
+            intersection[mat_id[i]] = std::make_pair<int, int>(i, -1);
+        }
     }
 
     for (size_t i = 0; i < ref_n; ++i) {
         auto it = intersection.find(ref_id[i]);
-        if (it != intersection.end()) {
-            (it->second).second = i;
+        if (it != intersection.end()) { // only using the first occurrence of each ID in ref_id.
+            auto& target = (it->second).second;
+            if (target < 0) {
+                target = i;
+            }
         }
     }
 
@@ -34,7 +39,6 @@ Intersection intersect_features(size_t mat_n, const Id* mat_id, size_t ref_n, co
         }
     }
 
-    std::sort(pairings.begin(), pairings.end());
     return pairings;
 }
 

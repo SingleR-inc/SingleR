@@ -13,8 +13,8 @@ extern int num_threads;
 #include "raticate/raticate.hpp"
 
 template<class Function>
-void parallelize(size_t n, Function function, int num_threads) {
-    raticate::parallelize<double, int>(n, function, num_threads);
+void parallelize(Function function, int ntasks, int num_threads) {
+    raticate::parallelize<double, int>(std::move(function), ntasks, num_threads);
 }
 
 // must be before singlepp includes.
@@ -25,6 +25,6 @@ void parallelize(size_t n, Function function, int num_threads) {
 
 typedef Rcpp::XPtr<singlepp::BasicBuilder::Prebuilt> PrebuiltXPtr;
 
-typedef Rcpp::XPtr<std::vector<singlepp::IntegratedReference> > IntegratedXPtr;
+typedef Rcpp::XPtr<singlepp::IntegratedReferences> IntegratedXPtr;
 
 #endif

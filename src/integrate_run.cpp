@@ -30,7 +30,7 @@ SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
-    size_t nrefs = iptr->size();
+    size_t nrefs = iptr->num_references();
     Rcpp::NumericMatrix scores(ncells, nrefs);
     std::vector<double*> scores_ptr(nrefs);
     if (nrefs) {

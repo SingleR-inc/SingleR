@@ -39,5 +39,5 @@ SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, R
     }
 
     auto finished = builder.finish();
-    return IntegratedXPtr(new std::vector<singlepp::IntegratedReference>(std::move(finished)), true);
+    return IntegratedXPtr(new singlepp::IntegratedReferences(std::move(finished)), true);
 }

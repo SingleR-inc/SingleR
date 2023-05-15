@@ -11,21 +11,70 @@ namespace singlepp {
 template<typename Stat, typename Index>
 using RankedVector = std::vector<std::pair<Stat, Index> >;
 
-template<typename Stat, typename Index>
-void fill_ranks(size_t num_subset, const int* subset, const Stat* ptr, RankedVector<Stat, Index>& vec, int offset = 0) {
-    for (size_t s = 0; s < num_subset; ++s, ++subset) {
-        vec[s].first = ptr[*subset - offset];
-        vec[s].second = s;
-    }
-    std::sort(vec.begin(), vec.end());
-    return;
-}
+// This class sanitizes any user-provided subsets so that we can provide a
+// sorted and unique subset to the tatami extractor. We then undo the sorting
+// to use the original indices in the rank filler. This entire thing is
+// necessary as the behavior of the subsets isn't something that the user can
+// easily control (e.g., if the reference/test datasets do not use the same
+// feature ordering, in which case the subset is necessarily unsorted).
+struct SubsetSorter {
+    bool use_sorted_subset = false;
+    const std::vector<int>* original_subset;
+    std::vector<int> sorted_subset, original_indices;
 
-template<typename Stat, typename Index>
-void fill_ranks(const std::vector<int>& subset, const Stat* ptr, RankedVector<Stat, Index>& vec, int offset = 0) {
-    fill_ranks(subset.size(), subset.data(), ptr, vec, offset);
-    return;
-}
+    SubsetSorter(const std::vector<int>& sub) : original_subset(&sub) {
+        size_t num_subset = sub.size();
+        for (size_t i = 1; i < num_subset; ++i) {
+            if (sub[i] <= sub[i-1]) {
+                use_sorted_subset = true;
+                break;
+            }
+        }
+
+        if (use_sorted_subset) {
+            std::vector<std::pair<int, int> > store;
+            store.reserve(num_subset);
+            for (size_t i = 0; i < num_subset; ++i) {
+                store.emplace_back(sub[i], i);
+            }
+            
+            std::sort(store.begin(), store.end());
+            sorted_subset.reserve(num_subset);
+            original_indices.resize(num_subset);
+            for (const auto& s : store) {
+                if (sorted_subset.empty() || sorted_subset.back() != s.first) {
+                    sorted_subset.push_back(s.first);
+                }
+                original_indices[s.second] = sorted_subset.size() - 1;
+            }
+        }
+    }
+
+    const std::vector<int>& extraction_subset() const {
+        if (use_sorted_subset) {
+            return sorted_subset;
+        } else {
+            return *original_subset;
+        }
+    }
+
+    void fill_ranks(const double* ptr, RankedVector<double, int>& vec) const {
+        if (use_sorted_subset) {
+            size_t num = original_indices.size();
+            for (size_t s = 0; s < num; ++s) {
+                vec[s].first = ptr[original_indices[s]];
+                vec[s].second = s;
+            }
+        } else {
+            size_t num = original_subset->size();
+            for (size_t s = 0; s < num; ++s, ++ptr) {
+                vec[s].first = *ptr;
+                vec[s].second = s;
+            }
+        }
+        std::sort(vec.begin(), vec.end());
+    }
+};
 
 template<typename Stat, typename Index>
 void scaled_ranks(const RankedVector<Stat, Index>& collected, double* outgoing) { 

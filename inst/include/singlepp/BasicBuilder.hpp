@@ -227,15 +227,53 @@ public:
     };
 
     /**
+     * @param intersection Vector defining the intersection of features betweent the test and reference datasets.
+     * Each entry is a pair where the first element is the row index in the test matrix,
+     * and the second element is the row index for the corresponding feature in the reference matrix.
+     * Each row index for either matrix should occur no more than once in `intersection`.
+     * @param ref An expression matrix for the reference expression profiles, where rows are genes and columns are cells.
+     * This should have non-zero columns.
+     * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
+     * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
+     * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels, see `Markers` for more details.
+     *
+     * @return A `PrebuiltIntersection` instance that can be used in `run()` for annotation of a test dataset with the same order of genes as specified in `mat_id`.
+     *
+     * This method deals with the case where the genes are not in the same order and number across the test and reference datasets.
+     * It finds the intersection of genes and then prepares the references accordingly.
+     */
+    PrebuiltIntersection run(
+        std::vector<std::pair<int, int> > intersection,
+        const tatami::Matrix<double, int>* ref, 
+        const int* labels,
+        Markers markers)
+    const {
+        // Sorting it if it wasn't already.
+        for (size_t i = 1, end = intersection.size(); i < end; ++i) {
+            if (intersection[i] < intersection[i-1]) {
+                std::sort(intersection.begin(), intersection.end());
+                break;
+            }
+        }
+
+        subset_markers(intersection, markers, top);
+        auto pairs = unzip(intersection);
+        auto subref = build_internal(ref, labels, pairs.second);
+        return PrebuiltIntersection(std::move(markers), std::move(pairs.first), std::move(pairs.second), std::move(subref));
+    }
+
+    /**
      * @tparam Id Gene identifier for each row.
      *
      * @param mat_nrow Number of rows (genes) in the test dataset.
      * @param[in] mat_id Pointer to an array of identifiers of length equal to `mat_nrow`.
      * This should contain a unique identifier for each row of `mat` (typically a gene name or index).
+     * If any duplicate IDs are present, only the first occurrence is used.
      * @param ref An expression matrix for the reference expression profiles, where rows are genes and columns are cells.
      * This should have non-zero columns.
      * @param[in] ref_id Pointer to an array of identifiers of length equal to the number of rows of any `ref`.
      * This should contain a unique identifier for each row in `ref`, and should be comparable to `mat_id`.
+     * If any duplicate IDs are present, only the first occurrence is used.
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels, see `Markers` for more details.
@@ -255,10 +293,7 @@ public:
         Markers markers) 
     const {
         auto intersection = intersect_features(mat_nrow, mat_id, ref->nrow(), ref_id);
-        subset_markers(intersection, markers, top);
-        auto pairs = unzip(intersection);
-        auto subref = build_internal(ref, labels, pairs.second);
-        return PrebuiltIntersection(std::move(markers), std::move(pairs.first), std::move(pairs.second), std::move(subref));
+        return run(std::move(intersection), ref, labels, std::move(markers));
     }
 };
 

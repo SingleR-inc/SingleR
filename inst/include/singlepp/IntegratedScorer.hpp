@@ -95,16 +95,18 @@ private:
      * Otherwise everything would land in a single mega-function.
      */
 
-    static void build_universe(int cell,
+    static void build_miniverse(int cell,
         const std::vector<const int*>& assigned,
-        const std::vector<IntegratedReference>& references,
+        const IntegratedReferences& built,
         std::unordered_set<int>& uset, 
         std::vector<int>& uvec) 
     {
         uset.clear();
-        for (size_t r = 0; r < references.size(); ++r) {
+        size_t nref = built.num_references();
+
+        for (size_t r = 0; r < nref; ++r) {
             auto best = assigned[r][cell];
-            const auto& markers = references[r].markers[best];
+            const auto& markers = built.markers[r][best];
             uset.insert(markers.begin(), markers.end());
         }
 
@@ -114,43 +116,44 @@ private:
         return;
     }
 
+    template<class Extractor_>
     static void fill_ranks(
-        const tatami::Matrix<double, int>* mat, 
-        const std::vector<int>& universe, 
+        Extractor_* wrk,
+        const std::vector<int>& miniverse,        
         int cell,
         std::vector<double>& buffer,
-        tatami::Workspace* wrk,
         RankedVector<double, int>& data_ranked) 
     {
         data_ranked.clear();
-        if (universe.empty()) {
+        if (miniverse.empty()) {
             return;
         }
 
-        size_t first = universe.front();
-        size_t last = universe.back() + 1;
-        auto ptr = mat->column(cell, buffer.data(), first, last, wrk);
-
-        for (auto u : universe) {
-            data_ranked.emplace_back(ptr[u - first], u);                    
+        auto ptr = wrk->fetch(cell, buffer.data());
+        for (auto u : miniverse) {
+            data_ranked.emplace_back(ptr[u], u);
         }
+
         std::sort(data_ranked.begin(), data_ranked.end());
         return;
     }
 
     static void prepare_mapping(
-        const IntegratedReference& ref, 
-        const std::vector<int>& universe,
+        const IntegratedReferences& built, 
+        size_t ref,
+        const std::vector<int>& miniverse,
         std::unordered_map<int, int>& mapping)
     {
         mapping.clear();
-        if (ref.check_availability) {
+        if (built.check_availability[ref]) {
+            const auto& cur_available = built.available[ref];
+
             // If we need to check availability, we reconstruct the mapping
             // for the intersection of features available in this reference.
             // We then calculate the scaled ranks for the data.
             int counter = 0;
-            for (auto c : universe) {
-                if (ref.available.find(c) != ref.available.end()) {
+            for (auto c : miniverse) {
+                if (cur_available.find(c) != cur_available.end()) {
                     mapping[c] = counter;
                     ++counter;
                 }
@@ -160,8 +163,8 @@ private:
             // much simpler. Technically, we could do this in the outer
             // loop if none of the references required checks, but this
             // seems like a niche optimization in practical settings.
-            for (size_t s = 0; s < universe.size(); ++s) {
-                auto u = universe[s];
+            for (size_t s = 0; s < miniverse.size(); ++s) {
+                auto u = miniverse[s];
                 mapping[u] = s;
             }
         } 
@@ -175,7 +178,7 @@ public:
      * @param[in] assigned Vector of pointers of length equal to the number of references.
      * Each pointer should point to an array of length equal to the number of columns in `mat`,
      * containing the assigned label for each column in each reference.
-     * @param references Vector of integrated references produced by `IntegratedBuilder::finish()`.
+     * @param built Set of integrated references produced by `IntegratedBuilder::finish()`.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
      * This is filled with the index of the reference with the best label for each cell.
      * @param[out] scores Vector of pointers of length equal to the number of references.
@@ -191,26 +194,19 @@ public:
     void run(
         const tatami::Matrix<double, int>* mat,
         const std::vector<const int*>& assigned,
-        const std::vector<IntegratedReference>& references,
+        const IntegratedReferences& built,
         int* best,
         std::vector<double*>& scores,
         double* delta)
     const {
-        /**
-         * @cond
-         */
-        size_t NR = mat->nrow();
-        size_t NC = mat->ncol();
+        auto NR = mat->nrow();
+        auto nref = built.num_references();
 
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-        #pragma omp parallel num_threads(nthreads)
-        {
-#else
-        SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
-#endif
-            
-            std::vector<double> buffer(NR);
-            auto wrk = mat->new_workspace(false);
+        tatami::parallelize([&](int, int start, int len) -> void {
+            // We perform an indexed extraction, so all subsequent indices
+            // will refer to indices into this subset (i.e., 'built.universe').
+            auto wrk = tatami::consecutive_extractor<false, false>(mat, start, len, built.universe); 
+            std::vector<double> buffer(wrk->index_length);
 
             RankedVector<double, int> data_ranked, data_ranked2;
             data_ranked.reserve(NR);
@@ -220,28 +216,21 @@ public:
 
             std::vector<double> scaled_data(NR);
             std::vector<double> scaled_ref(NR);
-            std::unordered_set<int> universe_tmp;
-            std::vector<int> universe;
+            std::unordered_set<int> miniverse_tmp;
+            std::vector<int> miniverse;
             std::unordered_map<int, int> mapping;
             std::vector<double> all_correlations;
 
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-            #pragma omp for
-            for (size_t i = 0; i < NC; ++i) {
-#else
-            for (size_t i = start; i < end; ++i) {
-#endif
-
-                build_universe(i, assigned, references, universe_tmp, universe);
-                fill_ranks(mat, universe, i, buffer, wrk.get(), data_ranked);
+            for (int i = start, end = start + len; i < end; ++i) {
+                build_miniverse(i, assigned, built, miniverse_tmp, miniverse);
+                fill_ranks(wrk.get(), miniverse, i, buffer, data_ranked);
 
                 // Scanning through each reference and computing the score for the best group.
                 double best_score = -1000, next_best = -1000;
                 int best_ref = 0;
-                
-                for (size_t r = 0; r < references.size(); ++r) {
-                    const auto& ref = references[r];
-                    prepare_mapping(ref, universe, mapping);
+
+                for (size_t r = 0; r < nref; ++r) {
+                    prepare_mapping(built, r, miniverse, mapping);
 
                     scaled_ref.resize(mapping.size());
                     scaled_data.resize(mapping.size());
@@ -255,7 +244,7 @@ public:
                     // already contains sorted pairs where the indices refer to the
                     // rows of the original data matrix.
                     auto best = assigned[r][i];
-                    const auto& best_ranked = ref.ranked[best];
+                    const auto& best_ranked = built.ranked[r][best];
                     all_correlations.clear();
 
                     for (size_t s = 0; s < best_ranked.size(); ++s) {
@@ -282,21 +271,12 @@ public:
                 if (best) {
                     best[i] = best_ref;
                 }
-                if (delta && references.size() > 1) {
+                if (delta && nref > 1) {
                     delta[i] = best_score - next_best;
                 }
             }
 
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-        }
-#else
-        }, nthreads);
-#endif
-        /**
-         * @endcond
-         */
-
-        return;
+        }, mat->ncol(), nthreads);
     }
 
 public:
@@ -346,14 +326,14 @@ public:
      * @param[in] assigned Vector of pointers of length equal to the number of references.
      * Each pointer should point to an array of length equal to the number of columns in `mat`,
      * containing the assigned label for each column in each reference.
-     * @param references Vector of integrated references produced by `IntegratedBuilder::finish()`.
+     * @param built Set of integrated references produced by `IntegratedBuilder::finish()`.
      *
      * @return A `Results` object containing the assigned labels and scores.
      */
-    Results run(const tatami::Matrix<double, int>* mat, const std::vector<const int*>& assigned, const std::vector<IntegratedReference>& references) const {
-        Results output(mat->ncol(), references.size());
+    Results run(const tatami::Matrix<double, int>* mat, const std::vector<const int*>& assigned, const IntegratedReferences& built) const {
+        Results output(mat->ncol(), built.num_references());
         auto scores = output.scores_to_pointers();
-        run(mat, assigned, references, output.best.data(), scores, output.delta.data());
+        run(mat, assigned, built, output.best.data(), scores, output.delta.data());
         return output;
     }
 };

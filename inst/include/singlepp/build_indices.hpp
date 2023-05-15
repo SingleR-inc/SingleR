@@ -35,12 +35,6 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
     }
 
     size_t NR = subset.size();
-    size_t first = 0, last = 0;
-    if (NR) {
-        first = *std::min_element(subset.begin(), subset.end());
-        last = *std::max_element(subset.begin(), subset.end()) + 1;
-    }
-
     std::vector<Reference> nnrefs(nlabels);
     std::vector<std::vector<double> > nndata(nlabels);
     for (size_t l = 0; l < nlabels; ++l) {
@@ -61,26 +55,17 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
         }
     }
 
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-    #pragma omp parallel num_threads(nthreads)
-    {
-#else
-    SINGLEPP_CUSTOM_PARALLEL(NC, [&](size_t start, size_t end) -> void {
-#endif
-        
+    SubsetSorter subsorter(subset);
+
+    tatami::parallelize([&](int, int start, int len) -> void {
         RankedVector<double, int> ranked(NR);
         std::vector<double> buffer(ref->nrow());
-        auto wrk = ref->new_workspace(false);
+        auto wrk = tatami::consecutive_extractor<false, false>(ref, start, len, subsorter.extraction_subset());
 
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-        #pragma omp for
-        for (size_t c = 0; c < NC; ++c) {
-#else
-        for (size_t c = start; c < end; ++c) {
-#endif
-
-            auto ptr = ref->column(c, buffer.data(), first, last, wrk.get());
-            fill_ranks(subset, ptr, ranked, first);
+        for (int c = start, end = start + len; c < end; ++c) {
+            auto ptr = wrk->fetch(c, buffer.data());
+            subsorter.fill_ranks(ptr, ranked); 
+            scaled_ranks(ranked, buffer.data()); // 'buffer' can be written to, as all data is extracted to 'vec'.
 
             auto curlab = labels[c];
             auto curoff = offsets[c];
@@ -93,18 +78,13 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
             stored_ranks.reserve(ranked.size());
             simplify_ranks(ranked, stored_ranks);
         }
-
-#ifndef SINGLEPP_CUSTOM_PARALLEL
-    }
-#else
-    }, nthreads);
-#endif
+    }, ref->ncol(), nthreads);
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
     #pragma omp parallel for num_threads(nthreads)
     for (size_t l = 0; l < nlabels; ++l) {
 #else
-    SINGLEPP_CUSTOM_PARALLEL(nlabels, [&](size_t start, size_t end) -> void {
+    SINGLEPP_CUSTOM_PARALLEL([&](int, size_t start, size_t end) -> void {
     for (size_t l = start; l < end; ++l) {
 #endif
         nnrefs[l].index = build(NR, label_count[l], nndata[l].data());
@@ -118,7 +98,7 @@ std::vector<Reference> build_indices(const tatami::Matrix<double, int>* ref, con
     }
 #else
     }
-    }, nthreads);
+    }, nlabels, nthreads);
 #endif
 
     return nnrefs;
