@@ -26,7 +26,8 @@ SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, R
 
         Rcpp::IntegerVector curids(ref_ids[r]);
         holding_labs.emplace_back(labels[r]);
-        PrebuiltXPtr curbuilt(SEXP(prebuilt[r]));
+        Rcpp::RObject built = prebuilt[r];
+        PrebuiltXPtr curbuilt(built);
 
         builder.add(
             test_features.size(),
