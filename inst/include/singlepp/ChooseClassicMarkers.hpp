@@ -1,8 +1,12 @@
 #ifndef SINGLEPP_CHOOSE_CLASSIC_MARKERS_HPP
 #define SINGLEPP_CHOOSE_CLASSIC_MARKERS_HPP
 
-#include "Markers.hpp"
+#include "macros.hpp"
+
 #include "tatami/tatami.hpp"
+
+#include "Markers.hpp"
+
 #include <vector>
 #include <cmath>
 #include <set>
@@ -171,7 +175,7 @@ public:
         #pragma omp parallel num_threads(nthreads)
         {
 #else
-        SINGLEPP_CUSTOM_PARALLEL([&](int, size_t start, size_t end) -> void {
+        SINGLEPP_CUSTOM_PARALLEL([&](int, size_t start, size_t len) -> void {
 #endif
             
             std::vector<std::pair<double, int> > sorter(ngenes), sorted_copy(ngenes);
@@ -184,7 +188,7 @@ public:
             #pragma omp for
             for (size_t p = 0; p < npairs; ++p) {
 #else
-            for (size_t p = start; p < end; ++p) {
+            for (size_t p = start, end = start + len; p < end; ++p) {
 #endif
 
                 auto curleft = pairs[p].first;

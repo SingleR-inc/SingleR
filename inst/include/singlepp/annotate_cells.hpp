@@ -1,6 +1,8 @@
 #ifndef SINGLEPP_ANNOTATE_CELLS_HPP
 #define SINGLEPP_ANNOTATE_CELLS_HPP
 
+#include "macros.hpp"
+
 #include "tatami/tatami.hpp"
 
 #include "scaled_ranks.hpp"

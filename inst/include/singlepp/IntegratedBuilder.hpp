@@ -1,6 +1,8 @@
 #ifndef SINGLEPP_INTEGRATED_BUILDER_HPP
 #define SINGLEPP_INTEGRATED_BUILDER_HPP
 
+#include "macros.hpp"
+
 #include "scaled_ranks.hpp"
 #include "BasicBuilder.hpp"
 

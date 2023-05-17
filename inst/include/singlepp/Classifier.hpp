@@ -1,7 +1,10 @@
 #ifndef SINGLEPP_CLASSIFIER_HPP
 #define SINGLEPP_CLASSIFIER_HPP
 
+#include "macros.hpp"
+
 #include "tatami/tatami.hpp"
+
 #include "BasicBuilder.hpp"
 #include "BasicScorer.hpp"
 

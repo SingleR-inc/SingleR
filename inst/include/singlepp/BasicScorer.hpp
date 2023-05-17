@@ -1,7 +1,10 @@
 #ifndef SINGLEPP_BASIC_SCORER_HPP
 #define SINGLEPP_BASIC_SCORER_HPP
 
+#include "macros.hpp"
+
 #include "tatami/tatami.hpp"
+
 #include "annotate_cells.hpp"
 #include "process_features.hpp"
 #include "BasicBuilder.hpp"

@@ -1,11 +1,14 @@
 #ifndef SINGLEPP_PROCESS_FEATURES_HPP
 #define SINGLEPP_PROCESS_FEATURES_HPP
 
+#include "macros.hpp"
+
+#include "Markers.hpp"
+
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include "Markers.hpp"
 
 namespace singlepp {
 
