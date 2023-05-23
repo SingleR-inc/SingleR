@@ -44,6 +44,7 @@ test_that("SingleR works with sparse matrices", {
     out <- SingleR(test=test.s, ref=training.s, labels=training.s$label)
     ref <- SingleR(test=test, ref=training, labels=training$label)
     expect_identical(out, ref)
+    asdasd
 
     # Also in parallel.
     ref2 <- SingleR(test=test.s, ref=training.s, labels=training.s$label, num.threads=3)

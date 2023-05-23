@@ -1,9 +1,4 @@
-#include "Rcpp.h"
-
 #include "utils.h" // must be before raticate, singlepp includes.
-
-#include "singlepp/singlepp.hpp"
-#include "raticate/raticate.hpp"
 
 #include <vector>
 
@@ -11,11 +6,11 @@
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
 SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
-    auto parsed = raticate::parse<double, int>(test, true);
+    auto parsed = Rtatami::BoundNumericPointer(test);
     PrebuiltXPtr built(prebuilt);
 
     // Setting up outputs.
-    size_t ncells = parsed.matrix->ncol();
+    size_t ncells = parsed->ptr->ncol();
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
@@ -34,7 +29,7 @@ SEXP run(Rcpp::RObject test, Rcpp::IntegerVector subset, SEXP prebuilt, double q
     runner.set_num_threads(nthreads);
     runner.set_quantile(quantile).set_fine_tune(use_fine_tune).set_fine_tune_threshold(fine_tune_threshold);
     runner.run(
-        parsed.matrix.get(), 
+        parsed->ptr.get(), 
         *built, 
         static_cast<const int*>(subset.begin()),
         static_cast<int*>(best.begin()),

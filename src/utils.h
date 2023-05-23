@@ -1,24 +1,11 @@
 #ifndef UTILS_H 
 #define UTILS_H 
 
-#include <cmath>
-#include <vector>
-#include <thread>
-#include <memory>
 #include "Rcpp.h"
-
-extern int num_threads;
-
-#define RATICATE_PARALLELIZE_UNKNOWN // must be before raticate includes.
-#include "raticate/raticate.hpp"
-
-template<class Function>
-void parallelize(Function function, int ntasks, int num_threads) {
-    raticate::parallelize<double, int>(std::move(function), ntasks, num_threads);
-}
+#include "Rtatami.h"
 
 // must be before singlepp includes.
-#define SINGLEPP_CUSTOM_PARALLEL parallelize 
+#define SINGLEPP_CUSTOM_PARALLEL tatami_r::parallelize 
 #define __ERROR_PRINTER_OVERRIDE__  REprintf // avoid R CMD check warnings about stderr in Annoy.
 
 #include "singlepp/singlepp.hpp"
