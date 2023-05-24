@@ -1,11 +1,15 @@
 #ifndef SINGLEPP_BASIC_BUILDER_HPP
 #define SINGLEPP_BASIC_BUILDER_HPP
 
-#include <vector>
-#include "build_indices.hpp"
+#include "macros.hpp"
+
 #include "knncolle/knncolle.hpp"
-#include "process_features.hpp"
 #include "tatami/tatami.hpp"
+
+#include "build_indices.hpp"
+#include "process_features.hpp"
+
+#include <vector>
 
 /**
  * @file BasicBuilder.hpp

@@ -1,9 +1,12 @@
 #ifndef SINGLEPP_RECOMPUTE_SCORES_HPP
 #define SINGLEPP_RECOMPUTE_SCORES_HPP
 
+#include "macros.hpp"
+
+#include "tatami/tatami.hpp"
+
 #include "compute_scores.hpp"
 #include "scaled_ranks.hpp"
-#include "tatami/tatami.hpp"
 #include "Classifier.hpp"
 #include "IntegratedBuilder.hpp"
 

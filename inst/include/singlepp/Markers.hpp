@@ -1,6 +1,8 @@
 #ifndef SINGLEPP_MARKERS_HPP
 #define SINGLEPP_MARKERS_HPP
 
+#include "macros.hpp"
+
 #include <vector>
 
 /**

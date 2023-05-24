@@ -1,6 +1,8 @@
 #ifndef SINGLEPP_COMPUTE_SCORES_HPP
 #define SINGLEPP_COMPUTE_SCORES_HPP
 
+#include "macros.hpp"
+
 #include <vector>
 #include <algorithm>
 #include <limits>

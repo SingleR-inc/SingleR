@@ -1,18 +1,21 @@
 #ifndef SINGLEPP_LOADERS_HPP
 #define SINGLEPP_LOADERS_HPP
 
-#include <string>
-#include <vector>
-#include <cctype>
+#include "macros.hpp"
 
-#include "Markers.hpp"
 #include "byteme/RawFileReader.hpp"
-#include "tatami/base/dense/DenseMatrix.hpp"
+#include "tatami/tatami.hpp"
 
 #ifdef SINGLEPP_USE_ZLIB
 #include "byteme/GzipFileReader.hpp"
 #include "byteme/ZlibBufferReader.hpp"
 #endif
+
+#include "Markers.hpp"
+
+#include <string>
+#include <vector>
+#include <cctype>
 
 /**
  * @file load_references.hpp

@@ -1,14 +1,16 @@
 #ifndef TATAMI_FINE_TUNE_HPP
 #define TATAMI_FINE_TUNE_HPP
 
-#include <vector>
-#include <algorithm>
-#include <unordered_map>
+#include "macros.hpp"
 
 #include "scaled_ranks.hpp"
 #include "process_features.hpp"
 #include "compute_scores.hpp"
 #include "build_indices.hpp"
+
+#include <vector>
+#include <algorithm>
+#include <unordered_map>
 
 namespace singlepp {
 
