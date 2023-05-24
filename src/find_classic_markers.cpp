@@ -1,4 +1,4 @@
-#include "utils.h" // must be before raticate, singlepp includes.
+#include "utils.h" // must be before all other includes.
 
 #include <vector>
 

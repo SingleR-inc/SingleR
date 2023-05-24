@@ -1,15 +1,10 @@
-#include "Rcpp.h"
-
-#include "utils.h" // must be before raticate, singlepp includes.
-
-#include "singlepp/singlepp.hpp"
-#include "raticate/raticate.hpp"
+#include "utils.h" // must be before all other includes.
 
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
 SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads) {
-    auto curtest = raticate::parse<double, int>(test, true);
+    Rtatami::BoundNumericPointer curtest(test);
     IntegratedXPtr iptr(integrated_build);
 
     // Setting up the previous results.
@@ -26,7 +21,7 @@ SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build
     }
 
     // Setting up outputs.
-    size_t ncells = curtest.matrix->ncol();
+    size_t ncells = curtest->ptr->ncol();
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
@@ -44,7 +39,7 @@ SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build
     singlepp::IntegratedScorer scorer;
     scorer.set_num_threads(nthreads).set_quantile(quantile);
     scorer.run(
-        curtest.matrix.get(), 
+        curtest->ptr.get(), 
         previous_results, 
         *iptr, 
         static_cast<int*>(best.begin()),

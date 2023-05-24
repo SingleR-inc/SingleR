@@ -1,8 +1,4 @@
-#include "Rcpp.h"
-
-#include "utils.h" // must be before raticate, singlepp includes.
-
-#include "singlepp/singlepp.hpp"
+#include "utils.h" // must be before all other includes.
 
 #include <vector>
 #include <memory>
