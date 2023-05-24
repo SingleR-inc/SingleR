@@ -52,6 +52,7 @@
 #' @importFrom S4Vectors selfmatch DataFrame
 #' @importFrom BiocParallel SerialParam bpnworkers
 #' @importFrom utils relist
+#' @importFrom beachmat initializeCpp
 getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=bpnworkers(BPPARAM), BPPARAM=SerialParam()) { 
     if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
         bpstart(BPPARAM)
@@ -94,7 +95,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
     out <- find_classic_markers(nlabels=length(ulabels), 
         ngenes=length(common), 
         labels=labels,
-        ref=ref, 
+        ref=lapply(ref, initializeCpp), 
         de_n=de.n,
         nthreads=num.threads
     )

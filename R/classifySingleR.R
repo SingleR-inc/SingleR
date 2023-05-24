@@ -139,7 +139,8 @@ classifySingleR <- function(
 
     trained <- rebuildIndex(trained, num.threads = num.threads)
 
-    out <- run(test, m - 1L, trained$built, 
+    parsed <- initializeCpp(test)
+    out <- run(parsed, m - 1L, trained$built, 
         quantile = quantile, 
         use_fine_tune = fine.tune, 
         fine_tune_threshold = tune.thresh, 

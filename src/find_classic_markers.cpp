@@ -1,8 +1,4 @@
-#include "Rcpp.h"
-#include "utils.h" // must be before raticate, singlepp includes.
-
-#include "singlepp/singlepp.hpp"
-#include "raticate/raticate.hpp"
+#include "utils.h" // must be before all other includes.
 
 #include <vector>
 
@@ -14,8 +10,6 @@ Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp
         throw std::runtime_error("'ref' and 'labels' should have the same length");
     }
 
-    std::vector<raticate::Parsed<double, int> > ref_vec;
-    ref_vec.reserve(nref);
     std::vector<const tatami::Matrix<double, int>*> ref_ptrs;
     ref_ptrs.reserve(nref);
     std::vector<Rcpp::IntegerVector> lab_vec;
@@ -24,14 +18,17 @@ Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp
     lab_ptrs.reserve(nref);
 
     for (size_t r = 0; r < nref; ++r) {
-        ref_vec.push_back(raticate::parse<double, int>(ref[r], true));
-        if (ref_vec.back().matrix->nrow() != ngenes) {
+        Rcpp::RObject current = ref[r];
+        Rtatami::BoundNumericPointer parsed(current);
+        const auto& ptr = parsed->ptr;
+
+        if (ptr->nrow() != ngenes) {
             throw std::runtime_error("each entry of 'ref' should have number of rows equal to 'ngenes'");
         }
-        ref_ptrs.push_back(ref_vec.back().matrix.get());
+        ref_ptrs.push_back(ptr.get());
 
         lab_vec.emplace_back(labels[r]);
-        if (lab_vec.back().size() != ref_vec.back().matrix->ncol()) {
+        if (lab_vec.back().size() != ptr->ncol()) {
             throw std::runtime_error("each entry of 'labels' should have length equal to the number of columns in the corresponding entry of 'ref'");
         }
         lab_ptrs.push_back(static_cast<const int*>(lab_vec.back().begin()));

@@ -1,10 +1,4 @@
-#include "Rcpp.h"
-#include "Rinternals.h"
-
-#include "utils.h" // must be before raticate, singlepp includes.
-
-#include "singlepp/singlepp.hpp"
-#include "raticate/raticate.hpp"
+#include "utils.h" 
 
 #include <vector>
 #include <memory>
@@ -34,8 +28,8 @@ SEXP prebuild(Rcpp::RObject ref, Rcpp::IntegerVector labels, Rcpp::List markers,
     }
 
     // Building the indices.
-    auto parsed = raticate::parse<double, int>(ref, true);
-    auto built = builder.run(parsed.matrix.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
+    auto parsed = Rtatami::BoundNumericPointer(ref);
+    auto built = builder.run(parsed->ptr.get(), static_cast<const int*>(labels.begin()), std::move(markers2));
 
     // Moving it into the external pointer.
     return PrebuiltXPtr(new singlepp::BasicBuilder::Prebuilt(std::move(built)), true);

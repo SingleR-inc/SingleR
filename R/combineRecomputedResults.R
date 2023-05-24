@@ -136,7 +136,7 @@ combineRecomputedResults <- function(
     universe <- Reduce(union, c(list(rownames(test)), all.refnames))
     ibuilt <- integrate_build(
         match(rownames(test), universe) - 1L,
-        lapply(trained, function(x) x$ref),
+        lapply(trained, function(x) initializeCpp(x$ref)),
         lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
         lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
         lapply(trained, function(x) x$built),
@@ -149,7 +149,8 @@ combineRecomputedResults <- function(
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
-    irun <- integrate_run(test, collated, ibuilt, quantile = quantile, nthreads = num.threads) 
+    parsed <- initializeCpp(test)
+    irun <- integrate_run(parsed, collated, ibuilt, quantile = quantile, nthreads = num.threads) 
     scores <- irun$scores
 
     # Organizing the outputs.

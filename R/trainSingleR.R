@@ -161,6 +161,7 @@
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
 #' @importFrom BiocParallel SerialParam bpisup bpstart bpstop
+#' @importFrom beachmat initializeCpp
 trainSingleR <- function(
     ref, 
     labels, 
@@ -307,6 +308,7 @@ trainSingleR <- function(
     )
 }
 
+#' @importFrom beachmat initializeCpp
 .build_index <- function(ref, markers, labels, ulabels, approximate, num.threads) {
     for (m in seq_along(markers)) {
         current <- markers[[m]]
@@ -319,7 +321,9 @@ trainSingleR <- function(
         }
         markers[[m]] <- current
     }
-    prebuild(ref, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
+
+    parsed <- initializeCpp(ref)
+    prebuild(parsed, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
 }
 
 .get_levels <- function(labels) sort(unique(labels))
