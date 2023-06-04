@@ -343,12 +343,12 @@ trainSingleR <- function(
             FUN <- scran::pairwiseWilcox
         }
 
-        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up", BPPARAM=BPPARAM), de.args))
+        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up", log.p=TRUE, BPPARAM=BPPARAM), de.args))
         if (is.null(de.n)) {
             de.n <- 10
         }
 
-        collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n)
+        collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n, pval.field="log.p.value", fdr.field="log.FDR", fdr.threshold=log(0.05))
         lapply(collected, as.list)
     }
 }
