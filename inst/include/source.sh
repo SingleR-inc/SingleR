@@ -9,7 +9,7 @@ else
     git pull
 fi
 
-git checkout f27d36500f653c1b67840db0ad28e43340e4ae99
+git checkout 1d9869c3f050521a12b3151c89bc41906bf093e0
 rm -rf ../singlepp
 cp -r include/singlepp/ ../singlepp
 git checkout master

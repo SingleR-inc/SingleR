@@ -3,6 +3,7 @@
 
 #include "macros.hpp"
 
+#include "byteme/PerByte.hpp"
 #include "byteme/RawFileReader.hpp"
 #include "tatami/tatami.hpp"
 
@@ -16,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <cctype>
+#include <type_traits>
 
 /**
  * @file load_references.hpp
@@ -28,37 +30,37 @@ namespace singlepp {
 /** 
  * @cond
  */
-template<class Reader>
-std::vector<int> load_labels_internal(Reader& reader) {
+template<bool parallel_>
+using SuperPerByte = typename std::conditional<parallel_, byteme::PerByte<char>, byteme::PerByteParallel<char> >::type;
+
+template<bool parallel_, class Reader_>
+std::vector<int> load_labels_internal(Reader_& reader) {
     bool non_empty = false;
     int current = 0;
     std::vector<int> labels;
     bool remaining = true;
 
-    do {
-        remaining = reader();
-        auto buffer = reinterpret_cast<const char*>(reader.buffer());
-        auto n = reader.available();
+    SuperPerByte<parallel_> pb(&reader);
+    bool okay = pb.valid();
+    while (okay) {
+        char x = pb.get();
+        okay = pb.advance();
 
-        size_t i = 0;
-        while (i < n) {
-            if (buffer[i] == '\n') {
-                if (!non_empty) {
-                    throw std::runtime_error("label index must be an integer");
-                }
-                labels.push_back(current);
-                current = 0;
-                non_empty = false;
-            } else if (std::isdigit(buffer[i])) {
-                non_empty = true;
-                current *= 10;
-                current += (buffer[i] - '0');
-            } else {
+        if (x == '\n') {
+            if (!non_empty) {
                 throw std::runtime_error("label index must be an integer");
             }
-            ++i;
+            labels.push_back(current);
+            current = 0;
+            non_empty = false;
+        } else if (std::isdigit(x)) {
+            non_empty = true;
+            current *= 10;
+            current += (x - '0');
+        } else {
+            throw std::runtime_error("label index must be an integer");
         }
-    } while (remaining);
+    } 
 
     if (non_empty) {
         labels.push_back(current);
@@ -71,6 +73,8 @@ std::vector<int> load_labels_internal(Reader& reader) {
  */
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a text file containing the labels.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -81,14 +85,17 @@ std::vector<int> load_labels_internal(Reader& reader) {
  * The total number of lines should be equal to the number of profiles in the dataset.
  * The file should not contain any header.
  */
-inline std::vector<int> load_labels_from_text_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::vector<int> load_labels_from_text_file(const char* path, size_t buffer_size = 65536) {
     byteme::RawFileReader reader(path, buffer_size);
-    return load_labels_internal(reader);
+    return load_labels_internal<parallel_>(reader);
 }
 
 #ifdef SINGLEPP_USE_ZLIB
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a Gzip-compressed file containing the labels.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -96,12 +103,15 @@ inline std::vector<int> load_labels_from_text_file(const char* path, size_t buff
  *
  * See `load_labels_from_text_file()` for details about the format.
  */
-inline std::vector<int> load_labels_from_gzip_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::vector<int> load_labels_from_gzip_file(const char* path, size_t buffer_size = 65536) {
     byteme::GzipFileReader reader(path, buffer_size);
-    return load_labels_internal(reader);
+    return load_labels_internal<parallel_>(reader);
 }
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param[in] buffer Pointer to an array containing a Zlib/Gzip-compressed string of labels.
  * @param len Length of the array for `buffer`.
  * @param buffer_size Size of the buffer to use when decompressing the buffer.
@@ -110,9 +120,10 @@ inline std::vector<int> load_labels_from_gzip_file(const char* path, size_t buff
  *
  * See `load_labels_from_text_file()` for details about the format.
  */
+template<bool parallel_ = false>
 inline std::vector<int> load_labels_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
     byteme::ZlibBufferReader reader(buffer, len, 3, buffer_size);
-    return load_labels_internal(reader);
+    return load_labels_internal<parallel_>(reader);
 }
 
 #endif
@@ -120,41 +131,28 @@ inline std::vector<int> load_labels_from_zlib_buffer(const unsigned char* buffer
 /**
  * @cond
  */
-template<class Reader>
-std::vector<std::string> load_names_internal(Reader& reader) {
+template<bool parallel_, class Reader_>
+std::vector<std::string> load_names_internal(Reader_& reader) {
+    std::string current;
     std::vector<std::string> names;
-    bool continuing = false;
-    bool remaining = false;
 
-    do {
-        remaining = reader();
-        auto buffer = reinterpret_cast<const char*>(reader.buffer());
-        auto n = reader.available();
+    SuperPerByte<parallel_> pb(&reader);
+    bool okay = pb.valid();
+    while (okay) {
+        char x = pb.get();
+        okay = pb.advance();
 
-        size_t last = 0;
-        size_t i = 0;
-        while (i < n) {
-            if (buffer[i] == '\n') {
-                if (continuing) {
-                    names.back() += std::string(buffer + last, buffer + i);
-                    continuing = false;
-                } else {
-                    names.emplace_back(buffer + last, buffer + i);
-                }
-                last = i + 1;
-            }
-            ++i;
+        if (x == '\n') {
+            names.emplace_back(std::move(current));
+            current.clear();
+        } else {
+            current += x;
         }
+    }
 
-        if (last != n) {
-            if (continuing) {
-                names.back() += std::string(buffer + last, buffer + n);
-            } else {
-                continuing = true;
-                names.emplace_back(buffer + last, buffer + n);
-            }
-        }
-    } while (remaining);
+    if (!current.empty()) { // absence of trailing newline is okay.
+        names.emplace_back(std::move(current));
+    }
 
     return names;
 };
@@ -163,6 +161,8 @@ std::vector<std::string> load_names_internal(Reader& reader) {
  */
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a text file containing the label names.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -172,14 +172,17 @@ std::vector<std::string> load_names_internal(Reader& reader) {
  * The total number of lines should be equal to the number of unique labels in the dataset.
  * The file should not contain any header.
  */
-inline std::vector<std::string> load_label_names_from_text_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::vector<std::string> load_label_names_from_text_file(const char* path, size_t buffer_size = 65536) {
     byteme::RawFileReader reader(path, buffer_size);
-    return load_names_internal(reader);
+    return load_names_internal<parallel_>(reader);
 }
 
 #ifdef SINGLEPP_USE_ZLIB
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a Gzip-compressed file containing the label names.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -187,12 +190,15 @@ inline std::vector<std::string> load_label_names_from_text_file(const char* path
  *
  * See `load_label_names_from_text_file()` for details about the format.
  */
-inline std::vector<std::string> load_label_names_from_gzip_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::vector<std::string> load_label_names_from_gzip_file(const char* path, size_t buffer_size = 65536) {
     byteme::GzipFileReader reader(path, buffer_size);
-    return load_names_internal(reader);
+    return load_names_internal<parallel_>(reader);
 }
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param[in] buffer Pointer to an array containing a Zlib/Gzip-compressed string of label names.
  * @param len Length of the array for `buffer`.
  * @param buffer_size Size of the buffer to use when decompressing the buffer.
@@ -201,9 +207,10 @@ inline std::vector<std::string> load_label_names_from_gzip_file(const char* path
  *
  * See `load_label_names_from_text_file()` for details about the format.
  */
-inline std::vector<std::string> load_label_names_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::vector<std::string> load_label_names_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
     byteme::ZlibBufferReader reader(buffer, len, 3, buffer_size);
-    return load_names_internal(reader);
+    return load_names_internal<parallel_>(reader);
 }
 
 #endif
@@ -211,62 +218,49 @@ inline std::vector<std::string> load_label_names_from_zlib_buffer(const unsigned
 /** 
  * @cond
  */
-template<class Reader>
-std::pair<std::vector<std::string>, std::vector<std::string> > load_features_internal(Reader& reader) {
-    int field = 0;
-    bool continuing = false;
-    bool remaining = false;
+template<bool parallel_, class Reader_>
+std::pair<std::vector<std::string>, std::vector<std::string> > load_features_internal(Reader_& reader) {
+    std::string current;
     std::vector<std::string> ensembl, symbols;
 
-    do {
-        remaining = reader();
-        auto buffer = reinterpret_cast<const char*>(reader.buffer());
-        auto n = reader.available();
+    SuperPerByte<parallel_> pb(&reader);
+    bool okay = pb.valid();
+    while (okay) {
+        current.clear();
 
-        size_t last = 0;
-        size_t i = 0;
-        while (i < n) {
-            if (buffer[i] == '\n') {
-                if (field != 1) {
-                    throw std::runtime_error("two fields (Ensembl ID and symbol) expected on each line");
-                }
-
-                if (continuing) {
-                    symbols.back() += std::string(buffer + last, buffer + i);
-                    continuing = false;
-                } else {
-                    symbols.emplace_back(buffer + last, buffer + i);
-                }
-                field = 0;
-                last = i + 1;
-
-            } else if (buffer[i] == ',') {
-                if (continuing) {
-                    ensembl.back() += std::string(buffer + last, buffer + i);
-                    continuing = false;
-                } else {
-                    ensembl.emplace_back(buffer + last, buffer + i);
-                }
-                ++field;
-                last = i + 1;
+        // Pulling out the Ensembl ID.
+        do {
+            char x = pb.get();
+            if (x == ',') { // don't advance yet, so that okay check below doesn't trigger if the symbol is empty and file is not newline terminated.
+                break;
+            } else if (x == '\n') {
+                okay = false; // hit the error below.
+                break;
             }
+            current += x;
+            okay = pb.advance();
+        } while (okay);
 
-            ++i;
+        if (!okay) {
+            throw std::runtime_error("two comma-separated fields (Ensembl ID and symbol) expected on each line");
         }
+        okay = pb.advance();
 
-        if (last != n) {
-            auto& target = (field == 0 ? ensembl : symbols);
-            if (continuing) {
-                target.back() += std::string(buffer + last, buffer + n);
-            } else {
-                continuing = true;
-                target.emplace_back(buffer + last, buffer + n);
-            }
+        ensembl.push_back(std::move(current));
+        current.clear();
+
+        // Now pulling out the gene symbol.
+        while (okay) {
+            char x = pb.get();
+            okay = pb.advance(); 
+            if (x == '\n') {
+                break;
+            } 
+            current += x;
         }
-    } while (remaining);
-
-    if (ensembl.size() != symbols.size()) {
-        throw std::runtime_error("two fields (Ensembl ID and symbol) expected on the last line");
+   
+        symbols.push_back(std::move(current)); // still gets added if file is not newline terminated.
+        current.clear();
     }
 
     return std::make_pair(std::move(ensembl), std::move(symbols));
@@ -276,6 +270,8 @@ std::pair<std::vector<std::string>, std::vector<std::string> > load_features_int
  */
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a text file containing the feature annotation.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -287,14 +283,17 @@ std::pair<std::vector<std::string>, std::vector<std::string> > load_features_int
  * The first string should be the Ensembl ID while the second string should be the gene symbol; either string may be empty.
  * The file should not contain any header.
  */
-inline std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_text_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_text_file(const char* path, size_t buffer_size = 65536) {
     byteme::RawFileReader reader(path, buffer_size);
-    return load_features_internal(reader);
+    return load_features_internal<parallel_>(reader);
 }
 
 #ifdef SINGLEPP_USE_ZLIB
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a Gzip-compressed file containing the feature annotation.
  * @param buffer_size Size of the buffer to use when reading the file.
  *
@@ -303,12 +302,15 @@ inline std::pair<std::vector<std::string>, std::vector<std::string> > load_featu
  *
  * See `load_features_from_text_file()` for details about the format.
  */
-inline std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_gzip_file(const char* path, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_gzip_file(const char* path, size_t buffer_size = 65536) {
     byteme::GzipFileReader reader(path, buffer_size);
-    return load_features_internal(reader);
+    return load_features_internal<parallel_>(reader);
 }
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param[in] buffer Pointer to an array containing a Zlib/Gzip-compressed string containing the feature annotation.
  * @param len Length of the array for `buffer`.
  * @param buffer_size Size of the buffer to use when decompressing the buffer.
@@ -318,9 +320,10 @@ inline std::pair<std::vector<std::string>, std::vector<std::string> > load_featu
  *
  * See `load_features_from_text_file()` for details about the format.
  */
-inline std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+std::pair<std::vector<std::string>, std::vector<std::string> > load_features_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
     byteme::ZlibBufferReader reader(buffer, len, 3, buffer_size);
-    return load_features_internal(reader);
+    return load_features_internal<parallel_>(reader);
 }
 
 #endif
@@ -339,20 +342,17 @@ using RankMatrix = tatami::DenseColumnMatrix<Data, Index, std::vector<int> >;
 /** 
  * @cond
  */
-template<typename Data, typename Index, class Reader>
+template<typename Data, typename Index, bool parallel_, class Reader>
 RankMatrix<Data, Index> load_rankings_internal(Reader& reader) {
     size_t nfeatures = 0;
     size_t line = 0;
     std::vector<int> values;
 
-    bool has_nfeatures = false;
-
     int field = 0;
-    bool continuing = false;
     bool non_empty = false;
-    bool remaining = true;
     int current = 0;
 
+    bool has_nfeatures = false;
     auto check_nfeatures = [&]() -> void {
         if (!has_nfeatures) {
             has_nfeatures = true;
@@ -362,45 +362,41 @@ RankMatrix<Data, Index> load_rankings_internal(Reader& reader) {
         }
     };
 
-    do {
-        remaining = reader();
-        auto buffer = reinterpret_cast<const char*>(reader.buffer());
-        auto n = reader.available();
+    SuperPerByte<parallel_> pb(&reader);
+    bool okay = pb.valid();
+    while (okay) {
+        char x = pb.get();
+        okay = pb.advance();
 
-        size_t i = 0;
-        while (i < n) {
-            if (buffer[i] == '\n') {
-                check_nfeatures();
-                if (!non_empty) {
-                    throw std::runtime_error("fields should not be empty");
-                }
-                values.push_back(current);
-                current = 0;
-                field = 0;
-                non_empty = false;
-                ++line;
-
-            } else if (buffer[i] == ',') {
-                if (!non_empty) {
-                    throw std::runtime_error("fields should not be empty");
-                }
-                values.push_back(current);
-                current = 0;
-                ++field;
-                non_empty = false;
-
-            } else if (std::isdigit(buffer[i])) {
-                non_empty = true;
-                current *= 10;
-                current += (buffer[i] - '0');
-
-            } else {
-                throw std::runtime_error("fields should only contain integer ranks");
+        if (x == '\n') {
+            check_nfeatures();
+            if (!non_empty) {
+                throw std::runtime_error("fields should not be empty");
             }
+            values.push_back(current);
+            current = 0;
+            field = 0;
+            non_empty = false;
+            ++line;
 
-            ++i;
+        } else if (x == ',') {
+            if (!non_empty) {
+                throw std::runtime_error("fields should not be empty");
+            }
+            values.push_back(current);
+            current = 0;
+            ++field;
+            non_empty = false;
+
+        } else if (std::isdigit(x)) {
+            non_empty = true;
+            current *= 10;
+            current += (x - '0');
+
+        } else {
+            throw std::runtime_error("fields should only contain integer ranks");
         }
-    } while (remaining);
+    }
 
     if (field || non_empty) { // aka no terminating newline.
         check_nfeatures();
@@ -420,6 +416,7 @@ RankMatrix<Data, Index> load_rankings_internal(Reader& reader) {
 /**
  * @tparam Data Numeric type for data in the matrix interface.
  * @tparam Index Integer type for indices in the matrix interface.
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
  * 
  * @param path Path to a text file containing the ranking matrix.
  * @param buffer_size Size of the buffer to use when reading the file.
@@ -432,10 +429,10 @@ RankMatrix<Data, Index> load_rankings_internal(Reader& reader) {
  * The number of comma-separated fields on each line should be equal to the number of features.
  * Ranks should be strictly integer - tied ranks should default to the minimum rank among the index set of ties.
  */
-template<typename Data = double, typename Index = int>
+template<typename Data = double, typename Index = int, bool parallel_ = false>
 RankMatrix<Data, Index> load_rankings_from_text_file(const char* path, size_t buffer_size = 65536) {
     byteme::RawFileReader reader(path, buffer_size);
-    return load_rankings_internal<Data, Index>(reader);
+    return load_rankings_internal<Data, Index, parallel_>(reader);
 }
 
 #ifdef SINGLEPP_USE_ZLIB
@@ -443,6 +440,7 @@ RankMatrix<Data, Index> load_rankings_from_text_file(const char* path, size_t bu
 /**
  * @tparam Data Numeric type for data in the matrix interface.
  * @tparam Index Integer type for indices in the matrix interface.
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
  *
  * @param path Path to a Gzip-compressed file containing the ranking matrix.
  * @param buffer_size Size of the buffer to use when reading the file.
@@ -452,15 +450,16 @@ RankMatrix<Data, Index> load_rankings_from_text_file(const char* path, size_t bu
  *
  * See `load_rankings_from_text_file()` for details about the format.
  */
-template<typename Data = double, typename Index = int>
+template<typename Data = double, typename Index = int, bool parallel_ = false>
 RankMatrix<Data, Index> load_rankings_from_gzip_file(const char* path, size_t buffer_size = 65536) {
     byteme::GzipFileReader reader(path, buffer_size);
-    return load_rankings_internal<Data, Index>(reader);
+    return load_rankings_internal<Data, Index, parallel_>(reader);
 }
 
 /**
  * @tparam Data Numeric type for data in the matrix interface.
  * @tparam Index Integer type for indices in the matrix interface.
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
  *
  * @param[in] buffer Pointer to an array containing a Zlib/Gzip-compressed string containing the ranking matrix.
  * @param len Length of the array for `buffer`.
@@ -471,10 +470,10 @@ RankMatrix<Data, Index> load_rankings_from_gzip_file(const char* path, size_t bu
  *
  * See `load_rankings_from_text_file()` for details about the format.
  */
-template<typename Data = double, typename Index = int>
+template<typename Data = double, typename Index = int, bool parallel_ = false>
 RankMatrix<Data, Index> load_rankings_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t buffer_size = 65536) {
     byteme::ZlibBufferReader reader(buffer, len, 3, buffer_size);
-    return load_rankings_internal<Data, Index>(reader);
+    return load_rankings_internal<Data, Index, parallel_>(reader);
 }
 
 #endif
@@ -482,26 +481,83 @@ RankMatrix<Data, Index> load_rankings_from_zlib_buffer(const unsigned char* buff
 /** 
  * @cond
  */
-template<class Reader>
+template<bool parallel_, class Reader>
 Markers load_markers_internal(size_t nfeatures, size_t nlabels, Reader& reader) {
     Markers markers(nlabels);
     for (auto& m : markers) {
         m.resize(nlabels);
     }
 
-    int field = 0;
-    bool continuing = false;
-    bool non_empty = false;
-    bool remaining = true;
-
-    int current = 0;
     std::vector<int> values;
-    size_t first, second;
+    SuperPerByte<parallel_> pb(&reader);
+    bool okay = pb.valid();
+    while (okay) {
 
-    auto newline = [&]() -> void {
-        if (field < 2) {
-            throw std::runtime_error("each line should contain at least three fields");
+        // Processing the label IDs.
+        size_t first = 0, second = 0;
+        for (int l = 0; l < 2; ++l) {
+            auto& current = (l == 0 ? first : second);
+            bool non_empty = false;
+
+            do {
+                char x = pb.get();
+                okay = pb.advance();
+
+                if (x == '\t') {
+                    if (!non_empty) {
+                        throw std::runtime_error("empty field detected in the label indices");
+                    }
+                    break;
+                } else if (x == '\n') {
+                    okay = false; // hit the error below.
+                    break;
+                } else if (!std::isdigit(x)) {
+                    throw std::runtime_error("label indices should be integers");
+                }
+
+                non_empty = true;
+                current *= 10;
+                current += (x - '0');
+            } while (okay);
+
+            if (!okay) {
+                throw std::runtime_error("expected at least three tab-separated fields on each line");
+            }
+            if (current >= markers.size()) {
+                throw std::runtime_error("label index out of range");
+            }
         }
+
+        // Processing the actual gene indices.
+        bool non_empty = false;
+        int current = 0;
+        while (okay) {
+            char x = pb.get();
+            okay = pb.advance();
+
+            if (std::isdigit(x)) {
+                non_empty = true;
+                current *= 10;
+                current += (x - '0');
+
+            } else if (x == '\t') {
+                if (!non_empty) {
+                    throw std::runtime_error("gene index fields should not be empty");
+                }
+                values.push_back(current);
+                current = 0;
+                non_empty = false;
+
+            } else if (x == '\n') {
+                break;
+
+            } else {
+                throw std::runtime_error("gene index fields should be integers");
+            }
+        }
+
+        // Adding the last element. We don't do this inside the newline check,
+        // as we need to account for cases where the file is not newline-terminated.
         if (!non_empty) {
             throw std::runtime_error("gene index fields should not be empty");
         }
@@ -513,67 +569,11 @@ Markers load_markers_internal(size_t nfeatures, size_t nlabels, Reader& reader) 
             }
         }
 
-        if (first >= markers.size()) {
-            throw std::runtime_error("first label index out of range");
-        }
-        if (second >= markers.size()) {
-            throw std::runtime_error("second label index out of range");
-        }
-
         auto& store = markers[first][second];
         if (!store.empty()) {
             throw std::runtime_error("multiple marker sets listed for a single pairwise comparison");
         }
-        store.swap(values);
-        values.clear();
-        return;
-    };
-
-    do {
-        remaining = reader();
-        auto buffer = reinterpret_cast<const char*>(reader.buffer());
-        auto n = reader.available();
-
-        size_t i = 0;
-        while (i < n) {
-            if (buffer[i] == '\n') {
-                newline();
-                current = 0;
-                field = 0;
-                non_empty = false;
-
-            } else if (buffer[i] == '\t') {
-                if (!non_empty) {
-                    throw std::runtime_error("fields should not be empty");
-                }
-
-                if (field == 0) {
-                    first = current;
-                } else if (field == 1) {
-                    second = current;
-                } else {
-                    values.push_back(current);
-                }
-
-                current = 0;
-                ++field;
-                non_empty = false;
-
-            } else if (std::isdigit(buffer[i])) {
-                non_empty = true;
-                current *= 10;
-                current += (buffer[i] - '0');
-
-            } else {
-                throw std::runtime_error("fields should only contain integer ranks");
-            }
-
-            ++i;
-        }
-    } while (remaining);
-
-    if (field || non_empty) { // aka no terminating newline.
-        newline();
+        store.swap(values); // implicit clear of 'values', as store is empty.
     }
 
     return markers;
@@ -583,6 +583,8 @@ Markers load_markers_internal(size_t nfeatures, size_t nlabels, Reader& reader) 
  */
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a text file containing the marker lists.
  * @param nfeatures Total number of features in the dataset.
  * @param nlabels Number of labels in the dataset.
@@ -596,14 +598,17 @@ Markers load_markers_internal(size_t nfeatures, size_t nlabels, Reader& reader) 
  * Any (non-zero) number of marker indices may be reported provided they are ordered by marker strength.
  * The total number of lines in this file should be equal to the total number of pairwise comparisons between different labels, including permutations.
  */
-inline Markers load_markers_from_text_file(const char* path, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+Markers load_markers_from_text_file(const char* path, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
     byteme::RawFileReader reader(path, buffer_size);
-    return load_markers_internal(nfeatures, nlabels, reader);
+    return load_markers_internal<parallel_>(nfeatures, nlabels, reader);
 }
 
 #ifdef SINGLEPP_USE_ZLIB
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param path Path to a Gzip-compressed file containing the marker lists.
  * @param nfeatures Total number of features in the dataset.
  * @param nlabels Number of labels in the dataset.
@@ -613,12 +618,15 @@ inline Markers load_markers_from_text_file(const char* path, size_t nfeatures, s
  *
  * See `load_markers_from_text_file()` for details about the format.
  */
-inline Markers load_markers_from_gzip_file(const char* path, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+Markers load_markers_from_gzip_file(const char* path, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
     byteme::GzipFileReader reader(path, buffer_size);
-    return load_markers_internal(nfeatures, nlabels, reader);
+    return load_markers_internal<parallel_>(nfeatures, nlabels, reader);
 }
 
 /**
+ * @tparam parallel_ Whether file loading and parsing should be parallelized.
+ *
  * @param[in] buffer Pointer to an array containing a Zlib/Gzip-compressed string containing the marker lists.
  * @param len Length of the array for `buffer`.
  * @param nfeatures Total number of features in the dataset.
@@ -629,9 +637,10 @@ inline Markers load_markers_from_gzip_file(const char* path, size_t nfeatures, s
  *
  * See `load_markers_from_text_file()` for details about the format.
  */
-inline Markers load_markers_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
+template<bool parallel_ = false>
+Markers load_markers_from_zlib_buffer(const unsigned char* buffer, size_t len, size_t nfeatures, size_t nlabels, size_t buffer_size = 65536) {
     byteme::ZlibBufferReader reader(buffer, len, 3, buffer_size);
-    return load_markers_internal(nfeatures, nlabels, reader);
+    return load_markers_internal<parallel_>(nfeatures, nlabels, reader);
 }
 
 #endif
