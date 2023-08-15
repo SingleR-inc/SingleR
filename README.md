@@ -5,11 +5,11 @@
 [![Support posts](https://bioconductor.org/shields/posts/SingleR.svg)](https://support.bioconductor.org/t/SingleR/ "Support site activity for SingleR, last 6 months: tagged questions/avg. answers per question/avg. comments per question/accepted answers, or 0 if no tagged posts.")
 
 **Current build status**
-- `release` [![Bioconductor Availability](https://bioconductor.org/shields/availability/3.11/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html#archives "Whether SingleR release is available on all platforms") 
+- `release` [![Bioconductor Availability](https://bioconductor.org/shields/availability/release/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html#archives "Whether SingleR release is available on all platforms") 
 [![Bioconductor Dependencies](https://bioconductor.org/shields/dependencies/release/SingleR.svg)](https://bioconductor.org/packages/release/bioc/html/SingleR.html#since "Number of recursive dependencies needed to install package")
 [![Bioconductor Commits](https://bioconductor.org/shields/lastcommit/release/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR "Time since last commit, possible values: today, < 1 week, < 1 month, < 3 months, since release, before release")
 [![Bioconductor Release Build](https://bioconductor.org/shields/build/release/bioc/SingleR.svg)](https://bioconductor.org/checkResults/release/bioc-LATEST/SingleR/ "Bioconductor release build")
-- `development` [![Bioconductor Availability](https://bioconductor.org/shields/availability/3.12/SingleR.svg)](https://bioconductor.org/packages/devel/bioc/html/SingleR.html#archives "Whether SingleR devel is available on all platforms") 
+- `development` [![Bioconductor Availability](https://bioconductor.org/shields/availability/devel/SingleR.svg)](https://bioconductor.org/packages/devel/bioc/html/SingleR.html#archives "Whether SingleR devel is available on all platforms") 
 [![Bioconductor Dependencies](https://bioconductor.org/shields/dependencies/devel/SingleR.svg)](https://bioconductor.org/packages/devel/bioc/html/SingleR.html#since "Number of recursive dependencies needed to install package")
 [![Bioconductor Commits](https://bioconductor.org/shields/lastcommit/devel/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR "Time since last commit, possible values: today, < 1 week, < 1 month, < 3 months, since release, before release")
 [![Bioconductor Devel Build](https://bioconductor.org/shields/build/devel/bioc/SingleR.svg)](https://bioconductor.org/checkResults/devel/bioc-LATEST/SingleR/ "Bioconductor devel build")
