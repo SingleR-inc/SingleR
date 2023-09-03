@@ -1,8 +1,36 @@
 # This tests the classic marker detection scheme.
 # library(testthat); library(SingleR); source("setup.R"); source("test-markers.R")
 
+library(DelayedArray)
+median_by_label <- function(mat, labels) {
+    ulabels <- SingleR:::.get_levels(labels)
+    output <- matrix(0, nrow(mat), length(ulabels))
+    rownames(output) <- rownames(mat)
+    colnames(output) <- ulabels
+
+    for (u in ulabels) {
+        # Disambiguate from Biobase::rowMedians.
+        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
+    }
+    output
+}
+
+test_that("grouped_medians works as expected", {
+    set.seed(999)
+    x <- matrix(rnorm(10000), ncol=50)
+    y <- sample(7, 50, replace=TRUE)
+    expected <- median_by_label(x, y)
+
+    f <- factor(y)
+    ptr <- beachmat::initializeCpp(x)
+    obs <- SingleR:::grouped_medians(ptr, as.integer(f) - 1L, nlevels(f), 1)
+    obs <- t(obs)
+    colnames(obs) <- levels(f)
+    expect_equal(expected, obs)
+})
+
 REF <- function(ref, labels, de.n=NULL) {
-    mat <- SingleR:::.median_by_label(ref, labels)
+    mat <- median_by_label(ref, labels)
     if (is.null(de.n)) {
         de.n <- round(500*(2/3)^log2(ncol(mat)))
     }

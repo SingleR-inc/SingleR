@@ -5,6 +5,10 @@ find_classic_markers <- function(nlabels, ngenes, labels, ref, de_n, nthreads) {
     .Call('_SingleR_find_classic_markers', PACKAGE = 'SingleR', nlabels, ngenes, labels, ref, de_n, nthreads)
 }
 
+grouped_medians <- function(ref, groups, ngroups, nthreads) {
+    .Call('_SingleR_grouped_medians', PACKAGE = 'SingleR', ref, groups, ngroups, nthreads)
+}
+
 integrate_build <- function(test_features, references, ref_ids, labels, prebuilt, nthreads) {
     .Call('_SingleR_integrate_build', PACKAGE = 'SingleR', test_features, references, ref_ids, labels, prebuilt, nthreads)
 }

@@ -25,6 +25,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// grouped_medians
+Rcpp::NumericMatrix grouped_medians(Rcpp::RObject ref, Rcpp::IntegerVector groups, int ngroups, int nthreads);
+RcppExport SEXP _SingleR_grouped_medians(SEXP refSEXP, SEXP groupsSEXP, SEXP ngroupsSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type groups(groupsSEXP);
+    Rcpp::traits::input_parameter< int >::type ngroups(ngroupsSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(grouped_medians(ref, groups, ngroups, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // integrate_build
 SEXP integrate_build(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
 RcppExport SEXP _SingleR_integrate_build(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_idsSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
@@ -107,6 +120,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
+    {"_SingleR_grouped_medians", (DL_FUNC) &_SingleR_grouped_medians, 4},
     {"_SingleR_integrate_build", (DL_FUNC) &_SingleR_integrate_build, 6},
     {"_SingleR_integrate_run", (DL_FUNC) &_SingleR_integrate_run, 5},
     {"_SingleR_prebuild", (DL_FUNC) &_SingleR_prebuild, 5},
