@@ -57,13 +57,16 @@ containing markers for labels in the corresponding entry of \code{ref}.}
 \item{de.method}{String specifying how DE genes should be detected between pairs of labels.
 Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
 Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
-and take the top \code{de.n} upregulated genes per comparison.}
+and take the top \code{de.n} upregulated genes per comparison.
+Ignored if \code{genes} is a list of markers/DE genes.}
 
 \item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
 If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
-Otherwise, defaults to 10.}
+Otherwise, defaults to 10.
+Ignored if \code{genes} is a list of markers/DE genes.}
 
-\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.}
+\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
+Ignored if \code{genes} is a list of markers/DE genes.}
 
 \item{aggr.ref}{Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.}
 
@@ -150,7 +153,7 @@ However, it obviously captures less information than marker sets for the pairwis
 
 If \code{genes} is manually passed, \code{ref} can be the raw counts or any monotonic transformation thereof.
 There is no need to supply (log-)normalized expression values for the benefit of the automatic marker detection.
-Similarly, for manual \code{genes}, \code{de.n} and \code{sd.thresh} have no effect.
+Similarly, for manual \code{genes}, the values of \code{de.method}, \code{de.n} and \code{sd.thresh} have no effect.
 }
 
 \section{Dealing with multiple references}{

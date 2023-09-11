@@ -31,10 +31,13 @@
 #' Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
 #' Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
 #' and take the top \code{de.n} upregulated genes per comparison.
+#' Ignored if \code{genes} is a list of markers/DE genes.
 #' @param de.n An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
 #' If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' Otherwise, defaults to 10.
+#' Ignored if \code{genes} is a list of markers/DE genes.
 #' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
+#' Ignored if \code{genes} is a list of markers/DE genes.
 #' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.
 #' @param aggr.args Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.
 #' @param recompute Deprecated and ignored.
@@ -107,7 +110,7 @@
 #'
 #' If \code{genes} is manually passed, \code{ref} can be the raw counts or any monotonic transformation thereof.
 #' There is no need to supply (log-)normalized expression values for the benefit of the automatic marker detection.
-#' Similarly, for manual \code{genes}, \code{de.n} and \code{sd.thresh} have no effect.
+#' Similarly, for manual \code{genes}, the values of \code{de.method}, \code{de.n} and \code{sd.thresh} have no effect.
 #'
 #' @section Dealing with multiple references:
 #' The default \pkg{SingleR} policy for dealing with multiple references is to perform the classification for each reference separately and combine the results 
