@@ -1,6 +1,6 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 2.3.7
+Version: 2.4.0
 Date: 2023-09-11
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
