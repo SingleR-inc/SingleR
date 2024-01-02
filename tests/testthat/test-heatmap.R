@@ -63,10 +63,15 @@ test_that("heatmap - can pass excess pheatmap::pheatmap parameters through plotS
         5)
 })
 
-test_that("heatmap scores color can be adjusted when 'normalize = FALSE'", {
+test_that("heatmap scores color can be adjusted, regardless of 'normalize' value", {
     expect_equal(
         plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
             normalize = FALSE,
+            color = colorRampPalette(c("red", "blue"))(33))$color,
+        colorRampPalette(c("red", "blue"))(33))
+    expect_equal(
+        plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
+            normalize = TRUE,
             color = colorRampPalette(c("red", "blue"))(33))$color,
         colorRampPalette(c("red", "blue"))(33))
 })
