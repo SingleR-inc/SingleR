@@ -29,7 +29,9 @@
 #' Contents should be the reference-labels in the order you would like them to appear, from top-to-bottom.
 #' For combined results, include labels for all plots in a single vector and labels relevant to each plot will be extracted.
 #' @param na.color String specifying the color for non-calculated scores of combined \code{results}.
-#' @param annotation_col,cluster_cols,show_colnames,color,silent,...
+#' @param color NA or a vector of colors passed to the \code{\link[pheatmap]{pheatmap}} input of the same name.
+#' When left as NA, SingleR defaults are used.
+#' @param annotation_col,cluster_cols,show_colnames,silent,...
 #' Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' @param grid.vars A named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
 #' used to arrange the multiple plots generated when \code{scores.use} is of length greater than 1.
@@ -187,7 +189,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     scores.use = NULL, calls.use = 0, na.color = "gray30",
     cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE,
-    color = grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100),
+    color = NA,
     silent = FALSE, ..., grid.vars = list())
 {
     results <- .ensure_named(results)
@@ -337,8 +339,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Add scores & score colors
     ## Set score colors and legend display
+    default_color <- grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100)
     if (normalize && ncol(scores) > 1) {
-        color <- viridis::viridis(100)
+        default_color <- viridis::viridis(100)
         args$breaks <- seq(0, 1, length.out = 101)
         args$legend_breaks <- c(0,1)
         args$legend_labels <- c("Lower", "Higher")
@@ -349,7 +352,11 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         args$legend_breaks <- c(-abs.max, abs.max, length.out = 3)
         args$legend_labels <- round(args$legend_breaks, 3)
     }
-    args$color <- color
+    args$color <- if (identical(color, NA)) {
+        default_color
+    } else {
+        color
+    }
 
     # Replace NAs and add na.color
     if (any(is.na(scores))) {
