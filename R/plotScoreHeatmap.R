@@ -31,6 +31,12 @@
 #' @param na.color String specifying the color for non-calculated scores of combined \code{results}.
 #' @param color NA or a vector of colors passed to the \code{\link[pheatmap]{pheatmap}} input of the same name.
 #' When left as NA, SingleR defaults are used.
+#' @param breaks,legend_breaks,legend_labels NA or vectors of values or labels passed to the \code{\link[pheatmap]{pheatmap}} input of the same name.
+#' By default SingleR uses these inputs: \itemize{
+#' \item when \code{normalize=FALSE}), to ensure use of evenly diverging color legend extents and labels.
+#' \item when \code{normalize=TRUE), to relabel only legend extents as "Lower" and "Higher" as actual normalized values have little meaning.
+#' \item always when NA values exist in the targeted scores, even if you set them, to display the \code{na.color} in the legend.
+#' }
 #' @param annotation_col,cluster_cols,show_colnames,silent,...
 #' Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' @param grid.vars A named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
@@ -187,9 +193,12 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     max.labels = 40, normalize = TRUE,
     cells.order = NULL, order.by = c("labels","clusters"), rows.order = NULL,
     scores.use = NULL, calls.use = 0, na.color = "gray30",
+    color = NA,
+    breaks = NA,
+    legend_breaks = NA,
+    legend_labels = NA,
     cluster_cols = FALSE,
     annotation_col = NULL, show_colnames = FALSE,
-    color = NA,
     silent = FALSE, ..., grid.vars = list())
 {
     results <- .ensure_named(results)
@@ -255,6 +264,9 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
             annotation_col=annotation_col,
             silent=silent || use.grid,
             color=color,
+            breaks=breaks,
+            legend_breaks=legend_breaks,
+            legend_labels=legend_labels,
             na.color=na.color,
             normalize=normalize,
             scores.labels=scores.labels,
@@ -286,6 +298,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     show.labels, show.pruned,
     scores.title, labels.title,
     show_colnames, cluster_cols, annotation_col, silent,
+    breaks, legend_breaks, legend_labels,
     color, na.color, normalize, scores.labels, ...)
 {
     # 'scores' is guaranteed to be named by this point.
@@ -339,24 +352,28 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Add scores & score colors
     ## Set score colors and legend display
-    default_color <- grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100)
+    default_if_NA <- function(value, default) {
+        if (identical(value, NA)) {
+            return(default)
+        }
+        value
+    }
     if (normalize && ncol(scores) > 1) {
-        default_color <- viridis::viridis(100)
-        args$breaks <- seq(0, 1, length.out = 101)
-        args$legend_breaks <- c(0,1)
-        args$legend_labels <- c("Lower", "Higher")
+        args$color <- default_if_NA(color, viridis::viridis(100))
+        default_breaks <- seq(0, 1, length.out = 101)
+        default_legend_breaks <- c(0,1)
+        default_legend_labels <- c("Lower", "Higher")
     } else {
+        args$color <- default_if_NA(color, grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B"))(100))
         abs.max <- max(abs(range(scores, na.rm = TRUE)))
-        breaks.len <- length(color)+1
-        args$breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
-        args$legend_breaks <- c(-abs.max, abs.max, length.out = 3)
-        args$legend_labels <- round(args$legend_breaks, 3)
+        breaks.len <- length(args$color)+1
+        default_breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
+        default_legend_breaks <- c(-abs.max, abs.max, length.out = 3)
+        default_legend_labels <- round(default_legend_breaks, 3)
     }
-    args$color <- if (identical(color, NA)) {
-        default_color
-    } else {
-        color
-    }
+    args$breaks <- default_if_NA(breaks, default_breaks)
+    args$legend_breaks <- default_if_NA(legend_breaks, default_legend_breaks)
+    args$legend_labels <- default_if_NA(legend_labels, default_legend_labels)
 
     # Replace NAs and add na.color
     if (any(is.na(scores))) {
