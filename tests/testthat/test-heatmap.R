@@ -81,26 +81,26 @@ test_that("heatmap allows users to adjust breaks, legend_breaks, legend_labels",
         plotScoreHeatmap(results = pred, silent = TRUE,
             normalize = FALSE,
             color = colorRampPalette(c("red", "blue"))(33),
-            breaks = seq(-5, 5, 34),
+            breaks = seq(-5, 5, length.out = 34),
             legend_breaks = c(-5, 0, 5),
             legend_labels = c("manually", "set", "labels")),
         "pheatmap")
     non_norm_args <- plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
         normalize = FALSE,
         color = colorRampPalette(c("red", "blue"))(33),
-        breaks = seq(-5, 5, 34),
+        breaks = seq(-5, 5, length.out = 34),
         legend_breaks = c(-5, 0, 5),
         legend_labels = c("manually", "set", "labels"))
-    expect_equal(non_norm_args$breaks, seq(-5, 5, 34))
+    expect_equal(non_norm_args$breaks, seq(-5, 5, length.out = 34))
     expect_equal(non_norm_args$legend_breaks, c(-5, 0, 5))
     expect_equal(non_norm_args$legened_labels, c("manually", "set", "labels"))
     norm_args <- plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
         normalize = TRUE,
         color = colorRampPalette(c("red", "blue"))(33),
-        breaks = seq(-5, 5, 34),
+        breaks = seq(-5, 5, length.out = 34),
         legend_breaks = c(-5, 0, 5),
         legend_labels = c("manually", "set", "labels"))
-    expect_equal(norm_args$breaks, seq(-5, 5, 34))
+    expect_equal(norm_args$breaks, seq(-5, 5, length.out = 34))
     expect_equal(norm_args$legend_breaks, c(-5, 0, 5))
     expect_equal(norm_args$legened_labels, c("manually", "set", "labels"))
 })
