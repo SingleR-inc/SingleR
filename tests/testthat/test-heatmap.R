@@ -93,7 +93,7 @@ test_that("heatmap allows users to adjust breaks, legend_breaks, legend_labels",
         legend_labels = c("manually", "set", "labels"))
     expect_equal(non_norm_args$breaks, seq(-5, 5, length.out = 34))
     expect_equal(non_norm_args$legend_breaks, c(-5, 0, 5))
-    expect_equal(non_norm_args$legened_labels, c("manually", "set", "labels"))
+    expect_equal(non_norm_args$legend_labels, c("manually", "set", "labels"))
     norm_args <- plotScoreHeatmap(results = pred, silent = TRUE, return.data = TRUE,
         normalize = TRUE,
         color = colorRampPalette(c("red", "blue"))(33),
@@ -102,7 +102,7 @@ test_that("heatmap allows users to adjust breaks, legend_breaks, legend_labels",
         legend_labels = c("manually", "set", "labels"))
     expect_equal(norm_args$breaks, seq(-5, 5, length.out = 34))
     expect_equal(norm_args$legend_breaks, c(-5, 0, 5))
-    expect_equal(norm_args$legened_labels, c("manually", "set", "labels"))
+    expect_equal(norm_args$legend_labels, c("manually", "set", "labels"))
 })
 
 test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels", {
