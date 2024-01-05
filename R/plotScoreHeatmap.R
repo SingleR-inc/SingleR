@@ -29,14 +29,16 @@
 #' Contents should be the reference-labels in the order you would like them to appear, from top-to-bottom.
 #' For combined results, include labels for all plots in a single vector and labels relevant to each plot will be extracted.
 #' @param na.color String specifying the color for non-calculated scores of combined \code{results}.
-#' @param color NA or a vector of colors passed to the \code{\link[pheatmap]{pheatmap}} input of the same name.
-#' When left as NA, SingleR defaults are used.
-#' @param breaks,legend_breaks,legend_labels NA or vectors of values or labels passed to the \code{\link[pheatmap]{pheatmap}} input of the same name.
-#' By default SingleR uses these inputs: \itemize{
-#' \item when \code{normalize=FALSE}), to ensure use of evenly diverging color legend extents and labels.
-#' \item when \code{normalize=TRUE), to relabel only legend extents as "Lower" and "Higher" as actual normalized values have little meaning.
-#' \item always when NA values exist in the targeted scores, even if you set them, to display the \code{na.color} in the legend.
-#' }
+#' This will always be displayed in the legend if any \code{NA} values are present in the scores.
+#' @param color Character vector of colors passed to \code{\link[pheatmap]{pheatmap}}.
+#' If \code{NA} and \code{normalize=TRUE}, the viridis color scheme is used by default;
+#' while if \code{normalize=FALSE}, a default red-blue color scheme is chosen that should be symmetric around zero (see \code{breaks}).
+#' @param breaks Numeric vector to map scores to colors, see the argument of the same name in \code{\link[pheatmap]{pheatmap}}. 
+#' If \code{NA}, this defaults to a sequence from 0 to 1 when \code{normalize=TRUE}, 
+#' or a sequence from -T to T where T is the largest absolute score when \code{normalize=FALSE}.
+#' @param legend_breaks,legend_labels Arguments passed to \code{\link[pheatmap]{pheatmap}} to label the legend.
+#' If \code{NA}, only the legend extremes are labelled by default;
+#' and when \code{normalize=TRUE}, the legend extremes are only labelled as \dQuote{Lower} and \dQuote{Higher}, as actual normalized values have little meaning.
 #' @param annotation_col,cluster_cols,show_colnames,silent,...
 #' Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #' @param grid.vars A named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
@@ -368,7 +370,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         abs.max <- max(abs(range(scores, na.rm = TRUE)))
         breaks.len <- length(args$color)+1
         default_breaks <- seq(-abs.max, abs.max, length.out = breaks.len)
-        default_legend_breaks <- c(-abs.max, abs.max, length.out = 3)
+        default_legend_breaks <- c(-abs.max, abs.max)
         default_legend_labels <- round(default_legend_breaks, 3)
     }
     args$breaks <- default_if_NA(breaks, default_breaks)

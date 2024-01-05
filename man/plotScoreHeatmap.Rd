@@ -19,10 +19,13 @@ plotScoreHeatmap(
   scores.use = NULL,
   calls.use = 0,
   na.color = "gray30",
+  color = NA,
+  breaks = NA,
+  legend_breaks = NA,
+  legend_labels = NA,
   cluster_cols = FALSE,
   annotation_col = NULL,
   show_colnames = FALSE,
-  color = (grDevices::colorRampPalette(c("#D1147E", "white", "#00A44B")))(100),
   silent = FALSE,
   ...,
   grid.vars = list()
@@ -68,9 +71,22 @@ This is only relevant for combined results, see Details.}
 for use in the annotation bar when \code{show.labels=TRUE}.
 This is only relevant for combined results, see Details.}
 
-\item{na.color}{String specifying the color for non-calculated scores of combined \code{results}.}
+\item{na.color}{String specifying the color for non-calculated scores of combined \code{results}.
+This will always be displayed in the legend if any \code{NA} values are present in the scores.}
 
-\item{annotation_col, cluster_cols, show_colnames, color, silent, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
+\item{color}{Character vector of colors passed to \code{\link[pheatmap]{pheatmap}}.
+If \code{NA} and \code{normalize=TRUE}, the viridis color scheme is used by default;
+while if \code{normalize=FALSE}, a default red-blue color scheme is chosen that should be symmetric around zero (see \code{breaks}).}
+
+\item{breaks}{Numeric vector to map scores to colors, see the argument of the same name in \code{\link[pheatmap]{pheatmap}}. 
+If \code{NA}, this defaults to a sequence from 0 to 1 when \code{normalize=TRUE}, 
+or a sequence from -T to T where T is the largest absolute score when \code{normalize=FALSE}.}
+
+\item{legend_breaks, legend_labels}{Arguments passed to \code{\link[pheatmap]{pheatmap}} to label the legend.
+If \code{NA}, only the legend extremes are labelled by default;
+and when \code{normalize=TRUE}, the legend extremes are only labelled as \dQuote{Lower} and \dQuote{Higher}, as actual normalized values have little meaning.}
+
+\item{annotation_col, cluster_cols, show_colnames, silent, ...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 
 \item{grid.vars}{A named list of extra variables to pass to \code{\link[gridExtra]{grid.arrange}},
 used to arrange the multiple plots generated when \code{scores.use} is of length greater than 1.}
