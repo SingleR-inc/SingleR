@@ -74,7 +74,7 @@ pred.hesc <- SingleR(test = hESCs, ref = hpca.se, assay.type.test=1,
 ```
 
 Each row of the output `DataFrame` contains prediction results for a single cell.
-Labels are shown before fine-tuning (`first.labels`), after fine-tuning (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
+Labels are shown before (`labels`) and after pruning (`pruned.labels`), along with the associated scores.
 
 ```{r}
 pred.hesc

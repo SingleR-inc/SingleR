@@ -18,7 +18,7 @@ This mimics the output of \code{\link{classifySingleR}} and contains the followi
 \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
-It may also contain \code{first.labels} and \code{pruned.labels} if these were also present in \code{results}.
+It may also contain \code{pruned.labels} if these were also present in \code{results}.
 
 The \code{\link{metadata}} contains \code{common.genes},
 a character vector of the common genes that were used across all references in \code{results};

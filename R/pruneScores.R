@@ -19,7 +19,7 @@
 #' resulting in assignment of an incorrect label to that cell.
 #' The \code{pruneScores} function aims to mitigate this effect by removing poor-quality assignments with \dQuote{low} scores.
 #'
-#' We compute a \dQuote{delta} value for each cell, defined as the difference between the score for the assigned label and the and median score across all labels.
+#' We compute a \dQuote{delta} value for each cell, defined as the difference between the score for the assigned label and the median score across all labels.
 #' If the delta is small, this indicates that the cell matches all labels with the same confidence such that the assigned label is not particularly meaningful.
 #' The aim is to discard low delta values caused by (i) ambiguous assignments with closely related reference labels and (ii) incorrect assignments that match poorly to all reference labels.
 #' 
