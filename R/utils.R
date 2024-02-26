@@ -26,7 +26,6 @@
         discard <- rowAnyNAs(DelayedArray(x))
 
         if (any(discard)) {
-            warning(sprintf("'%s' contains rows with missing values", msg))
             x <- x[!discard,,drop=FALSE]
         }
     }
