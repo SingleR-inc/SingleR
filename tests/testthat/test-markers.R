@@ -24,7 +24,6 @@ test_that("grouped_medians works as expected", {
     f <- factor(y)
     ptr <- beachmat::initializeCpp(x)
     obs <- SingleR:::grouped_medians(ptr, as.integer(f) - 1L, nlevels(f), 1)
-    obs <- t(obs)
     colnames(obs) <- levels(f)
     expect_equal(expected, obs)
 })

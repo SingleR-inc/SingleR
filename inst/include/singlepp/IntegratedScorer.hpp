@@ -183,16 +183,14 @@ public:
      * containing the assigned label for each column in each reference.
      * @param built Set of integrated references produced by `IntegratedBuilder::finish()`.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the reference with the best label for each cell.
+     * On output, this is filled with the index of the reference with the best label for each cell.
      * @param[out] scores Vector of pointers of length equal to the number of references.
      * Each pointer should point to an array of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for the best label of that reference for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for the best label of that reference for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores.
+     * On output, this is filled with the difference between the highest and second-highest scores.
      * This may also be `NULL` in which case the deltas are not reported.
-     *
-     * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(
         const tatami::Matrix<double, int>* mat,
@@ -208,8 +206,8 @@ public:
         tatami::parallelize([&](int, int start, int len) -> void {
             // We perform an indexed extraction, so all subsequent indices
             // will refer to indices into this subset (i.e., 'built.universe').
-            auto wrk = tatami::consecutive_extractor<false, false>(mat, start, len, built.universe); 
-            std::vector<double> buffer(wrk->index_length);
+            auto wrk = tatami::consecutive_extractor<false>(mat, false, start, len, built.universe); 
+            std::vector<double> buffer(built.universe.size());
 
             RankedVector<double, int> data_ranked, data_ranked2;
             data_ranked.reserve(NR);

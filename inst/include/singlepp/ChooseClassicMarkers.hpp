@@ -69,7 +69,7 @@ public:
      *
      * @return An appropriate number of markers for each pairwise comparison.
      *
-     * The exact expression is defined as $500 (\frac{2}{3})^{\log_2{N}}$ for $N$ labels,
+     * The exact expression is defined as \f$500 (\frac{2}{3})^{\log_2{N}}\f$ for \f$N\f$ labels,
      * which steadily decreases the markers per comparison as the number of labels increases.
      * This aims to avoid an excessive number of features when dealing with references with many labels.
      */
@@ -165,7 +165,7 @@ public:
 
         int actual_number = number;
         if (number < 0) {
-            actual_number = std::round(500.0 * std::pow(2.0/3.0, std::log(static_cast<double>(nlabels)) / std::log(2.0)));
+            actual_number = number_of_markers(nlabels);
         } 
         if (actual_number > static_cast<int>(ngenes)) {
             actual_number = ngenes;
@@ -182,7 +182,7 @@ public:
             typedef typename  Matrix::value_type Value_;
             typedef typename  Matrix::index_type Index_;
             std::vector<Value_> rbuffer(ngenes), lbuffer(ngenes);
-            std::vector<std::shared_ptr<tatami::FullDenseExtractor<Value_, Index_> > > rworks(nrefs), lworks(nrefs);
+            std::vector<std::shared_ptr<tatami::MyopicDenseExtractor<Value_, Index_> > > rworks(nrefs), lworks(nrefs);
 
 #ifndef SINGLEPP_CUSTOM_PARALLEL
             #pragma omp for

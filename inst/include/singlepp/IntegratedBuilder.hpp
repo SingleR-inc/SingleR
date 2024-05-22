@@ -213,22 +213,27 @@ private:
 
 public:
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload assumes that the reference and test datasets have the same features.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     *
      * @param ref Matrix containing the reference expression values.
      * Rows are features and columns are reference samples.
      * The number and identity of features should be identical to the test dataset to be classified in `IntegratedScorer`.
      * @param[in] labels Pointer to an array of label assignments.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels in `ref`, see `Markers` for more details.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
      */
     void add(const tatami::Matrix<double, int>* ref, const int* labels, const Markers& markers) {
         add_internal_direct(ref, labels, markers, false);    
     }
 
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload automatically identifies the intersection of features between the test and reference datasets.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
+     *
      * @tparam Id Type of the gene identifier for each row.
      *
      * @param mat_nrow Number of rows (genes) in the test dataset.
@@ -243,11 +248,6 @@ public:
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels in `ref`, see `Markers` for more details.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
-     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     template<typename Id>
     void add(size_t mat_nrow,
@@ -263,16 +263,17 @@ public:
 
 public:
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload assumes that the reference and test datasets have the same features,
+     * and that the reference dataset has already been processed through `BasicBuilder::run()`.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     *
      * @param ref Matrix containing the reference expression values.
      * Rows are features and columns are reference samples.
      * The number and identity of features should be identical to the test dataset to be classified in `IntegratedScorer`.
      * @param[in] labels Pointer to an array of label assignments.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param built The built reference created by running `BasicBuilder::run()` on `ref` and `labels`.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
      */
     void add(const tatami::Matrix<double, int>* ref, const int* labels, const BasicBuilder::Prebuilt& built) {
         add_internal_direct(ref, labels, built.markers, built.subset);
@@ -280,7 +281,12 @@ public:
     }
 
     /**
-     * @param intersection Vector defining the intersection of features betweent the test and reference datasets.
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload requires an existing intersection between the test and reference datasets,
+     * and assumes that the reference dataset has already been processed through `BasicBuilder::run()`.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     *
+     * @param intersection Vector defining the intersection of features between the test and reference datasets.
      * Each entry is a pair where the first element is the row index in the test matrix,
      * and the second element is the row index for the corresponding feature in the reference matrix.
      * Each row index for either matrix should occur no more than once in `intersection`.
@@ -289,11 +295,6 @@ public:
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param built The built reference created by running `BasicBuilder::run()` on all preceding arguments.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
-     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     void add(const std::vector<std::pair<int, int> >& intersection,
         const tatami::Matrix<double, int>* ref, 
@@ -312,6 +313,12 @@ public:
     }
 
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload automatically identifies the intersection of features between the test and reference datasets,
+     * and assumes that the reference dataset has already been processed through `BasicBuilder::run()`.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
+     *
      * @tparam Id Type of the gene identifier for each row.
      *
      * @param mat_nrow Number of rows (genes) in the test dataset.
@@ -326,11 +333,6 @@ public:
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param built The built reference created by running `BasicBuilder::run()` on all preceding arguments.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
-     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     template<typename Id>
     void add(size_t mat_nrow,
@@ -346,6 +348,11 @@ public:
     }
 
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload assumes that the reference and test datasets have the same features,
+     * and that the reference dataset has already been processed through `BasicBuilder::run()`.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     *
      * @param intersection Vector defining the intersection of features betweent the test and reference datasets.
      * Each entry is a pair where the first element is the row index in the test matrix,
      * and the second element is the row index for the corresponding feature in the reference matrix.
@@ -355,11 +362,6 @@ public:
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param built The built reference created by running `BasicBuilder::run()` on `ref` and `labels`.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
-     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     void add(const std::vector<std::pair<int, int> >& intersection,
         const tatami::Matrix<double, int>* ref, 
@@ -370,6 +372,12 @@ public:
     }
 
     /**
+     * Add a reference dataset to this object for later use in `finish()`.
+     * This overload automatically identifies the intersection of features between the test and reference datasets,
+     * and assumes that the reference dataset has already been processed through `BasicBuilder::run()`.
+     * `ref` and `labels` are expected to remain valid until `finish()` is called.
+     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
+     *
      * @tparam Id Type of the gene identifier for each row.
      *
      * @param mat_nrow Number of rows (genes) in the test dataset.
@@ -384,11 +392,6 @@ public:
      * @param[in] labels An array of length equal to the number of columns of `ref`, containing the label for each sample.
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param built The built reference created by running `BasicBuilder::run()` on `ref` and `labels`.
-     *
-     * @return The reference dataset is registered for later use in `finish()`.
-     *
-     * `ref` and `labels` are expected to remain valid until `finish()` is called.
-     * `mat_id` and `mat_nrow` should also be constant for all invocations to `add()`.
      */
     template<typename Id>
     void add(size_t mat_nrow,
@@ -424,8 +427,8 @@ private:
 
             // 'in_use' is guaranteed to be sorted and unique, see its derivation in finish().
             // This means we can directly use it for indexed extraction.
-            auto wrk = tatami::consecutive_extractor<false, false>(curmat, start, len, in_use); 
-            std::vector<double> buffer(wrk->index_length);
+            auto wrk = tatami::consecutive_extractor<false>(curmat, false, start, len, in_use); 
+            std::vector<double> buffer(in_use.size());
 
             for (int c = start, end = start + len; c < end; ++c) {
                 auto ptr = wrk->fetch(c, buffer.data());
@@ -481,7 +484,7 @@ private:
             RankedVector<double, int> tmp_ranked;
             tmp_ranked.reserve(remapped_in_use.size());
             std::vector<double> buffer(remapped_in_use.size());
-            auto wrk = tatami::consecutive_extractor<false, false>(curmat, start, len, remapped_in_use);
+            auto wrk = tatami::consecutive_extractor<false>(curmat, false, start, len, remapped_in_use);
 
             for (size_t c = start, end = start + len; c < end; ++c) {
                 auto ptr = wrk->fetch(c, buffer.data());

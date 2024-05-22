@@ -53,7 +53,7 @@ inline void annotate_cells_simple(
     SubsetSorter subsorted(subcopy);
 
     tatami::parallelize([&](int, int start, int length) -> void {
-        auto wrk = tatami::consecutive_extractor<false, false>(mat, start, length, subsorted.extraction_subset());
+        auto wrk = tatami::consecutive_extractor<false>(mat, false, start, length, subsorted.extraction_subset());
         RankedVector<double, int> vec(num_subset);
         std::vector<double> buffer(num_subset);
 
