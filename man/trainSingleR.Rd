@@ -80,7 +80,8 @@ By default, all genes in \code{ref} are used.}
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
+If true and any missing values are found, the rows containing these values are silently removed.}
 
 \item{approximate}{Logical scalar indicating whether a faster approximate method should be used to compute the quantile.}
 

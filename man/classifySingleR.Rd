@@ -38,7 +38,8 @@ Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multip
 
 \item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
+If true and any missing values are found, the rows containing these values are silently removed.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for classification.}
 
