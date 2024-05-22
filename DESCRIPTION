@@ -23,7 +23,7 @@ Imports:
     stats,
     utils,
     Rcpp,
-    beachmat,
+    beachmat (>= 2.21.1),
     parallel
 LinkingTo:
     Rcpp,
