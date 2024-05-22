@@ -116,15 +116,13 @@ public:
      * containing the index of the row of `mat` corresponding to each gene in `built.subset`.
      * That is, row `mat_subset[i]` in `mat` should be the same gene as row `built.subset[i]` in the reference matrix.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the assigned label for each cell.
+     * On output, this is filled with the index of the assigned label for each cell.
      * @param[out] scores Vector of pointers to arrays of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for each label for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for each label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * On output, this is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
-     *
-     * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(const tatami::Matrix<double, int>* mat, const BasicBuilder::Prebuilt& built, const int* mat_subset, int* best, std::vector<double*>& scores, double* delta) const {
         annotate_cells_simple(
@@ -149,15 +147,13 @@ public:
      * This should have the same order and identity of genes as the reference matrix used to create `built`.
      * @param built An object produced by `BasicBuilder::build()`.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the assigned label for each cell.
+     * On output, this is filled with the index of the assigned label for each cell.
      * @param[out] scores Vector of pointers to arrays of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for each label for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for each label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * On output, this is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
-     *
-     * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(const tatami::Matrix<double, int>* mat, const BasicBuilder::Prebuilt& built, int* best, std::vector<double*>& scores, double* delta) const {
         run(mat, built, built.subset.data(), best, scores, delta);
@@ -243,15 +239,13 @@ public:
      * @param mat Expression matrix of the test dataset, where rows are genes and columns are cells.
      * @param built An object produced by `build()` with intersections.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the assigned label for each cell.
+     * On output, this is filled with the index of the assigned label for each cell.
      * @param[out] scores Vector of pointers to arrays of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for each label for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for each label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * On output, tkkhis is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
-     * 
-     * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(
         const tatami::Matrix<double, int>* mat, 

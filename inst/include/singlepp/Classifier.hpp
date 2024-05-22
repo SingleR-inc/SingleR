@@ -209,16 +209,14 @@ public:
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels, see `Markers` for more details.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the assigned label for each cell.
+     * On output, this is filled with the index of the assigned label for each cell.
      * @param[out] scores Vector of pointers of length equal to the number of labels.
      * Each pointer should point to an array of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for that label for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for that label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * On output, this is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
-     *
-     * @return `best`, `scores` and `delta` are filled with their output values.
      */
     void run(const tatami::Matrix<double, int>* mat, const tatami::Matrix<double, int>* ref, const int* labels, Markers markers, int* best, std::vector<double*>& scores, double* delta) const {
         auto prebuilt = build_reference(ref, labels, std::move(markers));
@@ -256,16 +254,14 @@ public:
      * The smallest label should be 0 and the largest label should be equal to the total number of unique labels minus 1.
      * @param markers A vector of vectors of ranked marker genes for each pairwise comparison between labels, see `Markers` for more details.
      * @param[out] best Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the index of the assigned label for each cell.
+     * On output, this is filled with the index of the assigned label for each cell.
      * @param[out] scores Vector of pointers of length equal to the number of labels.
      * Each pointer should point to an array of length equal to the number of columns in `mat`.
-     * This is filled with the (non-fine-tuned) score for that label for each cell.
-     * Any pointer may be `NULL` in which case the scores for that label will not be saved.
+     * On output, this is filled with the (non-fine-tuned) score for that label for each cell.
+     * Any pointer may be `NULL` in which case the scores for that label will not be reported.
      * @param[out] delta Pointer to an array of length equal to the number of columns in `mat`.
-     * This is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
+     * On output, this is filled with the difference between the highest and second-highest scores, possibly after fine-tuning.
      * This may also be `NULL` in which case the deltas are not reported.
-     * 
-     * @return `best`, `scores` and `delta` are filled with their output values.
      * 
      * This version of `run()` applies an intersection to find the common genes between `mat` and `ref`, based on their shared values in `mat_id` and `ref_id`.
      * The annotation is then performed using only the subset of common genes.

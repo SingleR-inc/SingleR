@@ -78,7 +78,6 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
 
         flabels <- factor(labels[[i]])
         gm <- grouped_medians(curptr, as.integer(flabels) - 1L, nlevels(flabels), nthreads = num.threads)
-        gm <- t(gm)
         colnames(gm) <- levels(flabels)
         ref[[i]] <- gm
     }

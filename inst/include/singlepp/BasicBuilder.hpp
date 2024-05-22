@@ -36,7 +36,7 @@ public:
         /**
          * See `set_top()` for details.
          */
-        static constexpr int top = 20;
+        static constexpr int top = -1;
 
         /**
          * See `set_approximate()` for details.
@@ -204,13 +204,13 @@ public:
 
         /**
          * Row indices of test dataset, specifying the features in the intersection.
-         * This has the same length as `ref_indices`.
+         * This has the same length as `ref_subset`, where corresponding entries refer to the same features in the respective datasets.
          */
         std::vector<int> mat_subset;
 
         /**
          * Row indices of reference dataset, specifying the features in the intersection.
-         * This has the same length as `mat_indices`.
+         * This has the same length as `mat_subset`, where corresponding entries refer to the same features in the respective datasets.
          */
         std::vector<int> ref_subset;
 
@@ -219,6 +219,17 @@ public:
          */
         size_t num_labels() const {
             return references.size();
+        }
+
+        /**
+         * @return Number of profiles in this reference.
+         */
+        size_t num_profiles() const {
+            size_t n = 0;
+            for (const auto& ref : references) {
+                n += ref.ranked.size();
+            }
+            return n;
         }
 
         /**
