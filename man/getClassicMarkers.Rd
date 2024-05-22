@@ -32,7 +32,8 @@ Each element should contain a character vector or factor specifying the label fo
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
+If true and any missing values are found, the rows containing these values are silently removed.}
 
 \item{de.n}{An integer scalar specifying the number of DE genes to use.
 Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.}

@@ -125,7 +125,7 @@ test_that("trainSingleR strips out NAs", {
     sce <- training
     logcounts(sce)[1,1] <- NA
 
-    expect_warning(out <- trainSingleR(sce, sce$label), "missing values")
+    out <- trainSingleR(sce, sce$label)
     ref <- trainSingleR(sce[-1,], sce$label)
 
     expect_identical(out$ref, ref$ref)

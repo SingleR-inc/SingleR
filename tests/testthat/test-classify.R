@@ -86,7 +86,7 @@ test_that("classifySingleR behaves with missing values", {
     logcounts(sce)[1,1] <- NA
 
     Q <- 0.8
-    expect_warning(out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q), 'missing values')
+    out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q)
     ref <- classifySingleR(test, trained, fine.tune=FALSE, quantile=Q)
     expect_identical(out, ref)
 })
