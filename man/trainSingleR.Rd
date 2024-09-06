@@ -31,13 +31,12 @@ In general, the expression values are expected to be log-transformed, see Detail
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
-in which case the row names are expected to be the same across all objects.}
+Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
-Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
+Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
 
 \item{genes}{A string containing \code{"de"}, indicating that markers should be calculated from \code{ref}.
 For back compatibility, other string values are allowed but will be ignored with a deprecation warning.
@@ -83,14 +82,17 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
 If true and any missing values are found, the rows containing these values are silently removed.}
 
-\item{approximate}{Logical scalar indicating whether a faster approximate method should be used to compute the quantile.}
+\item{approximate}{Deprecated, use \code{BNPARAM} instead.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building.}
 
-\item{BNPARAM}{Deprecated and ignored.}
+\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying how the neighbor search index should be constructed.}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.}
+
+\item{test.genes}{Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
+If \code{NULL}, it is assumed that the test dataset and \code{ref} have the same genes in the same row order.}
 }
 \value{
 For a single reference, a \linkS4class{List} is returned containing:
@@ -120,9 +122,13 @@ This is done by identifying the median expression within each label, and computi
 For each label, the top \code{de.n} genes with the largest differences compared to another label are chosen as markers to distinguish the two labels.
 The expression values are expected to be log-transformed and normalized.
 
-If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
-Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
-This can be convenient for ensuring that only appropriate genes are used (e.g., not pseudogenes or predicted genes).
+Classification with \code{classifySingleR} assumes that the test dataset contains all marker genes that were detected from the reference.
+If the test and reference datasets do not have the same genes in the same order, we can specify \code{test.genes} to the row names of the test dataset.
+This will instruct \code{trainSingleR} to only consider markers that are present in the test dataset.
+
+Similarly, if \code{restrict} is specified, marker selection will only be performed using this restrictive subset of genes.
+This can be convenient for ignoring inappropriate genes like pseudogenes or predicted genes.
+Note that both parameters have the same effect as just subsetting the input \code{ref}.
 }
 \section{Custom feature specification}{
 

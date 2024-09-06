@@ -3,9 +3,9 @@
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
-SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads) {
+SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads) {
     Rtatami::BoundNumericPointer curtest(test);
-    IntegratedXPtr iptr(integrated_build);
+    TrainedIntegratedPointer iptr(integrated_build);
 
     // Setting up the previous results.
     std::vector<Rcpp::IntegerVector> previous_results_vec;
@@ -25,27 +25,25 @@ SEXP integrate_run(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build
     Rcpp::IntegerVector best(ncells);
     Rcpp::NumericVector delta(ncells);
 
+    singlepp::ClassifyIntegratedBuffers<int, double> buffers;
+    buffers.best = static_cast<int*>(best.begin());
+    buffers.delta = static_cast<double*>(delta.begin());
+
     size_t nrefs = iptr->num_references();
     Rcpp::NumericMatrix scores(ncells, nrefs);
-    std::vector<double*> scores_ptr(nrefs);
     if (nrefs) {
-        scores_ptr[0] = static_cast<double*>(scores.begin());
+        buffers.scores.resize(nrefs);
+        buffers.scores[0] = static_cast<double*>(scores.begin());
         for (size_t l = 1; l < nrefs; ++l) {
-            scores_ptr[l] = scores_ptr[l-1] + ncells;
+            buffers.scores[l] = buffers.scores[l-1] + ncells;
         }
     }
 
     // Running the integrated scoring.
-    singlepp::IntegratedScorer scorer;
-    scorer.set_num_threads(nthreads).set_quantile(quantile);
-    scorer.run(
-        curtest->ptr.get(), 
-        previous_results, 
-        *iptr, 
-        static_cast<int*>(best.begin()),
-        scores_ptr,
-        static_cast<double*>(delta.begin())
-    );
+    singlepp::ClassifyIntegratedOptions<double> opts;
+    opts.num_threads = nthreads;
+    opts.quantile = quantile;
+    singlepp::classify_integrated(*(curtest->ptr), previous_results, *iptr, buffers, opts);
 
     return Rcpp::List::create(
         Rcpp::Named("best") = best,

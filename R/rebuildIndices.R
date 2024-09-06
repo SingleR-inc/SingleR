@@ -46,7 +46,8 @@ rebuildIndex <- function(trained, num.threads=1) {
             markers=trained$markers$full, 
             labels=trained$labels$full, 
             ulabels=trained$labels$unique, 
-            approximate=trained$options$approximate, 
+            BNPARAM=trained$options$BNPARAM,
+            test.genes=trained$options$test.genes,
             num.threads=num.threads) 
     }
     trained

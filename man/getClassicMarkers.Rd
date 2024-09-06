@@ -21,13 +21,12 @@ In general, the expression values are expected to be log-transformed, see Detail
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
-in which case the row names are expected to be the same across all objects.}
+Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
-Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
+Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}

@@ -2,16 +2,15 @@
 #define UTILS_H 
 
 #include "Rcpp.h"
-#include "Rtatami.h"
-
-// must be before singlepp includes.
-#define SINGLEPP_CUSTOM_PARALLEL tatami_r::parallelize 
-#define __ERROR_PRINTER_OVERRIDE__  REprintf // avoid R CMD check warnings about stderr in Annoy.
-
+#include "Rtatami.h" // before singlepp includes to ensure the tatami_r::parallelize() override is set.
 #include "singlepp/singlepp.hpp"
 
-typedef Rcpp::XPtr<singlepp::BasicBuilder::Prebuilt> PrebuiltXPtr;
+typedef singlepp::TrainedSingleIntersect<int, double> TrainedSingleIntersect;
 
-typedef Rcpp::XPtr<singlepp::IntegratedReferences> IntegratedXPtr;
+typedef Rcpp::XPtr<TrainedSingleIntersect> TrainedSingleIntersectPointer;
+
+typedef singlepp::TrainedIntegrated<int> TrainedIntegrated;
+
+typedef Rcpp::XPtr<TrainedIntegrated> TrainedIntegratedPointer;
 
 #endif
