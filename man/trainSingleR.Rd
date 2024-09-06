@@ -7,6 +7,7 @@
 trainSingleR(
   ref,
   labels,
+  test.genes = NULL,
   genes = "de",
   sd.thresh = NULL,
   de.method = c("classic", "wilcox", "t"),
@@ -37,6 +38,9 @@ Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or n
 
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
 Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
+
+\item{test.genes}{Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
+If \code{NULL}, it is assumed that the test dataset and \code{ref} have the same genes in the same row order.}
 
 \item{genes}{A string containing \code{"de"}, indicating that markers should be calculated from \code{ref}.
 For back compatibility, other string values are allowed but will be ignored with a deprecation warning.
@@ -90,9 +94,6 @@ If true and any missing values are found, the rows containing these values are s
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.}
-
-\item{test.genes}{Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
-If \code{NULL}, it is assumed that the test dataset and \code{ref} have the same genes in the same row order.}
 }
 \value{
 For a single reference, a \linkS4class{List} is returned containing:

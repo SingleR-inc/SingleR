@@ -177,6 +177,7 @@
 trainSingleR <- function(
     ref, 
     labels, 
+    test.genes=NULL,
     genes="de", 
     sd.thresh=NULL, 
     de.method=c("classic", "wilcox", "t"), 
@@ -226,7 +227,7 @@ trainSingleR <- function(
     for (l in seq_along(ref)) {
         curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
 
-        curlabels <- as.character(labels[[ll]])
+        curlabels <- as.character(labels[[l]])
         stopifnot(length(curlabels) == ncol(curref))
         keep <- !is.na(curlabels)
         if (!all(keep)) {

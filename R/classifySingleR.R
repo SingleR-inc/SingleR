@@ -109,14 +109,17 @@ classifySingleR <- function(
         trained <- list(trained)
     }
 
-    results <- lapply(trained, FUN=.classify_internals, 
-        test=test, 
-        quantile=quantile, 
-        fine.tune=fine.tune, 
-        tune.thresh=tune.thresh, 
-        prune=prune, 
-        num.threads=num.threads
-    )
+    results <- vector("list", length(trained))
+    for (l in seq_along(results)) {
+        trained[[l]] <- .classify_internals(
+            test=test, 
+            quantile=quantile, 
+            fine.tune=fine.tune, 
+            tune.thresh=tune.thresh, 
+            prune=prune, 
+            num.threads=num.threads
+        )
+    }
 
     if (solo) {
         results[[1]]
@@ -133,19 +136,25 @@ classifySingleR <- function(
 
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
-    m <- match(trained$markers$unique, rownames(test))
-    if (anyNA(m)) {
-        stop("'rownames(test)' does not contain all genes used in 'trained'")
+    if (!is.null(trained$options$test.genes)) {
+        if (!identical(trained$options$test.genes, rownames(test))) {
+            stop("expected 'rownames(test)' to be the same as 'test.genes' in 'trainSingleR'")
+        }
+    } else if (nrow(trained$ref) != nrow(test)) {
+        stop("expected 'test' to have the same number of rows as the reference dataset")
     }
 
     trained <- rebuildIndex(trained, num.threads = num.threads)
 
     parsed <- initializeCpp(test)
-    out <- run(parsed, m - 1L, trained$built, 
+    out <- classify_single(
+        test = parsed, 
+        prebuilt = trained$built, 
         quantile = quantile, 
         use_fine_tune = fine.tune, 
         fine_tune_threshold = tune.thresh, 
-        nthreads = num.threads)
+        nthreads = num.threads
+    )
 
     colnames(out$scores) <- trained$labels$unique
     output <- DataFrame(

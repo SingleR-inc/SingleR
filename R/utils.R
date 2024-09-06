@@ -23,8 +23,11 @@
         old <- getAutoBPPARAM()
         setAutoBPPARAM(BPPARAM)
         on.exit(setAutoBPPARAM(old))
+
+        x <- DelayedArray(x)
+        discard <- rowAnyNAs(x)
         if (any(discard)) {
-            x <- DelayedArray(x)[!discard,,drop=FALSE]
+            x <- x[!discard,,drop=FALSE]
         }
     }
 
