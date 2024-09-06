@@ -114,7 +114,7 @@ SingleR <- function(
     for (rr in tmp.ref) {
         keep <- rownames(test) %in% rownames(rr)
         if (!all(keep)) {
-            test <- DelayedArray(test)[keep,,drop=FALSE]
+            test <- DelayedArray(test)[keep,,drop=FALSE] # only keeping the intersection, for safety's sake - see ?combineRecomputedResults.
         }
     }
     if (nrow(test) == 0) {

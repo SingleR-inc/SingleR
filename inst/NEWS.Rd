@@ -8,6 +8,10 @@ This is also checked against \code{rownames(test)} in \code{classifySingleR()} t
 
 \item Restored the \code{BNPARAM=} argument in \code{trainSingleR()}, to enable more fine-grained specification of neighbor search algorithms.
 The \code{approximate=} argument is deprecated. 
+
+\item Soft-deprecated \code{check.missing=} in \code{classifySingleR()} and \code{combineRecomputedResults()}.
+This is because any filtering will cause a mismatch between the row names of \code{tests} and the \code{test.genes} in \code{trained}.
+Rather, filtering should be done prior to \code{trainSingleR()}, as is done in the main \code{SingleR()} function.
 }}
 
 \section{Version 2.0.0}{\itemize{
