@@ -12,8 +12,7 @@
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param sd.thresh Deprecated and ignored.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
-#' @param check.missing Logical scalar indicating whether rows should be checked for missing values.
-#' If true and any missing values are found, the rows containing these values are silently removed.
+#' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param prune A logical scalar indicating whether label pruning should be performed.
 #' @param num.threads Integer scalar specifying the number of threads to use for classification.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.
@@ -98,11 +97,11 @@ classifySingleR <- function(
     sd.thresh=NULL, 
     prune=TRUE, 
     assay.type="logcounts", 
-    check.missing=TRUE,
+    check.missing=FALSE,
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam()) 
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
 
     solo <- .is_solo(trained)
     if (solo) { 
@@ -140,8 +139,8 @@ classifySingleR <- function(
         if (!identical(trained$options$test.genes, rownames(test))) {
             stop("expected 'rownames(test)' to be the same as 'test.genes' in 'trained'")
         }
-    } else if (nrow(trained$ref) != nrow(test)) {
-        stop("expected 'test' to have the same number of rows as the reference dataset")
+    } else if (!identical(rownames(trained$ref), rownames(test))) {
+        stop("expected 'rownames(test)' to be the same as 'rownames(ref)' in 'trained'")
     }
 }
 

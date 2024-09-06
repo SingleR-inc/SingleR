@@ -293,9 +293,6 @@ trainSingleR <- function(
     }
     if (!is.null(test.genes)) {
         ref <- DelayedArray(ref)[rownames(ref) %in% test.genes,,drop=FALSE]
-        if (nrow(ref) == 0L) {
-            stop("no common genes between 'test' and 'ref'")
-        }
     }
 
     if (.is_list(genes)) {

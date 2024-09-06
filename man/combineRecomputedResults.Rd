@@ -12,7 +12,6 @@ combineRecomputedResults(
   assay.type.test = "logcounts",
   check.missing = TRUE,
   allow.lost = FALSE,
-  warn.lost = TRUE,
   num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
@@ -36,12 +35,12 @@ if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{allow.lost}{Deprecated.}
 
-\item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.}
-
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
 see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
+
+\item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).

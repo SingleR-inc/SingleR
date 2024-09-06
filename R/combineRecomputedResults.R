@@ -9,7 +9,7 @@
 #' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
-#' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.
+#' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.
 #' @param quantile Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.
 #' @param allow.lost Deprecated.
 #'
@@ -108,8 +108,8 @@ combineRecomputedResults <- function(
     quantile=0.8, 
     assay.type.test="logcounts", 
     check.missing=TRUE, 
-    allow.lost=FALSE, 
     warn.lost=TRUE,
+    allow.lost=FALSE, 
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
@@ -133,8 +133,18 @@ combineRecomputedResults <- function(
         .check_test_genes(test, curtrain)
     }
 
-    # Applying the integration.
+    # Checking the genes.
     all.refnames <- lapply(trained, function(x) rownames(x$ref))
+    if (warn.lost) {
+        intersected <- Reduce(intersect, all.refnames)
+        for (i in seq_along(trained)) {
+            if (!all(trained[[i]]$markers$unique %in% intersected)) {
+                warning("not all markers in 'trained' are available in each reference")
+            }
+        }
+    }
+
+    # Applying the integration.
     universe <- Reduce(union, c(list(rownames(test)), all.refnames))
     ibuilt <- train_integrated(
         test_features=match(rownames(test), universe) - 1L,

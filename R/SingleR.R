@@ -103,9 +103,23 @@ SingleR <- function(
         on.exit(bpstop(BPPARAM))
     }
 
-    # We have to clean it at the start to remove NAs before we do the build,
+    # We have to do all this row-subsetting at the start before trainSingleR,
     # otherwise 'test.genes' won't match up to the filtered 'test'.
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test", BPPARAM=BPPARAM)
+
+    tmp.ref <- ref
+    if (!is.list(tmp.ref)) {
+        tmp.ref <- list(ref)
+    }
+    for (rr in tmp.ref) {
+        keep <- rownames(test) %in% rownames(rr)
+        if (!all(keep)) {
+            test <- DelayedArray(test)[keep,,drop=FALSE]
+        }
+    }
+    if (nrow(test) == 0) {
+        stop("no common genes between 'test' and 'ref")
+    }
 
     trained <- trainSingleR(
         ref, 
