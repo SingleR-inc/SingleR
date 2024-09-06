@@ -224,6 +224,7 @@ trainSingleR <- function(
     }
 
     output <- vector("list", length(ref))
+    names(output) <- names(ref)
     for (l in seq_along(ref)) {
         curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
 

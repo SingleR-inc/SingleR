@@ -86,10 +86,18 @@ test_that("classifySingleR works with multiple references", {
 
     mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
     out <- classifySingleR(test, mtrain)
+    expect_identical(names(out$orig.results), c("ref1", "ref2"))
+    expect_true(all(out$reference %in% 1:2))
 
     ref1 <- classifySingleR(test, mtrain[[1]])
     ref2 <- classifySingleR(test, mtrain[[2]])
     expect_identical(out, combineRecomputedResults(list(ref1, ref2), test, mtrain))
+
+    # Preserves names of the references themselves.
+    mtrain <- trainSingleR(list(foo=training1, bar=training2), list(training1$label, training2$label))
+    out <- classifySingleR(test, mtrain)
+    expect_identical(names(out$orig.results), c("foo", "bar"))
+    expect_true(all(out$reference %in% 1:2))
 })
 
 test_that("classifySingleR behaves with silly inputs", {

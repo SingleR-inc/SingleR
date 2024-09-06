@@ -137,16 +137,17 @@ test_that("trainSingleR behaves with multiple references, plus recomputation", {
     training1 <- training1[sample(nrow(training1)),]
     rownames(training1) <- rownames(training)
     
-    set.seed(1000)
     ref1 <- trainSingleR(training1, training1$label)
     ref2 <- trainSingleR(training2, training2$label)
-
-    set.seed(1000)
-    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label), recompute=TRUE)
+    out <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
 
     except.built <- setdiff(names(ref1), "built")
     expect_identical(ref1[except.built], out[[1]][except.built])
     expect_identical(ref2[except.built], out[[2]][except.built])
+
+    # Same result with names.
+    out <- trainSingleR(list(foo=training1, bar=training2), list(training1$label, training2$label))
+    expect_identical(names(out), c("foo", "bar"))
 })
 
 test_that("trainSingleR behaves with aggregation turned on", {

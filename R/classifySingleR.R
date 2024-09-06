@@ -109,6 +109,7 @@ classifySingleR <- function(
     }
 
     results <- vector("list", length(trained))
+    names(results) <- names(trained)
     for (l in seq_along(results)) {
         results[[l]] <- .classify_internals(
             test=test, 
