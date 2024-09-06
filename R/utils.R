@@ -24,10 +24,10 @@
         setAutoBPPARAM(BPPARAM)
         on.exit(setAutoBPPARAM(old))
 
-        x <- DelayedArray(x)
+        y <- DelayedArray(x)
         discard <- rowAnyNAs(x)
         if (any(discard)) {
-            x <- x[!discard,,drop=FALSE]
+            x <- y[!discard,,drop=FALSE]
         }
     }
 

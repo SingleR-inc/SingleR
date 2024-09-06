@@ -102,34 +102,10 @@ SingleR <- function(
         bpstart(BPPARAM)
         on.exit(bpstop(BPPARAM))
     }
+
+    # We have to clean it at the start to remove NAs before we do the build,
+    # otherwise 'test.genes' won't match up to the filtered 'test'.
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test", BPPARAM=BPPARAM)
-
-    # Converting to a common list format for ease of data munging.
-    if (single.ref <- !.is_list(ref)) {
-        ref <- list(ref)
-    }
-
-    ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type.ref, 
-        check.missing=check.missing, msg="ref", BPPARAM=BPPARAM)
-    refnames <- Reduce(intersect, lapply(ref, rownames))
-
-    keep <- intersect(rownames(test), refnames)
-    if (length(keep) == 0) {
-        stop("no common genes between 'test' and 'ref'")
-    }
-    if (!identical(keep, rownames(test))) {
-        test <- test[keep,]
-    }
-    for (i in seq_along(ref)) {
-        if (!identical(keep, rownames(ref[[i]]))) {
-            ref[[i]] <- ref[[i]][keep,,drop=FALSE]
-        }
-    }
-
-    # Converting back.
-    if (single.ref) {
-        ref <- ref[[1]]
-    }
 
     trained <- trainSingleR(
         ref, 
@@ -143,7 +119,8 @@ SingleR <- function(
         aggr.args = aggr.args, 
         recompute=recompute,
         restrict = restrict, 
-        check.missing=FALSE, 
+        test.genes=rownames(test),
+        check.missing=check.missing, 
         BNPARAM=BNPARAM, 
         num.threads = num.threads, 
         BPPARAM=BPPARAM

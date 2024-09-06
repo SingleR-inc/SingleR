@@ -293,6 +293,9 @@ trainSingleR <- function(
     if (!is.null(test.genes)) {
         ref <- DelayedArray(ref)[rownames(ref) %in% test.genes,,drop=FALSE]
     }
+    if (nrow(ref) == 0L) {
+        stop("no genes available for marker detection in the reference dataset")
+    }
 
     if (.is_list(genes)) {
         is.char <- vapply(genes, is.character, TRUE)

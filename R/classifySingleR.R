@@ -111,8 +111,9 @@ classifySingleR <- function(
 
     results <- vector("list", length(trained))
     for (l in seq_along(results)) {
-        trained[[l]] <- .classify_internals(
+        results[[l]] <- .classify_internals(
             test=test, 
+            trained=trained[[l]],
             quantile=quantile, 
             fine.tune=fine.tune, 
             tune.thresh=tune.thresh, 
@@ -134,16 +135,19 @@ classifySingleR <- function(
     } 
 }
 
-#' @importFrom S4Vectors DataFrame metadata metadata<- I
-.classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
+.check_test_genes <- function(test, trained) {
     if (!is.null(trained$options$test.genes)) {
         if (!identical(trained$options$test.genes, rownames(test))) {
-            stop("expected 'rownames(test)' to be the same as 'test.genes' in 'trainSingleR'")
+            stop("expected 'rownames(test)' to be the same as 'test.genes' in 'trained'")
         }
     } else if (nrow(trained$ref) != nrow(test)) {
         stop("expected 'test' to have the same number of rows as the reference dataset")
     }
+}
 
+#' @importFrom S4Vectors DataFrame metadata metadata<- I
+.classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
+    .check_test_genes(test, trained)
     trained <- rebuildIndex(trained, num.threads = num.threads)
 
     parsed <- initializeCpp(test)

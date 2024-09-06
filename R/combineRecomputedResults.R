@@ -100,6 +100,7 @@
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
+#' @importFrom beachmat initializeCpp
 combineRecomputedResults <- function(
     results, 
     test, 
@@ -112,46 +113,51 @@ combineRecomputedResults <- function(
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
-    all.names <- c(list(colnames(test)), lapply(results, rownames))
-    if (length(unique(all.names)) != 1) {
-        stop("cell/cluster names in 'results' are not identical")
-    }
-    all.nrow <- c(ncol(test), vapply(results, nrow, 0L))
-    if (length(unique(all.nrow)) != 1) {
-        stop("numbers of cells/clusters in 'results' are not identical")
+    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
+
+    # Applying the sanity checks.
+    stopifnot(length(results) == length(trained))
+    for (i in seq_along(results)) {
+        curres <- results[[i]]
+        if (ncol(test) != nrow(curres)) {
+            stop("numbers of cells/clusters in 'results' are not identical")
+        }
+        if (!identical(rownames(curres), colnames(test))) {
+            stop("cell/cluster names in 'results' are not identical")
+        }
+
+        curtrain <- trained[[i]]
+        if (!all(curres$labels %in% curtrain$labels$unique)) {
+            stop("not all labels in 'results' are present in 'trained'")
+        }
+        .check_test_genes(test, curtrain)
     }
 
-    # Checking the marker consistency.
-    all.refnames <- lapply(trained, function(x) rownames(x$ref))
-    intersected <- Reduce(intersect, all.refnames)
-    for (i in seq_along(trained)) {
-        if (!all(trained[[i]]$markers$unique %in% rownames(test))) {
-            stop("all markers stored in 'results' should be present in 'test'")
-        } else if (warn.lost && !all(trained[[i]]$markers$unique %in% intersected)) {
-            warning("entries of 'trained' differ in the universe of available markers")
-        }
-    }
-    
     # Applying the integration.
+    all.refnames <- lapply(trained, function(x) rownames(x$ref))
     universe <- Reduce(union, c(list(rownames(test)), all.refnames))
-    ibuilt <- integrate_build(
-        match(rownames(test), universe) - 1L,
-        lapply(trained, function(x) initializeCpp(x$ref)),
-        lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
-        lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
-        lapply(trained, function(x) x$built),
+    ibuilt <- train_integrated(
+        test_features=match(rownames(test), universe) - 1L,
+        references=lapply(trained, function(x) initializeCpp(x$ref)),
+        ref_ids=lapply(all.refnames, function(x) match(x, universe) - 1L), 
+        labels=lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
+        prebuilt=lapply(trained, function(x) rebuildIndex(x)$built),
         nthreads = num.threads
     )
 
-    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
     collated <- vector("list", length(trained))
     for (i in seq_along(collated)) {
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
     parsed <- initializeCpp(test)
-    irun <- integrate_run(parsed, collated, ibuilt, quantile = quantile, nthreads = num.threads) 
-    scores <- irun$scores
+    irun <- classify_integrated(
+        test=parsed,
+        results=collated,
+        integrated_build=ibuilt,
+        quantile=quantile,
+        nthreads=num.threads
+    ) 
 
     # Organizing the outputs.
     base.scores <- vector("list", length(results))
@@ -159,7 +165,7 @@ combineRecomputedResults <- function(
         mat <- results[[r]]$scores   
         mat[] <- NA_real_
         idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
-        mat[idx] <- scores[,r]
+        mat[idx] <- irun$scores[,r]
         base.scores[[r]] <- mat
     }
 
