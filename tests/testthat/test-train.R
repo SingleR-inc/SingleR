@@ -128,7 +128,8 @@ test_that("trainSingleR strips out NAs", {
     out <- trainSingleR(sce, sce$label)
     ref <- trainSingleR(sce[-1,], sce$label)
 
-    expect_identical(out$ref, ref$ref)
+    expect_identical(as.matrix(out$ref), ref$ref)
+    expect_identical(out$markers, ref$markers)
 })
 
 test_that("trainSingleR behaves with multiple references, plus recomputation", {

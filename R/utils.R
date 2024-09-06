@@ -25,8 +25,9 @@
         on.exit(setAutoBPPARAM(old))
 
         y <- DelayedArray(x)
-        discard <- rowAnyNAs(x)
+        discard <- rowAnyNAs(y)
         if (any(discard)) {
+            # Returning a DelayedArray to avoid making an actual subset.
             x <- y[!discard,,drop=FALSE]
         }
     }

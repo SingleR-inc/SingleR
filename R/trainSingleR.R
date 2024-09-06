@@ -286,15 +286,16 @@ trainSingleR <- function(
     }
 
     # Note that the genes are reported as names rather than indexing, so these
-    # row-subsetting operations don't require re-indexing of the output.
+    # row-subsetting operations don't require re-indexing of the output. We use
+    # DelayedArrays to avoid making copies of the data.
     if (!is.null(restrict)) {
         ref <- DelayedArray(ref)[rownames(ref) %in% restrict,,drop=FALSE]
     }
     if (!is.null(test.genes)) {
         ref <- DelayedArray(ref)[rownames(ref) %in% test.genes,,drop=FALSE]
-    }
-    if (nrow(ref) == 0L) {
-        stop("no genes available for marker detection in the reference dataset")
+        if (nrow(ref) == 0L) {
+            stop("no common genes between 'test' and 'ref'")
+        }
     }
 
     if (.is_list(genes)) {
