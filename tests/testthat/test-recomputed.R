@@ -109,32 +109,19 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
 })
 
 test_that("combineRecomputedResults emits warnings when missing genes are present", {
+    half <- nrow(test) / 2
+
     # Spiking in some missing genes.
-    ref1b <- ref1[c(1, seq_len(nrow(ref1))),]
-    rownames(ref1b)[1] <- "BLAH"
-    markers1 <- train1$markers$full
-    markers1$A$B <- c(markers1$A$B, "BLAH")
-    train1b <- trainSingleR(ref1b, labels=ref1$label, genes=markers1, test.genes=rownames(test))
+    ref1b <- ref1[seq_len(half),,drop=FALSE]
+    train1b <- trainSingleR(ref1b, labels=ref1$label, test.genes=rownames(test))
 
-    ref2b <- ref2[c(1, seq_len(nrow(ref2))),]
-    rownames(ref2b)[1] <- "WHEE"
-    markers2 <- train2$markers$full
-    markers2$A$B <- c(markers2$a$b, "WHEE")
-    train2b <- trainSingleR(ref2b, labels=ref2$label, genes=markers2, test.genes=rownames(test))
-
-    expect_error(out <- combineRecomputedResults(
-        results=list(pred1, pred2), 
-        test=test,
-        trained=list(train1b, train2b)), "should be present")
-
-    test2 <- test[c(1,seq_len(nrow(test)),1),]
-    rownames(test2)[1] <- "WHEE"
-    rownames(test2)[length(rownames(test2))] <- "BLAH"
+    ref2b <- ref2[half + seq_len(half),]
+    train2b <- trainSingleR(ref2b, labels=ref2$label, test.genes=rownames(test))
 
     expect_warning(out <- combineRecomputedResults(
         results=list(pred1, pred2), 
-        test=test2,
-        trained=list(train1b, train2b)), "differ in the universe")
+        test=test,
+        trained=list(train1b, train2b)), "available in each reference")
 })
 
 test_that("combineRecomputedResults is invariant to ordering", {

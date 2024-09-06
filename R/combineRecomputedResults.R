@@ -6,6 +6,7 @@
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' @inheritParams SingleR
+#' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
@@ -107,13 +108,13 @@ combineRecomputedResults <- function(
     trained, 
     quantile=0.8, 
     assay.type.test="logcounts", 
-    check.missing=TRUE, 
+    check.missing=FALSE,
     warn.lost=TRUE,
     allow.lost=FALSE, 
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
-    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
 
     # Applying the sanity checks.
     stopifnot(length(results) == length(trained))

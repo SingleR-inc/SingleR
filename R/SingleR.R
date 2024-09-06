@@ -108,7 +108,7 @@ SingleR <- function(
     test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test", BPPARAM=BPPARAM)
 
     tmp.ref <- ref
-    if (!is.list(tmp.ref)) {
+    if (!is.list(tmp.ref) || is.data.frame(tmp.ref)) {
         tmp.ref <- list(ref)
     }
     for (rr in tmp.ref) {

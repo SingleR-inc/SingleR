@@ -10,7 +10,8 @@ combineRecomputedResults(
   trained,
   quantile = 0.8,
   assay.type.test = "logcounts",
-  check.missing = TRUE,
+  check.missing = FALSE,
+  warn.lost = TRUE,
   allow.lost = FALSE,
   num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
@@ -31,7 +32,9 @@ or (ii) running \code{trainSingleR} on each reference separately and manually ma
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+\item{check.missing}{Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.}
+
+\item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.}
 
 \item{allow.lost}{Deprecated.}
 
@@ -39,8 +42,6 @@ if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
 see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
-
-\item{warn.lost}{Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.}
 }
 \value{
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).

@@ -70,10 +70,11 @@ test_that("SingleR handles DelayedArray inputs", {
 })
 
 test_that("SingleR works with multiple references", {
-    # Handles mismatching row names.
-    chosen0 <- sample(rownames(training), 900)
-    chosen1 <- sample(rownames(training), 900)
-    chosen2 <- sample(rownames(training), 900)
+    # Handles mismatching row names. Note that the sorting is necessary
+    # to ensure that tied genes are handled in a consistent way.
+    chosen0 <- sort(sample(rownames(training), 900))
+    chosen1 <- sort(sample(rownames(training), 900))
+    chosen2 <- sort(sample(rownames(training), 900))
 
     # Works with recomputation.
     out <- SingleR(test[chosen0,], list(training[chosen1,], training[chosen2,]), 
