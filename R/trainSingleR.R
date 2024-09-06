@@ -80,12 +80,14 @@
 #' The expression values are expected to be log-transformed and normalized.
 #'
 #' Classification with \code{classifySingleR} assumes that the test dataset contains all marker genes that were detected from the reference.
-#' If the test and reference datasets do not have the same genes in the same order, we can specify \code{test.genes} to the row names of the test dataset.
+#' If the test and reference datasets do not have the same genes in the same order, we can set \code{test.genes} to the row names of the test dataset.
 #' This will instruct \code{trainSingleR} to only consider markers that are present in the test dataset.
+#' Any subsequent call to \code{classifySingleR} will also check that \code{test.genes} is consistent with \code{rownames(test)}.
 #'
-#' Similarly, if \code{restrict} is specified, marker selection will only be performed using this restrictive subset of genes.
+#' On a similar note, if \code{restrict} is specified, marker selection will only be performed using the specified subset of genes.
 #' This can be convenient for ignoring inappropriate genes like pseudogenes or predicted genes.
-#' Note that both parameters have the same effect as just subsetting the input \code{ref}.
+#' It has the same effect as filtering out undesirable rows from \code{ref} prior to calling \code{trainSingleR}.
+#' Unlike \code{test.genes}, setting \code{restrict} does not introduce further checks on \code{rownames(test)} in \code{classifySingleR}.
 #'
 #' @section Custom feature specification:
 #' Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.

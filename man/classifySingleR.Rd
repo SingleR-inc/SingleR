@@ -20,10 +20,13 @@ classifySingleR(
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
+Each row should be named with the gene name.
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
 \item{trained}{A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+If the row names of \code{test} are not exactly the same as the reference dataset, the call to \code{trainSingleR} should set \code{test.genes=rownames(test)}.
+
 Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.}
 
 \item{quantile}{A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.}
