@@ -2,6 +2,14 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 2.8.0}{\itemize{
+\item Added the \code{test.genes=} argument to \code{trainSingleR()}, to restrict marker detection to only those genes in the test dataset.
+This is also checked against \code{rownames(test)} in \code{classifySingleR()} to ensure that the test's feature space is consistent with the space used during training.
+
+\item Restored the \code{BNPARAM=} argument in \code{trainSingleR()}, to enable more fine-grained specification of neighbor search algorithms.
+The \code{approximate=} argument is deprecated. 
+}}
+
 \section{Version 2.0.0}{\itemize{
 \item The format of the output of \code{trainSingleR()} has changed and is no longer back-compatible.
 \item \code{recompute=FALSE} in \code{trainSingleR()} does nothing; all integrated analyses are now done with \code{recompute=TRUE}.
