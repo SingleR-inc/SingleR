@@ -19,11 +19,11 @@ test <- .mockTestData(ref)
 test <- scuttle::logNormCounts(test)
 
 ref1 <- scuttle::logNormCounts(ref1)
-train1 <- trainSingleR(ref1, labels=ref1$label)
+train1 <- trainSingleR(ref1, labels=ref1$label, test.genes=rownames(test))
 pred1 <- classifySingleR(test, train1)
 
 ref2 <- scuttle::logNormCounts(ref2)
-train2 <- trainSingleR(ref2, labels=ref2$label)
+train2 <- trainSingleR(ref2, labels=ref2$label, test.genes=rownames(test))
 pred2 <- classifySingleR(test, train2)
 
 test_that("combineRecomputedResults works as expected (light check)", {
@@ -100,47 +100,28 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
         trained=list(train1, train2)), "not identical")
     colnames(test) <- NULL
 
-    # Correctly reorders the gene universes.
-    ref <- combineRecomputedResults(
-        results=list(pred1, pred2),
-        test=test,
-        trained=list(train1, train2))
-
+    # Responds to mismatches in the genes.
     s <- sample(nrow(test))
-    out <- combineRecomputedResults(
+    expect_error(combineRecomputedResults(
         results=list(pred1, pred2),
         test=test[s,],
-        trained=list(train1, train2))
-    expect_equal(ref, out)
+        trained=list(train1, train2)), "test.genes")
 })
 
 test_that("combineRecomputedResults emits warnings when missing genes are present", {
+    half <- nrow(test) / 2
+
     # Spiking in some missing genes.
-    ref1b <- ref1[c(1, seq_len(nrow(ref1))),]
-    rownames(ref1b)[1] <- "BLAH"
-    markers1 <- train1$markers$full
-    markers1$A$B <- c(markers1$A$B, "BLAH")
-    train1b <- trainSingleR(ref1b, labels=ref1$label, genes=markers1)
+    ref1b <- ref1[seq_len(half),,drop=FALSE]
+    train1b <- trainSingleR(ref1b, labels=ref1$label, test.genes=rownames(test))
 
-    ref2b <- ref2[c(1, seq_len(nrow(ref2))),]
-    rownames(ref2b)[1] <- "WHEE"
-    markers2 <- train2$markers$full
-    markers2$A$B <- c(markers2$a$b, "WHEE")
-    train2b <- trainSingleR(ref2b, labels=ref2$label, genes=markers2)
-
-    expect_error(out <- combineRecomputedResults(
-        results=list(pred1, pred2), 
-        test=test,
-        trained=list(train1b, train2b)), "should be present")
-
-    test2 <- test[c(1,seq_len(nrow(test)),1),]
-    rownames(test2)[1] <- "WHEE"
-    rownames(test2)[length(rownames(test2))] <- "BLAH"
+    ref2b <- ref2[half + seq_len(half),]
+    train2b <- trainSingleR(ref2b, labels=ref2$label, test.genes=rownames(test))
 
     expect_warning(out <- combineRecomputedResults(
         results=list(pred1, pred2), 
-        test=test2,
-        trained=list(train1b, train2b)), "differ in the universe")
+        test=test,
+        trained=list(train1b, train2b)), "available in each reference")
 })
 
 test_that("combineRecomputedResults is invariant to ordering", {

@@ -79,18 +79,6 @@ test_that("classifySingleR behaves with no-variance cells", {
     expect_identical(out$labels[-(1:10)], ref$labels[-(1:10)])
 })
 
-test_that("classifySingleR behaves with missing values", {
-    # Can't just set the first entry to NA, as we need to ensure 
-    # that the test set contains a superset of genes in the training set.
-    sce <- BiocGenerics::rbind(test[1,], test)
-    logcounts(sce)[1,1] <- NA
-
-    Q <- 0.8
-    out <- classifySingleR(sce, trained, fine.tune=FALSE, quantile=Q)
-    ref <- classifySingleR(test, trained, fine.tune=FALSE, quantile=Q)
-    expect_identical(out, ref)
-})
-
 test_that("classifySingleR works with multiple references", {
     training1 <- training2 <- training
     training1 <- training1[sample(nrow(training1)),]
@@ -98,15 +86,23 @@ test_that("classifySingleR works with multiple references", {
 
     mtrain <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
     out <- classifySingleR(test, mtrain)
+    expect_identical(names(out$orig.results), c("ref1", "ref2"))
+    expect_true(all(out$reference %in% 1:2))
 
     ref1 <- classifySingleR(test, mtrain[[1]])
     ref2 <- classifySingleR(test, mtrain[[2]])
     expect_identical(out, combineRecomputedResults(list(ref1, ref2), test, mtrain))
+
+    # Preserves names of the references themselves.
+    mtrain <- trainSingleR(list(foo=training1, bar=training2), list(training1$label, training2$label))
+    out <- classifySingleR(test, mtrain)
+    expect_identical(names(out$orig.results), c("foo", "bar"))
+    expect_true(all(out$reference %in% 1:2))
 })
 
 test_that("classifySingleR behaves with silly inputs", {
     out <- classifySingleR(test[,0], trained, fine.tune=FALSE)
     expect_identical(nrow(out$scores), 0L)
     expect_identical(length(out$labels), 0L)
-    expect_error(classifySingleR(test[0,], trained, fine.tune=FALSE), "does not contain")
+    expect_error(classifySingleR(test[0,], trained, fine.tune=FALSE), "expected 'rownames(test)' to be the same", fixed=TRUE)
 })

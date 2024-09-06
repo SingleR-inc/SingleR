@@ -13,17 +13,20 @@ classifySingleR(
   sd.thresh = NULL,
   prune = TRUE,
   assay.type = "logcounts",
-  check.missing = TRUE,
+  check.missing = FALSE,
   num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
+Each row should be named with the gene name.
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
 \item{trained}{A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+If the row names of \code{test} are not exactly the same as the reference dataset, the call to \code{trainSingleR} should set \code{test.genes=rownames(test)}.
+
 Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.}
 
 \item{quantile}{A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.}
@@ -38,8 +41,7 @@ Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multip
 
 \item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
-If true and any missing values are found, the rows containing these values are silently removed.}
+\item{check.missing}{Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for classification.}
 

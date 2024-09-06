@@ -6,10 +6,11 @@
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' @inheritParams SingleR
+#' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
-#' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are \dQuote{lost} in other references.
+#' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.
 #' @param quantile Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.
 #' @param allow.lost Deprecated.
 #'
@@ -20,7 +21,7 @@
 #' For any given cell, entries of this matrix are only non-\code{NA} for the assigned label in each reference;
 #' scores are not recomputed for the other labels.
 #' \item \code{labels}, a character vector containing the per-cell combined label across references.
-#' \item \code{references}, an integer vector specifying the reference from which the combined label was derived.
+#' \item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
 #' It may also contain \code{pruned.labels} if these were also present in \code{results}.
@@ -100,58 +101,74 @@
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
+#' @importFrom beachmat initializeCpp
 combineRecomputedResults <- function(
     results, 
     test, 
     trained, 
     quantile=0.8, 
     assay.type.test="logcounts", 
-    check.missing=TRUE, 
-    allow.lost=FALSE, 
+    check.missing=FALSE,
     warn.lost=TRUE,
+    allow.lost=FALSE, 
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
-    all.names <- c(list(colnames(test)), lapply(results, rownames))
-    if (length(unique(all.names)) != 1) {
-        stop("cell/cluster names in 'results' are not identical")
-    }
-    all.nrow <- c(ncol(test), vapply(results, nrow, 0L))
-    if (length(unique(all.nrow)) != 1) {
-        stop("numbers of cells/clusters in 'results' are not identical")
+    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
+
+    # Applying the sanity checks.
+    stopifnot(length(results) == length(trained))
+    for (i in seq_along(results)) {
+        curres <- results[[i]]
+        if (ncol(test) != nrow(curres)) {
+            stop("numbers of cells/clusters in 'results' are not identical")
+        }
+        if (!identical(rownames(curres), colnames(test))) {
+            stop("cell/cluster names in 'results' are not identical")
+        }
+
+        curtrain <- trained[[i]]
+        if (!all(curres$labels %in% curtrain$labels$unique)) {
+            stop("not all labels in 'results' are present in 'trained'")
+        }
+        .check_test_genes(test, curtrain)
     }
 
-    # Checking the marker consistency.
+    # Checking the genes.
     all.refnames <- lapply(trained, function(x) rownames(x$ref))
-    intersected <- Reduce(intersect, all.refnames)
-    for (i in seq_along(trained)) {
-        if (!all(trained[[i]]$markers$unique %in% rownames(test))) {
-            stop("all markers stored in 'results' should be present in 'test'")
-        } else if (warn.lost && !all(trained[[i]]$markers$unique %in% intersected)) {
-            warning("entries of 'trained' differ in the universe of available markers")
+    if (warn.lost) {
+        intersected <- Reduce(intersect, all.refnames)
+        for (i in seq_along(trained)) {
+            if (!all(trained[[i]]$markers$unique %in% intersected)) {
+                warning("not all markers in 'trained' are available in each reference")
+            }
         }
     }
-    
+
     # Applying the integration.
     universe <- Reduce(union, c(list(rownames(test)), all.refnames))
-    ibuilt <- integrate_build(
-        match(rownames(test), universe) - 1L,
-        lapply(trained, function(x) initializeCpp(x$ref)),
-        lapply(trained, function(x) match(rownames(x$ref), universe) - 1L), 
-        lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
-        lapply(trained, function(x) x$built),
+    ibuilt <- train_integrated(
+        test_features=match(rownames(test), universe) - 1L,
+        references=lapply(trained, function(x) initializeCpp(x$ref)),
+        ref_ids=lapply(all.refnames, function(x) match(x, universe) - 1L), 
+        labels=lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
+        prebuilt=lapply(trained, function(x) rebuildIndex(x)$built),
         nthreads = num.threads
     )
 
-    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=check.missing, msg="test", BPPARAM=BPPARAM)
     collated <- vector("list", length(trained))
     for (i in seq_along(collated)) {
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
     parsed <- initializeCpp(test)
-    irun <- integrate_run(parsed, collated, ibuilt, quantile = quantile, nthreads = num.threads) 
-    scores <- irun$scores
+    irun <- classify_integrated(
+        test=parsed,
+        results=collated,
+        integrated_build=ibuilt,
+        quantile=quantile,
+        nthreads=num.threads
+    ) 
 
     # Organizing the outputs.
     base.scores <- vector("list", length(results))
@@ -159,7 +176,7 @@ combineRecomputedResults <- function(
         mat <- results[[r]]$scores   
         mat[] <- NA_real_
         idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
-        mat[idx] <- scores[,r]
+        mat[idx] <- irun$scores[,r]
         base.scores[[r]] <- mat
     }
 

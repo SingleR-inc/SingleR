@@ -45,7 +45,7 @@ Row names may be different across entries but only the intersection will be used
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
-Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.}
+Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
 
 \item{method}{Deprecated.}
 

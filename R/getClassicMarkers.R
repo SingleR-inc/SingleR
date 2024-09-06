@@ -64,6 +64,10 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         labels <- list(labels)
     }
 
+    for (i in seq_along(ref)) {
+        ref[[i]] <- .to_clean_matrix(ref[[i]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+    }
+
     # Setting up references.
     common <- Reduce(intersect, lapply(ref, rownames))
     if (length(common)==0L && any(vapply(ref, nrow, 0L) > 0L)) {
@@ -73,9 +77,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
 
     for (i in seq_along(ref)) {
         current <- ref[[i]][common,,drop=FALSE]
-        current <- .to_clean_matrix(current, assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
         curptr <- initializeCpp(current)
-
         flabels <- factor(labels[[i]])
         gm <- grouped_medians(curptr, as.integer(flabels) - 1L, nlevels(flabels), nthreads = num.threads)
         colnames(gm) <- levels(flabels)

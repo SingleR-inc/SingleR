@@ -3,17 +3,19 @@
 #' Assign labels to each cell in a test dataset, using a pre-trained classifier combined with an iterative fine-tuning approach.
 #' 
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
+#' Each row should be named with the gene name.
 #'
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param trained A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+#' If the row names of \code{test} are not exactly the same as the reference dataset, the call to \code{trainSingleR} should set \code{test.genes=rownames(test)}.
+#'
 #' Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.
 #' @param quantile A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param sd.thresh Deprecated and ignored.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
-#' @param check.missing Logical scalar indicating whether rows should be checked for missing values.
-#' If true and any missing values are found, the rows containing these values are silently removed.
+#' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param prune A logical scalar indicating whether label pruning should be performed.
 #' @param num.threads Integer scalar specifying the number of threads to use for classification.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.
@@ -98,25 +100,30 @@ classifySingleR <- function(
     sd.thresh=NULL, 
     prune=TRUE, 
     assay.type="logcounts", 
-    check.missing=TRUE,
+    check.missing=FALSE,
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam()) 
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
 
     solo <- .is_solo(trained)
     if (solo) { 
         trained <- list(trained)
     }
 
-    results <- lapply(trained, FUN=.classify_internals, 
-        test=test, 
-        quantile=quantile, 
-        fine.tune=fine.tune, 
-        tune.thresh=tune.thresh, 
-        prune=prune, 
-        num.threads=num.threads
-    )
+    results <- vector("list", length(trained))
+    names(results) <- names(trained)
+    for (l in seq_along(results)) {
+        results[[l]] <- .classify_internals(
+            test=test, 
+            trained=trained[[l]],
+            quantile=quantile, 
+            fine.tune=fine.tune, 
+            tune.thresh=tune.thresh, 
+            prune=prune, 
+            num.threads=num.threads
+        )
+    }
 
     if (solo) {
         results[[1]]
@@ -131,21 +138,30 @@ classifySingleR <- function(
     } 
 }
 
+.check_test_genes <- function(test, trained) {
+    if (!is.null(trained$options$test.genes)) {
+        if (!identical(trained$options$test.genes, rownames(test))) {
+            stop("expected 'rownames(test)' to be the same as 'test.genes' in 'trained'")
+        }
+    } else if (!identical(rownames(trained$ref), rownames(test))) {
+        stop("expected 'rownames(test)' to be the same as 'rownames(ref)' in 'trained'")
+    }
+}
+
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
-    m <- match(trained$markers$unique, rownames(test))
-    if (anyNA(m)) {
-        stop("'rownames(test)' does not contain all genes used in 'trained'")
-    }
-
+    .check_test_genes(test, trained)
     trained <- rebuildIndex(trained, num.threads = num.threads)
 
     parsed <- initializeCpp(test)
-    out <- run(parsed, m - 1L, trained$built, 
+    out <- classify_single(
+        test = parsed, 
+        prebuilt = trained$built, 
         quantile = quantile, 
         use_fine_tune = fine.tune, 
         fine_tune_threshold = tune.thresh, 
-        nthreads = num.threads)
+        nthreads = num.threads
+    )
 
     colnames(out$scores) <- trained$labels$unique
     output <- DataFrame(

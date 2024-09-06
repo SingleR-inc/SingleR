@@ -8,12 +8,11 @@
 #' 
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #'
-#' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references,
-#' in which case the row names are expected to be the same across all objects.
+#' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
 #' @param labels A character vector or factor of known labels for all samples in \code{ref}.
 #' 
 #' Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
-#' Each element should contain a character vector or factor specifying the label for the corresponding entry of \code{ref}.
+#' Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.
 #' @param genes A string containing \code{"de"}, indicating that markers should be calculated from \code{ref}.
 #' For back compatibility, other string values are allowed but will be ignored with a deprecation warning.
 #' 
@@ -45,13 +44,15 @@
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values.
 #' If true and any missing values are found, the rows containing these values are silently removed.
-#' @param BNPARAM Deprecated and ignored.
-#' @param approximate Logical scalar indicating whether a faster approximate method should be used to compute the quantile.
+#' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying how the neighbor search index should be constructed.
+#' @param approximate Deprecated, use \code{BNPARAM} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
 #' Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
+#' @param test.genes Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
+#' If \code{NULL}, it is assumed that the test dataset and \code{ref} have the same genes in the same row order.
 #'
 #' @return 
 #' For a single reference, a \linkS4class{List} is returned containing:
@@ -78,9 +79,15 @@
 #' For each label, the top \code{de.n} genes with the largest differences compared to another label are chosen as markers to distinguish the two labels.
 #' The expression values are expected to be log-transformed and normalized.
 #'
-#' If \code{restrict} is specified, \code{ref} is subsetted to only include the rows with names that are in \code{restrict}.
-#' Marker selection and all subsequent classification will be performed using this restrictive subset of genes.
-#' This can be convenient for ensuring that only appropriate genes are used (e.g., not pseudogenes or predicted genes).
+#' Classification with \code{classifySingleR} assumes that the test dataset contains all marker genes that were detected from the reference.
+#' If the test and reference datasets do not have the same genes in the same order, we can set \code{test.genes} to the row names of the test dataset.
+#' This will instruct \code{trainSingleR} to only consider markers that are present in the test dataset.
+#' Any subsequent call to \code{classifySingleR} will also check that \code{test.genes} is consistent with \code{rownames(test)}.
+#'
+#' On a similar note, if \code{restrict} is specified, marker selection will only be performed using the specified subset of genes.
+#' This can be convenient for ignoring inappropriate genes like pseudogenes or predicted genes.
+#' It has the same effect as filtering out undesirable rows from \code{ref} prior to calling \code{trainSingleR}.
+#' Unlike \code{test.genes}, setting \code{restrict} does not introduce further checks on \code{rownames(test)} in \code{classifySingleR}.
 #'
 #' @section Custom feature specification:
 #' Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.
@@ -164,11 +171,15 @@
 #' 
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
+#' @importFrom BiocNeighbors defineBuilder AnnoyParam KmknnParam
 #' @importFrom BiocParallel SerialParam bpisup bpstart bpstop
 #' @importFrom beachmat initializeCpp
+#' @importFrom S4Vectors List
+#' @importFrom SummarizedExperiment assay
 trainSingleR <- function(
     ref, 
     labels, 
+    test.genes=NULL,
     genes="de", 
     sd.thresh=NULL, 
     de.method=c("classic", "wilcox", "t"), 
@@ -195,68 +206,96 @@ trainSingleR <- function(
         }
     }
 
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
-    ref <- lapply(ref, FUN=.to_clean_matrix, assay.type=assay.type, 
-        check.missing=check.missing, msg="ref", BPPARAM=BPPARAM)
-
-    # Cleaning the genes.
-    gns <- lapply(ref, rownames)
-    if (length(unique(gns))!=1L) {
-        stop("row names are not identical across references")
-    }
-
-    if (!is.null(restrict)) {
-        keep <- gns[[1]] %in% restrict
-        ref <- lapply(ref, FUN="[", i=keep, , drop=FALSE)
-    }
-
     if (isSingleString(genes)) {
         genes <- rep(genes, length(ref))
     } else if (length(genes)!=length(ref)) {
         stop("list-like 'genes' should be the same length as 'ref'")
     }
 
-    # Cleaning the labels.
-    labels <- lapply(labels, as.character)
-    if (length(labels)!=length(ref)) {
-        stop("lists in 'labels' and 'ref' should be of the same length")
-    }
-
-    for (l in seq_along(labels)) {
-        keep <- !is.na(labels[[l]])
-        if (!all(keep)) {
-            labels[[l]] <- labels[[l]][keep]
-            ref[[l]] <- ref[[l]][,keep,drop=FALSE]
+    if (is.null(BNPARAM)) {
+        if (approximate) {
+            BNPARAM <- AnnoyParam()
+        } else {
+            BNPARAM <- KmknnParam()
         }
     }
 
-    gene.info <- mapply(FUN=.identify_genes, ref=ref, labels=labels, genes=genes,
-        MoreArgs=list(de.method=de.method, de.n=de.n, de.args=de.args, BPPARAM=BPPARAM),
-        SIMPLIFY=FALSE)
-
-    if (!solo && !recompute) {
-        .Deprecated(old="recompute = FALSE")
+    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
+        bpstart(BPPARAM)
+        on.exit(bpstop(BPPARAM))
     }
-    output <- mapply(FUN=.build_trained_index, ref=ref, labels=labels, markers=gene.info,
-        MoreArgs = list(aggr.ref=aggr.ref, aggr.args=aggr.args, BPPARAM=BPPARAM, approximate = approximate, num.threads = num.threads), 
-        SIMPLIFY=FALSE)
+
+    output <- vector("list", length(ref))
+    names(output) <- names(ref)
+    for (l in seq_along(ref)) {
+        curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+
+        curlabels <- as.character(labels[[l]])
+        stopifnot(length(curlabels) == ncol(curref))
+        keep <- !is.na(curlabels)
+        if (!all(keep)) {
+            curref <- curref[,keep,drop=FALSE]
+            curlabels <- curlabels[keep]
+        }
+
+        markers <- .identify_genes(
+            ref=curref,
+            labels=curlabels,
+            genes=genes[[l]],
+            de.method=de.method,
+            de.n=de.n,
+            de.args=de.args,
+            restrict=restrict,
+            test.genes=test.genes,
+            BPPARAM=BPPARAM
+        )
+
+        if (aggr.ref) {
+            aggr <- do.call(aggregateReference, c(list(ref=quote(curref), label=curlabels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
+            curref <- assay(aggr)
+            curlabels <- aggr$label
+        }
+
+        ulabels <- .get_levels(curlabels)
+        built <- .build_index(
+            ref=curref,
+            labels=curlabels,
+            ulabels=ulabels,
+            test.genes=test.genes,
+            markers=markers,
+            BNPARAM=BNPARAM,
+            num.threads=num.threads
+        )
+
+        output[[l]] <- List(
+            built = built,
+            ref = curref,
+            labels = list(full = curlabels, unique = ulabels),
+            markers = list(full = markers, unique = rownames(curref)[get_ref_subset(built) + 1]),
+            options = list(BNPARAM = BNPARAM, test.genes = test.genes)
+        )
+    }
 
     if (solo) {
         output[[1]]
     } else {
-        final <- List(output)
-        metadata(final)$recompute <- recompute
-        final
+        List(output)
     }
 }
 
-.identify_genes <- function(ref, labels, genes="de", de.method="classic", de.n=NULL, de.args=list(), BPPARAM=BPPARAM) {
+.identify_genes <- function(ref, labels, genes, de.method, de.n, test.genes, restrict, de.args, BPPARAM) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")
+    }
+
+    # Note that the genes are reported as names rather than indexing, so these
+    # row-subsetting operations don't require re-indexing of the output. We use
+    # DelayedArrays to avoid making copies of the data.
+    if (!is.null(restrict)) {
+        ref <- DelayedArray(ref)[rownames(ref) %in% restrict,,drop=FALSE]
+    }
+    if (!is.null(test.genes)) {
+        ref <- DelayedArray(ref)[rownames(ref) %in% test.genes,,drop=FALSE]
     }
 
     if (.is_list(genes)) {
@@ -284,36 +323,8 @@ trainSingleR <- function(
     genes
 }
 
-#' @importFrom S4Vectors List
-#' @importFrom SummarizedExperiment assay
-.build_trained_index <- function(ref, labels, markers, aggr.ref, aggr.args, search.info, approximate = FALSE, BPPARAM = SerialParam(), num.threads = 1) {
-    if (aggr.ref) {
-        aggr <- do.call(aggregateReference, c(list(ref=quote(ref), label=labels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
-        ref <- assay(aggr)
-        labels <- aggr$label
-    }
-
-    if (anyNA(labels)) {
-        keep <- !is.na(labels)
-        ref <- ref[,keep,drop=FALSE]
-        labels <- labels[keep]
-    }
-
-    ulabels <- .get_levels(labels)
-
-    built <- .build_index(ref, markers=markers, labels=labels, ulabels=ulabels, approximate=approximate, num.threads=num.threads)
-
-    List(
-        built = built,
-        ref = ref,
-        labels = list(full = labels, unique = ulabels),
-        markers = list(full = markers, unique = rownames(ref)[get_subset(built) + 1]),
-        options = list(approximate = approximate)
-    )
-}
-
 #' @importFrom beachmat initializeCpp
-.build_index <- function(ref, markers, labels, ulabels, approximate, num.threads) {
+.build_index <- function(ref, labels, ulabels, markers, test.genes, BNPARAM, num.threads) {
     for (m in seq_along(markers)) {
         current <- markers[[m]]
         for (n in seq_along(current)) {
@@ -326,8 +337,25 @@ trainSingleR <- function(
         markers[[m]] <- current
     }
 
+    if (is.null(test.genes)) {
+        test.genes <- ref.genes <- seq_len(nrow(ref))
+    } else {
+        universe <- union(test.genes, rownames(ref))
+        test.genes <- match(test.genes, universe)
+        ref.genes <- match(rownames(ref), universe)
+    }
+
+    builder <- defineBuilder(BNPARAM)
     parsed <- initializeCpp(ref)
-    prebuild(parsed, match(labels, ulabels) - 1L, markers, approximate = approximate, nthreads = num.threads)
+    train_single(
+        test_features=test.genes - 1L, 
+        ref=parsed,
+        ref_features=ref.genes - 1L,
+        labels=match(labels, ulabels) - 1L,
+        markers=markers,
+        builder=builder,
+        nthreads=num.threads
+    )
 }
 
 .get_levels <- function(labels) sort(unique(labels))
