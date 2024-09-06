@@ -206,13 +206,15 @@ combineRecomputedResults <- function(
     }
 
     output <- DataFrame(labels=chosen.label, row.names=rownames(results[[1]]))
+
     if (has.pruned) {
         output$pruned.labels <- chosen.pruned
     }
 
     output$reference <- chosen
+
     if (is.null(names(results))) {
-        names(results) <- sprintf("ref%s", seq_along(results))
+        names(results) <- sprintf("ref%i", seq_along(results))
     }
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 

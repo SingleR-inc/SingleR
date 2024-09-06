@@ -51,7 +51,7 @@ This mimics the output of \code{\link{classifySingleR}} and contains the followi
 For any given cell, entries of this matrix are only non-\code{NA} for the assigned label in each reference;
 scores are not recomputed for the other labels.
 \item \code{labels}, a character vector containing the per-cell combined label across references.
-\item \code{references}, an integer vector specifying the reference from which the combined label was derived.
+\item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
 It may also contain \code{pruned.labels} if these were also present in \code{results}.
