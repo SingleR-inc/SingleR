@@ -133,7 +133,10 @@ classifySingleR <- function(
             test=test, 
             trained=trained, 
             check.missing=FALSE, 
-            quantile=quantile
+            quantile=quantile,
+            fine.tune=fine.tune,
+            tune.thresh=tune.thresh,
+            num.threads=num.threads
         )
     } 
 }

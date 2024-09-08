@@ -12,6 +12,8 @@
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
 #' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.
 #' @param quantile Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.
+#' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
+#' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param allow.lost Deprecated.
 #'
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
@@ -32,17 +34,17 @@
 #' @details
 #' Here, the strategy is to perform classification separately within each reference, 
 #' then collate the results to choose the label with the highest score across references.
-#' For a given cell in \code{test}, we extract its assigned label from \code{results} for each reference.
-#' We also retrieve the marker genes associated with that label and take the union of markers across all references.
+#' For a given cell in \code{test}, we extract its assigned label from each reference in \code{results}, along with the marker genes associated with that label.
+#' We take the union of the markers for the assigned labels across all references.
 #' This defines a common feature space in which the score for each reference's assigned label is recomputed using \code{ref};
 #' the label from the reference with the top recomputed score is then reported as the combined annotation for that cell.
 #' 
-#' A key aspect of this approach is that each entry of \code{results} is generated with reference-specific markers.
-#' This avoids the inclusion of noise from irrelevant genes in the within-reference assignments.
+#' A key aspect of this approach is that each entry of \code{results} is generated separately for each reference.
+#' This avoids problems with unintersting technical or biological differences between references that could otherwise introduce noise by forcing irrelevant genes into the marker list. 
 #' Similarly, the common feature space for each cell is defined from the most relevant markers across all references,
 #' analogous to one iteration of fine-tuning using only the best labels from each reference.
-#' Compare this to the alternative approach of creating a common feature space, where we force all per-reference classifications to use the same set of markers;
-#' this would slow down each individual classification as many more genes are involved.
+#' Indeed, if fine-tuning is enabled, the common feature space is iteratively refined from the labels with the highest scores, using the same process described in \code{\link{classifySingleR}}.
+#' This allows us to distinguish between closely-related labels from different references.
 #'
 #' @section Dealing with mismatching gene availabilities:
 #' It is recommended that the universe of genes be the same across all references in \code{trained}.
@@ -107,6 +109,8 @@ combineRecomputedResults <- function(
     test, 
     trained, 
     quantile=0.8, 
+    fine.tune=TRUE, 
+    tune.thresh=0.05, 
     assay.type.test="logcounts", 
     check.missing=FALSE,
     warn.lost=TRUE,
@@ -167,6 +171,8 @@ combineRecomputedResults <- function(
         results=collated,
         integrated_build=ibuilt,
         quantile=quantile,
+        use_fine_tune = fine.tune, 
+        fine_tune_threshold = tune.thresh, 
         nthreads=num.threads
     ) 
 

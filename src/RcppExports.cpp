@@ -11,16 +11,18 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // classify_integrated
-SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads);
-RcppExport SEXP _SingleR_classify_integrated(SEXP testSEXP, SEXP resultsSEXP, SEXP integrated_buildSEXP, SEXP quantileSEXP, SEXP nthreadsSEXP) {
+SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads);
+RcppExport SEXP _SingleR_classify_integrated(SEXP testSEXP, SEXP resultsSEXP, SEXP integrated_buildSEXP, SEXP quantileSEXP, SEXP use_fine_tuneSEXP, SEXP fine_tune_thresholdSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::RObject >::type test(testSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type results(resultsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type integrated_build(integrated_buildSEXP);
     Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_fine_tune(use_fine_tuneSEXP);
+    Rcpp::traits::input_parameter< double >::type fine_tune_threshold(fine_tune_thresholdSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(classify_integrated(test, results, integrated_build, quantile, nthreads));
+    rcpp_result_gen = Rcpp::wrap(classify_integrated(test, results, integrated_build, quantile, use_fine_tune, fine_tune_threshold, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -120,7 +122,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SingleR_classify_integrated", (DL_FUNC) &_SingleR_classify_integrated, 5},
+    {"_SingleR_classify_integrated", (DL_FUNC) &_SingleR_classify_integrated, 7},
     {"_SingleR_classify_single", (DL_FUNC) &_SingleR_classify_single, 6},
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
     {"_SingleR_grouped_medians", (DL_FUNC) &_SingleR_grouped_medians, 4},

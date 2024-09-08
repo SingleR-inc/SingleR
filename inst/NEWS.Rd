@@ -18,6 +18,9 @@ The \code{approximate=} argument is deprecated.
 \item Soft-deprecated \code{check.missing=} in \code{classifySingleR()} and \code{combineRecomputedResults()}.
 This is because any filtering will cause a mismatch between the row names of \code{tests} and the \code{test.genes} in \code{trained}.
 Rather, filtering should be done prior to \code{trainSingleR()}, as is done in the main \code{SingleR()} function.
+
+\item \code{combineRecomputedResults()} now supports fine-tuning to resolve closely-related labels from different references.
+This is similar to the fine-tuning in \code{classifySingleR()} where the feature space is iterately redefined as the union of markers of labels with near-highest scores.
 }}
 
 \section{Version 2.0.0}{\itemize{

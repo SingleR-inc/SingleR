@@ -3,7 +3,7 @@
 #include <vector>
 
 //[[Rcpp::export(rng=false)]]
-SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, int nthreads) {
+SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated_build, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
     Rtatami::BoundNumericPointer curtest(test);
     TrainedIntegratedPointer iptr(integrated_build);
 
@@ -43,6 +43,8 @@ SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated
     singlepp::ClassifyIntegratedOptions<double> opts;
     opts.num_threads = nthreads;
     opts.quantile = quantile;
+    opts.fine_tune = use_fine_tune;
+    opts.fine_tune_threshold = fine_tune_threshold;
     singlepp::classify_integrated(*(curtest->ptr), previous_results, *iptr, buffers, opts);
 
     return Rcpp::List::create(
