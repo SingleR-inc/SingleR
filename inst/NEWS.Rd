@@ -6,6 +6,12 @@
 \item Added the \code{test.genes=} argument to \code{trainSingleR()}, to restrict marker detection to only those genes in the test dataset.
 This is also checked against \code{rownames(test)} in \code{classifySingleR()} to ensure that the test's feature space is consistent with the space used during training.
 
+\item The introduction of \code{test.genes=} means that we no longer need to explicitly subset the rows of the reference dataset (to match the test features) in \code{SingleR()}.
+This saves memory by avoiding an unnecessary copy of the reference dataset, but may also slightly alter the marker selection as ties are broken in a different way.
+Namely, if the top X genes are used as markers, and the X-th and (X+1)-th gene have the same log-fold change, 
+tie breaking will be based on the ordering of the rows in the reference matrix - which is no longer the same as in the previous version of \pkg{SingleR}.
+This results in some slight differences in the markers that propagate down to the classification results.
+
 \item Restored the \code{BNPARAM=} argument in \code{trainSingleR()}, to enable more fine-grained specification of neighbor search algorithms.
 The \code{approximate=} argument is deprecated. 
 
