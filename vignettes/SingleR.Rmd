@@ -37,7 +37,7 @@ for the reference dataset, and this biological knowledge can be propagated to ne
 To keep things brief, this vignette only provides a brief summary of the basic capabilities of `r Biocpkg("SingleR")`.
 However, the package also provides more advanced functionality that includes the use of multiple references simultaneously,
 manipulating the cell ontology and improving performance on big datasets.
-Readers are referred to the [book](http://bioconductor.org/books/devel/SingleRBook/) for more details. 
+Readers are referred to the [book](https://bioconductor.org/books/devel/SingleRBook/) for more details. 
 
 # Using built-in references
 
@@ -171,7 +171,7 @@ plotHeatmap(sceG, order_columns_by="labels",
 *How can I use this with my `Seurat`, `SingleCellExperiment`, or `cell_data_set` object?*
 
 `r Biocpkg("SingleR")` is workflow agnostic - all it needs is normalized counts.
-An example showing how to map its results back to common single-cell data objects is available in the [README](https://github.com/LTLA/SingleR/blob/master/README.md).
+An example showing how to map its results back to common single-cell data objects is available in the [README](https://github.com/SingleR-inc/SingleR/blob/master/README.md).
 
 *Where can I find reference sets appropriate for my data?*
 
@@ -183,9 +183,9 @@ but have been migrated into a separate package for more general use by other Bio
 *Where can I get more help?*
 
 It is likely that your questions is already answered by the function documentation (e.g., `?SingleR`).
-Further explanations on the reasoning behind certain functions can be found in the [book](https://ltla.github.io/SingleRBook/).
+Further explanations on the reasoning behind certain functions can be found in the [book](https://bioconductor.org/books/devel/SingleRBook/).
 If this is not sufficient, we recommend posting an issue on the [Bioconductor support site](https://support.bioconductor.org)
-or [the GitHub repository](https://github.com/LTLA/SingleR) for this package.
+or [the GitHub repository](https://github.com/SingleR-inc/SingleR) for this package.
 Be sure to include your session information and a minimal reproducible example.
 
 # Session information

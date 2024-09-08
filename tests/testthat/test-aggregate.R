@@ -108,7 +108,7 @@ test_that("aggregateReference seed setter behaves correctly", {
     setAutoBPPARAM(SerialParam())
 
     set.seed(20)
-    out <- aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(3))
+    out <- aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(2))
     expect_identical(ref, out)
 
     # The seed is unset properly for downstream applications.
@@ -117,7 +117,7 @@ test_that("aggregateReference seed setter behaves correctly", {
     test1 <- runif(10)
 
     set.seed(10)
-    aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(3))
+    aggregateReference(sce, labels, BPPARAM=BiocParallel::SnowParam(2))
     test2 <- runif(10)
     expect_identical(test1, test2)
 

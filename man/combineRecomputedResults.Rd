@@ -134,7 +134,7 @@ combined[,1:5]
 \references{
 Lun A, Bunis D, Andrews J (2020).
 Thoughts on a more scalable algorithm for multiple references.
-\url{https://github.com/LTLA/SingleR/issues/94}
+\url{https://github.com/SingleR-inc/SingleR/issues/94}
 }
 \seealso{
 \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.

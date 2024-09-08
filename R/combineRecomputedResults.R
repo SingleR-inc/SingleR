@@ -71,7 +71,7 @@
 #' @references
 #' Lun A, Bunis D, Andrews J (2020).
 #' Thoughts on a more scalable algorithm for multiple references.
-#' \url{https://github.com/LTLA/SingleR/issues/94}
+#' \url{https://github.com/SingleR-inc/SingleR/issues/94}
 #'
 #' @examples
 #' # Making up data.

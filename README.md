@@ -38,19 +38,19 @@ install.packages("BiocManager")
 BiocManager::install("SingleR", version = "devel")
 ```
 
-Alternatively, you can install it from GitHub using the [devtools](https://github.com/hadley/devtools "devtools") package.
+Alternatively, you can install it from GitHub using the [devtools](https://github.com/r-lib/devtools "devtools") package.
 
 ```r
 install.packages("devtools")
 library(devtools)
-install_github("LTLA/SingleR")
+install_github("SingleR-inc/SingleR")
 ```
 
 ## Usage
 
 The `SingleR()` function annotates each cell in a test dataset given a reference dataset with known labels. Documentation and basic examples can be accessed with `?SingleR`.
 
-Both basic and advanced examples can be found in the [SingleR book](https://ltla.github.io/SingleRBook/).
+Both basic and advanced examples can be found in the [SingleR book](https://bioconductor.org/books/devel/SingleRBook/).
 
 ### Usage with Seurat/SingleCellExperiment objects
 
@@ -78,4 +78,4 @@ Using broad labels can reduce the time to under 15 minutes, though run times wil
 SingleR was originally developed by Dvir Aran. 
 This refactor was initiated by Aaron Lun, with additional contributions from Daniel Bunis, Friederike Dündar, and Jared Andrews.
 
-[Issues](https://github.com/LTLA/SingleR/issues) and [pull requests](https://github.com/LTLA/SingleR/pulls) are welcome.
+[Issues](https://github.com/SingleR-inc/SingleR/issues) and [pull requests](https://github.com/SingleR-inc/SingleR/pulls) are welcome.

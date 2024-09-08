@@ -3,3 +3,4 @@
 ^Dockerfile$
 ^\.github$
 ^\.gitignore$
+^LICENSE\.txt$

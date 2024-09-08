@@ -62,7 +62,7 @@ test_that("combineRecomputedResults matrix fragmentation works as expected", {
         results=list(pred1, pred2), 
         test=test,
         trained=list(train1, train2),
-        BPPARAM=BiocParallel::MulticoreParam(3))
+        BPPARAM=BiocParallel::MulticoreParam(2))
     expect_equal(combined1, combined1x)
 
     # Testing that it works for DA's, as well as when the DA
