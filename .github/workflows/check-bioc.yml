@@ -1,74 +1,28 @@
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 name: R-CMD-check
 
 jobs:
   build-check:
-    runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    container: ${{ matrix.config.cont }}
-    ## Environment variables unique to this job.
-
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - { os: ubuntu-latest, r: '4.3', bioc: '3.18', cont: "bioconductor/bioconductor_docker:devel", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
-          - { os: macOS-latest, r: '4.3', bioc: '3.18'}
-          ## Check https://github.com/r-lib/actions/tree/master/examples
-          ## for examples using the http-user-agent
-    env:
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      RSPM: ${{ matrix.config.rspm }}
-      NOT_CRAN: true
-      TZ: UTC
-      GITHUB_PAT: ${{ secrets.BEACHMAT_PAT }}
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:devel
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    ## For Macs - none of this is required for the Linux containers.
-    - name: Setup R from r-lib
-      if: runner.os != 'Linux'
-      uses: r-lib/actions/setup-r@v2
-      with:
-        r-version: ${{ matrix.config.r }}
-        http-user-agent: ${{ matrix.config.http-user-agent }}
-
-    - name: Setup pandoc from r-lib
-      if: runner.os != 'Linux'
-      uses: r-lib/actions/setup-pandoc@v2
-
-    - name: Install BiocManager with the right version
-      if: runner.os != 'Linux'
-      run: |
-        install.packages("BiocManager")
-        BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE, force = TRUE)
-      shell: Rscript {0}
-
-    - name: Install remotes to get beachmat
-      if: runner.os != 'Linux'
-      run: |
-        BiocManager::install("remotes")
-      shell: Rscript {0}
-
-    - name: Install macOS system dependencies
-      if: matrix.config.os == 'macOS-latest'
-      run: |
-        ## Enable installing XML from source if needed
-        brew install libxml2
-        echo "XML_CONFIG=/usr/local/opt/libxml2/bin/xml2-config" >> $GITHUB_ENV
+      uses: actions/checkout@v4
 
     - name: Determine the package directory
       run: R --no-echo -e "cat(paste0('R_PKG_DIR=', .libPaths()[1], '\n'))" >> $GITHUB_ENV
 
     - name: Restore the package directory
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.R_PKG_DIR }}
-        key: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-${{ hashFiles('.github/dependencies.rds') }}
-        restore-keys: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-
+        key: installed-packages
 
     - name: Install R package dependencies
       shell: Rscript {0}
@@ -77,24 +31,21 @@ jobs:
         installs <- unlist(strsplit(deets[,c("Imports", "Depends", "Suggests", "LinkingTo")], ",\\s+"), use.names=FALSE)
         BiocManager::install(installs)
         BiocManager::install("BiocCheck")
-        saveRDS(file=".github/dependencies.rds", installs)
 
-    - name: Determine the Hub directories
-      run: R --no-echo -e "cat(paste0('EXPERIMENT_HUB_DIR=', suppressMessages(ExperimentHub::getExperimentHubOption('CACHE')), '\nANNOTATION_HUB_DIR=', suppressMessages(AnnotationHub::getAnnotationHubOption('CACHE')), '\n'))" >> $GITHUB_ENV
+    - name: Determine the data directories
+      run: R --no-echo -e "cat(paste0('GYPSUM_DIR=', suppressMessages(gypsum::cacheDirectory()), '\nANNOTATION_HUB_DIR=', suppressMessages(AnnotationHub::getAnnotationHubOption('CACHE')), '\n'))" >> $GITHUB_ENV
 
-    - name: Restore the ExperimentHub directory
-      uses: actions/cache@v3
+    - name: Restore the gypsum directory
+      uses: actions/cache@v4
       with:
-        path: ${{ env.EXPERIMENT_HUB_DIR }}
-        key: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-ExperimentHub-${{ hashFiles('vignettes/*.Rmd') }}
-        restore-keys: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-ExperimentHub-
+        path: ${{ env.GYPSUM_DIR }}
+        key: gypsum-cache
 
     - name: Restore the AnnotationHub directory
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.ANNOTATION_HUB_DIR }}
-        key: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-AnnotationHub-${{ hashFiles('vignettes/*.Rmd') }}
-        restore-keys: ${{ env.cache-version }}-${{ runner.os }}-biocversion-RELEASE_${{ matrix.config.bioc }}-r-${{ matrix.config.r }}-AnnotationHub-
+        key: AnnotationHub-cache
 
     - name: Run CMD build
       run: |
