@@ -112,7 +112,7 @@ test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels",
         paste0("disabling normalization"))
 
     expect_equal(
-        suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
+        suppressWarnings(plotScoreHeatmap(results = pred, silent = TRUE,
             labels.use = c("A"),
             color = colorRampPalette(c("red", "blue"))(33), # proximal to normalization being turned off
             return.data = TRUE)$color),
@@ -124,7 +124,7 @@ test_that("heatmap is adjusted properly when 'labels.use' yields 1 or 0 labels",
         paste0("ignoring 'labels.use'"))
 
     expect_equal(
-        nrow(suppressMessages(plotScoreHeatmap(results = pred, silent = TRUE,
+        nrow(suppressWarnings(plotScoreHeatmap(results = pred, silent = TRUE,
             labels.use = c("a"),
             return.data = TRUE)$mat)),
         5)
@@ -349,8 +349,10 @@ test_that("heatmap multi-ref - Other typical adjustments throw no unexpected err
     expect_s3_class(plotScoreHeatmap(results = combined,
         normalize = FALSE),
         "gtable")
-    expect_s3_class(plotScoreHeatmap(results = combined,
+    expect_warning(out <- plotScoreHeatmap(results = combined,
         labels.use = c("A", "a")),
+        "disabling normalization")
+    expect_s3_class(out,
         "gtable")
     expect_s3_class(plotScoreHeatmap(results = combined,
         max.labels = 3),
