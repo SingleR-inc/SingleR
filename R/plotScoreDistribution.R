@@ -206,7 +206,7 @@ plotScoreDistribution <- function(
 
     # Making the violin plots.
     p <- ggplot2::ggplot(data = df,
-            ggplot2::aes_string(x = "cell.calls", y = "values", fill = "cell.calls")) +
+            ggplot2::aes(x = .data$cell.calls, y = .data$values, fill = .data$cell.calls)) +
         ggplot2::scale_fill_manual(
             name = labels.title,
             breaks = c("assigned", "pruned", "other"),

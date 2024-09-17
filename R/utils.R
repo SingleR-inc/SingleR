@@ -84,3 +84,5 @@
         as.matrix(x)
     }
 }
+
+utils::globalVariables(".data")

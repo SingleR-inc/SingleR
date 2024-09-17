@@ -168,7 +168,7 @@ plotDeltaDistribution <- function(
     aes.jit <- NULL
     if (!is.null(pruned)) {
         df$pruned <- pruned
-        aes.jit <- ggplot2::aes_string(color = "pruned")
+        aes.jit <- ggplot2::aes(color = .data$pruned)
     }
 
     # Trim dataframe by labels:
@@ -180,7 +180,7 @@ plotDeltaDistribution <- function(
     }
 
     # Making the violin plots.
-    p <- ggplot2::ggplot(data = df, ggplot2::aes_string(x="x", y="values")) + 
+    p <- ggplot2::ggplot(data = df, ggplot2::aes(x=.data$x, y=.data$values)) + 
         ggplot2::xlab("")
 
     if (!is.null(pruned)) {
