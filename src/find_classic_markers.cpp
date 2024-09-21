@@ -6,7 +6,7 @@
 Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp::List ref, int de_n, int nthreads) {
     // Storing references to the R objects and creating pointers.
     size_t nref = ref.size();
-    if (nref != labels.size()) {
+    if (nref != static_cast<size_t>(labels.size())) {
         throw std::runtime_error("'ref' and 'labels' should have the same length");
     }
 

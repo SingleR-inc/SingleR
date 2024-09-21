@@ -9,14 +9,15 @@ SEXP classify_integrated(Rcpp::RObject test, Rcpp::List results, SEXP integrated
 
     // Setting up the previous results.
     std::vector<Rcpp::IntegerVector> previous_results_vec;
-    previous_results_vec.reserve(results.size());
-    for (size_t r = 0; r < results.size(); ++r) {
+    size_t nresults = results.size();
+    previous_results_vec.reserve(nresults);
+    for (size_t r = 0; r < nresults; ++r) {
         previous_results_vec.emplace_back(results[r]);
     }
 
     std::vector<const int*> previous_results;
-    previous_results.reserve(results.size());
-    for (size_t r = 0; r < results.size(); ++r) {
+    previous_results.reserve(nresults);
+    for (size_t r = 0; r < nresults; ++r) {
         previous_results.push_back(static_cast<const int*>(previous_results_vec[r].begin()));
     }
 

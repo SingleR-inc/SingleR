@@ -16,13 +16,15 @@ SEXP train_single(Rcpp::IntegerVector test_features, Rcpp::RObject ref, Rcpp::In
     opts.trainer = std::shared_ptr<BiocNeighbors::Builder>(std::shared_ptr<BiocNeighbors::Builder>{}, bptr.get()); // make a no-op shared pointer.
 
     // Setting up the markers. We assume that these are already 0-indexed on the R side.
-    singlepp::Markers<int> markers2(markers.size());
-    for (size_t m = 0; m < markers.size(); ++m) {
+    size_t ngroups = markers.size();
+    singlepp::Markers<int> markers2(ngroups);
+    for (size_t m = 0; m < ngroups; ++m) {
         Rcpp::List curmarkers(markers[m]);
         auto& curmarkers2 = markers2[m];
-        curmarkers2.resize(curmarkers.size());
+        size_t inner_ngroups = curmarkers.size();
+        curmarkers2.resize(inner_ngroups);
 
-        for (size_t n = 0; n < curmarkers.size(); ++n) {
+        for (size_t n = 0; n < inner_ngroups; ++n) {
             Rcpp::IntegerVector seq(curmarkers[n]);
             auto& seq2 =  curmarkers2[n];
             seq2.insert(seq2.end(), seq.begin(), seq.end());
