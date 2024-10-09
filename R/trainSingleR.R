@@ -353,7 +353,7 @@ trainSingleR <- function(
         ref_features=ref.genes - 1L,
         labels=match(labels, ulabels) - 1L,
         markers=markers,
-        builder=builder,
+        builder=builder$builder,
         nthreads=num.threads
     )
 }
