@@ -70,17 +70,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_integrated
-SEXP train_integrated(Rcpp::IntegerVector test_features, Rcpp::List references, Rcpp::List ref_ids, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
-RcppExport SEXP _SingleR_train_integrated(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_idsSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
+SEXP train_integrated(Rcpp::List test_features, Rcpp::List references, Rcpp::List ref_features, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
+RcppExport SEXP _SingleR_train_integrated(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type test_features(test_featuresSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type test_features(test_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type references(referencesSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type ref_ids(ref_idsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type ref_features(ref_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type labels(labelsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type prebuilt(prebuiltSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(train_integrated(test_features, references, ref_ids, labels, prebuilt, nthreads));
+    rcpp_result_gen = Rcpp::wrap(train_integrated(test_features, references, ref_features, labels, prebuilt, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }

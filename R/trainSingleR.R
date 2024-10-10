@@ -340,9 +340,9 @@ trainSingleR <- function(
     if (is.null(test.genes)) {
         test.genes <- ref.genes <- seq_len(nrow(ref))
     } else {
-        universe <- union(test.genes, rownames(ref))
-        test.genes <- match(test.genes, universe)
-        ref.genes <- match(rownames(ref), universe)
+        intersection <- .create_intersection(test.genes, rownames(ref))
+        test.genes <- intersection$test
+        ref.genes <- intersection$reference
     }
 
     builder <- defineBuilder(BNPARAM)

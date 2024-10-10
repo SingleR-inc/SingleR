@@ -19,8 +19,8 @@ grouped_medians <- function(ref, groups, ngroups, nthreads) {
     .Call('_SingleR_grouped_medians', PACKAGE = 'SingleR', ref, groups, ngroups, nthreads)
 }
 
-train_integrated <- function(test_features, references, ref_ids, labels, prebuilt, nthreads) {
-    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_features, references, ref_ids, labels, prebuilt, nthreads)
+train_integrated <- function(test_features, references, ref_features, labels, prebuilt, nthreads) {
+    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_features, references, ref_features, labels, prebuilt, nthreads)
 }
 
 #' @importFrom Rcpp sourceCpp

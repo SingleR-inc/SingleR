@@ -149,12 +149,19 @@ combineRecomputedResults <- function(
         }
     }
 
+    all.inter.test <- all.inter.ref <- vector("list", length(trained))
+    test.genes <- rownames(test)
+    for (i in seq_along(all.refnames)) {
+        inter <- .create_intersection(test.genes, all.refnames[[i]])
+        all.inter.test[[i]] <- inter$test - 1L
+        all.inter.ref[[i]] <- inter$reference - 1L
+    }
+
     # Applying the integration.
-    universe <- Reduce(union, c(list(rownames(test)), all.refnames))
     ibuilt <- train_integrated(
-        test_features=match(rownames(test), universe) - 1L,
+        test_features=all.inter.test,
         references=lapply(trained, function(x) initializeCpp(x$ref)),
-        ref_ids=lapply(all.refnames, function(x) match(x, universe) - 1L), 
+        ref_features=all.inter.ref,
         labels=lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
         prebuilt=lapply(trained, function(x) rebuildIndex(x)$built),
         nthreads = num.threads

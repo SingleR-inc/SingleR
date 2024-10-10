@@ -35,6 +35,19 @@
     x
 }
 
+.create_intersection <- function(test, reference) {
+    # Effectively an NA-safe intersect() that preserves ordering in 'test'.
+    common <- test[test %in% reference]
+    common <- common[!is.na(common)]
+    common <- common[!duplicated(common)]
+
+    # match() takes the first occurrence, consistent with internal behavior in singlepp.
+    list(
+        test = match(common, test),
+        reference = match(common, reference)
+    )
+}
+
 #' @importFrom methods is
 #' @importClassesFrom S4Vectors List
 .is_list <- function(val) {
