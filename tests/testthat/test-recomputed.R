@@ -109,19 +109,55 @@ test_that("combineRecomputedResults handles mismatches to rows and cells", {
 })
 
 test_that("combineRecomputedResults emits warnings when missing genes are present", {
-    half <- nrow(test) / 2
+    half <- nrow(ref) / 2
 
     # Spiking in some missing genes.
-    ref1b <- ref1[seq_len(half),,drop=FALSE]
-    train1b <- trainSingleR(ref1b, labels=ref1$label, test.genes=rownames(test))
+    train1b <- trainSingleR(ref1[seq_len(half),,drop=FALSE], labels=ref1$label, test.genes=rownames(test))
+    pred1b <- classifySingleR(test, train1b)
 
-    ref2b <- ref2[half + seq_len(half),]
-    train2b <- trainSingleR(ref2b, labels=ref2$label, test.genes=rownames(test))
+    train2b <- trainSingleR(ref2[half + seq_len(half),,drop=FALSE], labels=ref2$label, test.genes=rownames(test))
+    pred2b <- classifySingleR(test, train2b)
 
     expect_warning(out <- combineRecomputedResults(
-        results=list(pred1, pred2), 
+        results=list(pred1b, pred2b), 
         test=test,
         trained=list(train1b, train2b)), "available in each reference")
+})
+
+test_that("combineRecomputedResults works with intersections", {
+    tkeep <- sample(rownames(test), 500)
+    rkeep <- sample(rownames(ref), 500)
+
+    subtest <- test[tkeep,]
+    train1b <- trainSingleR(ref1[rownames(ref1) %in% rkeep,,drop=FALSE], labels=ref1$label, test.genes=tkeep)
+    pred1b <- classifySingleR(subtest, train1b)
+
+    train2b <- trainSingleR(ref2[rownames(ref2) %in% rkeep,,drop=FALSE], labels=ref2$label, test.genes=tkeep)
+    pred2b <- classifySingleR(subtest, train2b)
+
+    out <- combineRecomputedResults(
+        results=list(pred1b, pred2b), 
+        test=subtest,
+        trained=list(train1b, train2b)
+    )
+
+    # Comparing to some explicit subsets to the intersection.
+    common <- intersect(tkeep, rkeep)
+    subtest <- test[rownames(test) %in% common,]
+    train1c <- trainSingleR(ref1[rownames(ref1) %in% common,], labels=ref1$label)
+    pred1c <- classifySingleR(subtest, train1c)
+
+    train2c <- trainSingleR(ref2[rownames(ref2) %in% common,], labels=ref2$label)
+    pred2c <- classifySingleR(subtest, train2c)
+
+    ref.out <- combineRecomputedResults(
+        results=list(pred1c, pred2c), 
+        test=subtest,
+        trained=list(train1c, train2c)
+    )
+
+    expect_equal(out$scores, ref.out$scores)
+    expect_identical(out$labels, ref.out$labels)
 })
 
 test_that("combineRecomputedResults is invariant to ordering", {

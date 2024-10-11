@@ -97,6 +97,16 @@ test_that("trainSingleR is robust to non-character labels", {
     expect_equal(out$labels, ref$labels)
 })
 
+test_that("trainSingleR behaves correctly with gene intersections", {
+    random.test <- sample(rownames(test), 500)
+    out <- trainSingleR(training, training$label, test.genes=random.test)
+    ref <- trainSingleR(training[rownames(training) %in% random.test,], training$label)
+    expect_identical(out$labels, ref$labels)
+    expect_identical(out$markers$full, ref$markers$full)
+    expect_identical(sort(out$markers$unique), sort(ref$markers$unique))
+    expect_identical(out$ref[rownames(training) %in% random.test,], ref$ref)
+})
+
 test_that("trainSingleR works on various expression matrices", {
     out <- trainSingleR(training, training$label)
     alt <- trainSingleR(logcounts(training), training$label)
@@ -204,4 +214,3 @@ test_that("trainSingleR auto-eliminates NA labels", {
     expect_identical(out$labels, ref$labels)
     expect_identical(out$ref, ref$ref)
 })
-

@@ -46,6 +46,21 @@ test_that("classifySingleR behaves sensibly with very low 'quantile' settings", 
     expect_identical(colnames(collected)[max.col(collected)], out$labels)
 })
 
+test_that("classifySingleR behaves correctly with gene intersections", {
+    random.training <- sample(rownames(training), 500)
+    random.test <- sample(rownames(test), 500)
+
+    trained <- trainSingleR(training[rownames(training) %in% random.training], training$label, test.genes=random.test)
+    out <- classifySingleR(test[random.test,], trained)
+
+    common <- intersect(random.test, random.training) # order-preserving intersection.
+    ref.trained <- trainSingleR(training[rownames(training) %in% common,], training$label)
+    ref.out <- classifySingleR(test[rownames(test) %in% common,], ref.trained)
+
+    expect_equal(out$scores, ref.out$scores)
+    expect_identical(out$labels, ref.out$labels)
+})
+
 test_that("classifySingleR behaves sensibly with very large 'quantile' settings", {
     Q <- 1
     out <- classifySingleR(test, trained, fine.tune=FALSE, quantile=Q)
