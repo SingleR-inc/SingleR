@@ -152,18 +152,12 @@ summary(is.na(pred.grun$pruned.labels))
 ```
 
 Finally, a simple yet effective diagnostic is to examine the expression of the marker genes for each label in the test dataset.
-We extract the identity of the markers from the metadata of the `SingleR()` results and use them in the  `plotHeatmap()` function from `r Biocpkg("scater")`, as shown below for beta cell markers.
+We extract the identity of the markers from the metadata of the `SingleR()` results and use them in the  `plotMarkerHeatmap()` function, as shown below for beta cell markers.
 If a cell in the test dataset is confidently assigned to a particular label, we would expect it to have strong expression of that label's markers.
 At the very least, it should exhibit upregulation of those markers relative to cells assigned to other labels.
 
 ```{r}
-all.markers <- metadata(pred.grun)$de.genes
-sceG$labels <- pred.grun$labels
-
-# Beta cell-related markers
-library(scater)
-plotHeatmap(sceG, order_columns_by="labels",
-    features=unique(unlist(all.markers$beta))) 
+plotMarkerHeatmap(pred.grun, sceG, label="beta")
 ```
 
 # FAQs
