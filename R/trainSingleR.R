@@ -338,7 +338,6 @@ trainSingleR <- function(
     }
 
     if (is.null(test.genes)) {
-        stopifnot(nrow(test) == nrow(ref))
         test.genes <- ref.genes <- seq_len(nrow(ref))
     } else {
         intersection <- .create_intersection(test.genes, rownames(ref))
