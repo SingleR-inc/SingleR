@@ -21,6 +21,8 @@ Rather, filtering should be done prior to \code{trainSingleR()}, as is done in t
 
 \item \code{combineRecomputedResults()} now supports fine-tuning to resolve closely-related labels from different references.
 This is similar to the fine-tuning in \code{classifySingleR()} where the feature space is iterately redefined as the union of markers of labels with near-highest scores.
+
+\item Added the \code{plotMarkerHeatmap()} function to plot a diagnostic heatmap of the most interesting markers for each label.
 }}
 
 \section{Version 2.0.0}{\itemize{
