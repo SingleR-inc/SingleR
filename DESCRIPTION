@@ -19,13 +19,11 @@ Imports:
     DelayedArray,
     DelayedMatrixStats,
     BiocParallel,
-    BiocSingular,
     BiocNeighbors,
     stats,
     utils,
     Rcpp,
-    beachmat (>= 2.21.1),
-    parallel
+    beachmat (>= 2.21.1)
 LinkingTo:
     Rcpp,
     beachmat,
@@ -39,8 +37,7 @@ Suggests:
     BiocGenerics,
     SingleCellExperiment,
     scuttle,
-    scater,
-    scran,
+    scrapper,
     scRNAseq,
     ggplot2,
     pheatmap,

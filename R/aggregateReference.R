@@ -75,8 +75,6 @@
 #' @export
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
-#' @importFrom BiocParallel SerialParam bpnworkers bpmapply
-#' @importFrom BiocSingular bsparam
 aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000, assay.type="logcounts", 
     rank=20, subset.row=NULL, check.missing=TRUE, BPPARAM=SerialParam(), BSPARAM=bsparam())
 {
@@ -123,7 +121,6 @@ aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000,
 #' @importFrom stats kmeans
 #' @importFrom utils head
 #' @importFrom Matrix t rowMeans
-#' @importFrom BiocSingular runPCA
 #' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
 #' @importFrom DelayedMatrixStats rowVars
 #' @importFrom beachmat realizeFileBackedMatrix
@@ -173,44 +170,4 @@ aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000,
     }
 
     val
-}
-
-#' @importFrom stats runif
-#' @importFrom parallel nextRNGStream
-.define_seeds <- function(n) {
-    if (!n) {
-        return(list())
-    }
-
-    runif(1) # bumping the RNG so that repeated calls to this function generate different results.
-
-    oldseed <- .get_seed()
-    on.exit(.set_seed(oldseed))
-
-    old <- RNGkind("L'Ecuyer-CMRG")
-    on.exit(RNGkind(old[1]), add=TRUE, after=FALSE)
-
-    seeds <- vector("list", n)
-    seeds[[1L]] <- .Random.seed
-    for (i in seq_len(n - 1L)) {
-        seeds[[i + 1L]] <- nextRNGStream(seeds[[i]])
-    }
-
-    seeds
-}
-
-.get_seed <- function( ) {
-    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-        get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-    } else {
-        NULL
-    }
-}
-
-.set_seed <- function(oldseed) {
-    if (!is.null(oldseed)) {
-        assign(".Random.seed", oldseed, envir = .GlobalEnv)
-    } else {
-        rm(.Random.seed, envir = .GlobalEnv)
-    }
 }

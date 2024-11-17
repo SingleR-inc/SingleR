@@ -163,11 +163,23 @@
 #' trained
 #' length(trained$markers$unique)
 #'
-#' # Alternatively, computing and supplying a set of label-specific markers.
-#' by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
-#' markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
-#' trained <- trainSingleR(ref, ref$label, genes=markers)
-#' length(trained$markers$unique)
+#' # Alternatively, supplying a custom set of markers from pairwise comparisons.
+#' all.labels <- unique(ref$label)
+#' custom.markers <- list()
+#' for (x in all.labels) {
+#'     current.markers <- lapply(all.labels, function(x) sample(rownames(ref), 20))
+#'     names(current.markers) <- all.labels
+#'     current.markers[[x]] <- character(0)
+#'     custom.markers[[x]] <- current.markers
+#' }
+#' custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
+#'
+#' # Alternatively, supplying a custom set of markers for each label.
+#' custom.markers <- list()
+#' for (x in all.labels) {
+#'     current.markers[[x]] <- sample(rownames(ref), 20)
+#' }
+#' custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
 #' 
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
@@ -247,7 +259,7 @@ trainSingleR <- function(
             de.args=de.args,
             restrict=restrict,
             test.genes=test.genes,
-            BPPARAM=BPPARAM
+            num.threads=num.threads
         )
 
         if (aggr.ref) {
@@ -283,7 +295,7 @@ trainSingleR <- function(
     }
 }
 
-.identify_genes <- function(ref, labels, genes, de.method, de.n, test.genes, restrict, de.args, BPPARAM) {
+.identify_genes <- function(ref, labels, genes, de.method, de.n, test.genes, restrict, de.args, num.threads) {
     if (length(labels)!=ncol(ref)) {
         stop("number of labels must be equal to number of cells")
     }
@@ -317,7 +329,7 @@ trainSingleR <- function(
         if (genes != "de") {
             .Deprecated(old="genes = \"", genes, "\"")
         } 
-        genes <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, BPPARAM=BPPARAM)
+        genes <- .get_genes_by_de(ref, labels, de.n=de.n, de.method=de.method, de.args=de.args, num.threads=num.threads)
     }
 
     genes
@@ -365,24 +377,63 @@ trainSingleR <- function(
 .is_solo <- function(trained) !is.null(trained$ref)
 
 #' @importFrom utils head
-.get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), BPPARAM=SerialParam()) {
+.get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), num.threads=1) {
     if (de.method=="classic") {
-        getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE, BPPARAM=BPPARAM)
-    } else {
-        if (de.method=="t") {
-            FUN <- scran::pairwiseTTests
-        } else {
-            FUN <- scran::pairwiseWilcox
-        }
-
-        pairwise <- do.call(FUN, c(list(x=ref, groups=labels, direction="up", log.p=TRUE, BPPARAM=BPPARAM), de.args))
-        if (is.null(de.n)) {
-            de.n <- 10
-        }
-
-        collected <- scran::getTopMarkers(pairwise$statistics, pairwise$pairs, n=de.n, pval.field="log.p.value", fdr.field="log.FDR", fdr.threshold=log(0.05))
-        lapply(collected, as.list)
+        return(getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE, num.threads=num.threads))
     }
+
+    if (de.method=="t") {
+        compute.auc <- FALSE
+        compute.cohens.d <- TRUE
+        upregulation.boundary <- 0
+    } else {
+        compute.auc <- TRUE
+        compute.cohens.d <- FALSE 
+        upregulation.boundary <- 0.5
+    }
+
+    pairwise <- do.call(
+        scrapper::scoreMarkers,
+        c(
+            list(
+                ref,
+                groups=labels,
+                num.threads=num.threads,
+                all.pairwise=TRUE,
+                compute.delta.detected=FALSE,
+                compute.delta.mean=FALSE,
+                compute.auc=compute.auc,
+                compute.cohens.d=compute.cohens.d
+            ),
+            de.args
+        )
+    )
+
+    if (is.null(de.n)) {
+        de.n <- 10
+    }
+
+    all.labels <- dimnames(pairwise)[[1]]
+    all.genes <- dimnames(pairwise)[[3]]
+    output <- vector("list", length(all.labels))
+    names(output) <- all.labels
+
+    for (g1 in all.labels) {
+        current <- vector("list", length(all.labels))
+        names(current) <- all.labels
+        for (g2 in all.labels) {
+            if (g1 == g2) {
+                current[[g2]] <- character(0)
+                next
+            }
+            stats <- pairwise[g2, g1,] # remember, second dimension is the first group in the comparison.
+            keep <- which(stats > upregulation.boundary)
+            o <- order(stats[keep], decreasing=TRUE)
+            current[[g2]] <- all.genes[keep[head(o, de.n)]]
+        }
+        output[[g1]] <- current
+    }
+    output
 }
 
 .convert_per_label_set <- function(genes) {

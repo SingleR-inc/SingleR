@@ -11,8 +11,10 @@ plotMarkerHeatmap(
   other.labels = NULL,
   assay.type = "logcounts",
   use.pruned = FALSE,
-  order.by = "rank.logFC.cohen",
+  order.by.effect = "cohens.d",
+  order.by.summary = "min.rank",
   top = 20,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -34,7 +36,9 @@ Defaults to all available labels.}
 
 \item{use.pruned}{Logical scalar indicating whether the pruned labels should be used instead.}
 
-\item{order.by}{String specifying the column of the output of \code{\link[scran]{scoreMarkers}} with which to sort for interesting markers.}
+\item{order.by.effect}{String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
+
+\item{order.by.summary}{String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
 
 \item{top}{Integer scalar indicating the top most interesting markers to show in the heatmap.}
 
@@ -50,7 +54,7 @@ Create a heatmap of the log-normalized expression for the most interesting marke
 This function creates a heatmap where each row is a marker gene for \code{label} and each column is a cell in the test dataset.
 The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
 Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
-We identify such markers by scoring all reference-derived markers with \code{\link[scran]{scoreMarkers}} on the \code{test} expression.
+We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
 The \code{top} markers based on the specified \code{order.by} field are shown in the heatmap.
 If only one label is present, markers are ranked by average abundance intead.
 }
@@ -60,7 +64,7 @@ example(SingleR, echo=FALSE)
 
 plotMarkerHeatmap(pred, test, pred$labels[1])
 plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
-plotMarkerHeatmap(pred, test, pred$labels[1], order.by="rank.AUC")
+plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
 
 }
 \author{

@@ -204,11 +204,23 @@ trained <- trainSingleR(ref, ref$label)
 trained
 length(trained$markers$unique)
 
-# Alternatively, computing and supplying a set of label-specific markers.
-by.t <- scran::pairwiseTTests(assay(ref, 2), ref$label, direction="up")
-markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
-trained <- trainSingleR(ref, ref$label, genes=markers)
-length(trained$markers$unique)
+# Alternatively, supplying a custom set of markers from pairwise comparisons.
+all.labels <- unique(ref$label)
+custom.markers <- list()
+for (x in all.labels) {
+    current.markers <- lapply(all.labels, function(x) sample(rownames(ref), 20))
+    names(current.markers) <- all.labels
+    current.markers[[x]] <- character(0)
+    custom.markers[[x]] <- current.markers
+}
+custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
+
+# Alternatively, supplying a custom set of markers for each label.
+custom.markers <- list()
+for (x in all.labels) {
+    current.markers[[x]] <- sample(rownames(ref), 20)
+}
+custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
 
 }
 \seealso{
