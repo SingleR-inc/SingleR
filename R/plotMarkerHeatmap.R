@@ -5,7 +5,7 @@
 #' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}},
 #' \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.
 #' @param test A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
-#' Each row should be named with the gene name.
+#' Each row should be named with the same gene name that was used to compute \code{results}.
 #'
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @param label String specifying the label of interest.
@@ -15,6 +15,9 @@
 #' @param use.pruned Logical scalar indicating whether the pruned labels should be used instead.
 #' @param order.by.effect String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param order.by.summary String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
+#' @param display.row.names Character vector of length equal to the number of rows of \code{test},
+#' containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).
+#' If \code{NULL}, the existing row names of \code{test} are used.
 #' @param top Integer scalar indicating the top most interesting markers to show in the heatmap.
 #' @param num.threads Integer scalar specifying the number to threads to use.
 #' @param BPPARAM Deprecated, use \code{num.threads} instead.
@@ -27,7 +30,7 @@
 #' The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
 #' Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
 #' We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
-#' The \code{top} markers based on the specified \code{order.by} field are shown in the heatmap.
+#' The \code{top} markers based on the specified \code{order.by.*} fields are shown in the heatmap.
 #' If only one label is present, markers are ranked by average abundance intead. 
 #'
 #' @author Aaron Lun
@@ -50,6 +53,7 @@ plotMarkerHeatmap <- function(
     label,
     other.labels=NULL,
     assay.type="logcounts",
+    display.row.names=NULL,
     use.pruned=FALSE,
     order.by.effect="cohens.d",
     order.by.summary="min.rank",
@@ -104,13 +108,19 @@ plotMarkerHeatmap <- function(
         to.show <- names(abundance)[order(abundance, decreasing=TRUE)]
     }
 
-    to.show <- head(to.show, top)
-    limits <- range(test, na.rm=TRUE)
+    to.show <- match(head(to.show, top), rownames(test))
     colnames(test) <- seq_len(ncol(test))
     col.order <- order(predictions)
+    test <- test[to.show,col.order,drop=FALSE]
+    predictions <- predictions[col.order]
 
+    if (!is.null(display.row.names)) {
+        rownames(test) <- display.row.names[rkeep][to.show]
+    }
+
+    limits <- range(test, na.rm=TRUE)
     pheatmap::pheatmap(
-        test[to.show,col.order,drop=FALSE],
+        test,
         breaks=seq(limits[1], limits[2], length.out=26),
         color=viridis::viridis(25),
         annotation_col=data.frame(labels=predictions, row.names=colnames(test)),

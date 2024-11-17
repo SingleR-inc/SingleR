@@ -18,6 +18,11 @@ test_that("marker heatmaps work with a subset of other labels", {
     expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1], other.labels=unique(pred$labels)[1:2]), "pheatmap")
 })
 
+test_that("marker heatmaps work with other names", {
+    alt.names <- paste0("X_", rownames(test))
+    expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1], display.row.names=alt.names), "pheatmap")
+})
+
 test_that("marker heatmap falls back to average abundances", {
     lab <- pred$labels[1]
     keep <- pred$labels == lab

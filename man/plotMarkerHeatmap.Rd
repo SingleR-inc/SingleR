@@ -10,6 +10,7 @@ plotMarkerHeatmap(
   label,
   other.labels = NULL,
   assay.type = "logcounts",
+  display.row.names = NULL,
   use.pruned = FALSE,
   order.by.effect = "cohens.d",
   order.by.summary = "min.rank",
@@ -23,7 +24,7 @@ plotMarkerHeatmap(
 \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.}
 
 \item{test}{A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
-Each row should be named with the gene name.
+Each row should be named with the same gene name that was used to compute \code{results}.
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
 
@@ -33,6 +34,10 @@ Alternatively, a \linkS4class{SummarizedExperiment} object containing such a mat
 Defaults to all available labels.}
 
 \item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
+
+\item{display.row.names}{Character vector of length equal to the number of rows of \code{test},
+containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).
+If \code{NULL}, the existing row names of \code{test} are used.}
 
 \item{use.pruned}{Logical scalar indicating whether the pruned labels should be used instead.}
 
@@ -57,7 +62,7 @@ This function creates a heatmap where each row is a marker gene for \code{label}
 The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
 Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
 We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
-The \code{top} markers based on the specified \code{order.by} field are shown in the heatmap.
+The \code{top} markers based on the specified \code{order.by.*} fields are shown in the heatmap.
 If only one label is present, markers are ranked by average abundance intead.
 }
 \examples{
