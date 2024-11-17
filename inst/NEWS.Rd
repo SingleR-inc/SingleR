@@ -2,6 +2,14 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 2.10.0}{\itemize{
+\item Switch to \pkg{scrapper} for DE detection when \code{de.method="t"} or \code{de.method="wilcox"} in \code{trainSingleR()}.
+This should give similar results to but is faster than the previous \pkg{scran} functions. 
+
+\item Switch to \pkg{scrapper} for variance calculation, PCA and clustering in \code{aggregateReference()}.
+This should be faster than the previous \pkg{BiocSingular} and \code{stats::kmeans} functions, and avoids the need to consider the seed.
+}}
+
 \section{Version 2.8.0}{\itemize{
 \item Added the \code{test.genes=} argument to \code{trainSingleR()}, to restrict marker detection to only those genes in the test dataset.
 This is also checked against \code{rownames(test)} in \code{classifySingleR()} to ensure that the test's feature space is consistent with the space used during training.
