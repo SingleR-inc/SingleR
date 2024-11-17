@@ -385,10 +385,12 @@ trainSingleR <- function(
     if (de.method=="t") {
         compute.auc <- FALSE
         compute.cohens.d <- TRUE
+        effect.size <- "cohens.d"
         upregulation.boundary <- 0
     } else {
         compute.auc <- TRUE
         compute.cohens.d <- FALSE 
+        effect.size <- "auc"
         upregulation.boundary <- 0.5
     }
 
@@ -407,7 +409,7 @@ trainSingleR <- function(
             ),
             de.args
         )
-    )
+    )[[effect.size]]
 
     if (is.null(de.n)) {
         de.n <- 10

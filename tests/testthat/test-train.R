@@ -65,29 +65,49 @@ test_that("trainSingleR fails correctly for a list of lists of genes", {
 })
 
 test_that("trainSingleR works correctly for other DE testing methods", {
-    # For Wilcox.
-    by.t <- scran::pairwiseWilcox(logcounts(training), training$label, direction="up")
-    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
+    effects <- scrapper::scoreMarkers(logcounts(training), training$label, all.pairwise=TRUE)
 
+    VERIFY <- function(ref.markers, effect.sizes, hard.limit, extra) {
+        expect_identical(sort(names(ref.markers)), sort(unique(training$label)))
+
+        for (n in names(ref.markers)) {
+            current.markers <- ref.markers[[n]]
+            expect_identical(sort(names(current.markers)), sort(unique(training$label)))
+            expect_identical(current.markers[[n]], character(0))
+
+            for (n2 in setdiff(names(current.markers), n)) {
+                my.effects <- effect.sizes[n2, n,]
+                is.chosen <- rownames(training) %in% current.markers[[n2]]
+                expect_gte(min(my.effects[is.chosen]), max(my.effects[!is.chosen]))
+                expect_gt(min(my.effects[is.chosen]), hard.limit)
+
+                if (!is.null(extra)) {
+                    extra(n, n2, current.markers[[n2]])
+                }
+            }
+        }
+    }
+
+    # For Wilcox.
     ref <- trainSingleR(training, training$label, genes='de', de.method="wilcox")
-    trained <- trainSingleR(training, training$label, genes=markers)
-    expect_identical(ref$markers, trained$markers)
+    VERIFY(ref$markers$full, effects$auc, 0.5, extra=NULL)
 
     # For t-tests.
-    by.t <- scran::pairwiseTTests(logcounts(training), training$label, direction="up")
-    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=10)
-
     ref <- trainSingleR(training, training$label, genes='de', de.method="t")
-    trained <- trainSingleR(training, training$label, genes=markers)
-    expect_identical(ref$markers, trained$markers)
+    VERIFY(ref$markers$full, effects$cohens.d, 0, extra=function(n, n2, markers) {
+        left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
+        right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
+        expect_true(all(left > right))
+    })
 
     # Responds to the requested number of genes.
-    by.t <- scran::pairwiseTTests(logcounts(training), training$label, direction="up", lfc=1)
-    markers <- scran::getTopMarkers(by.t[[1]], by.t[[2]], n=20)
-
-    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=20, de.args=list(lfc=1))
-    trained <- trainSingleR(training, training$label, genes=markers)
-    expect_identical(ref$markers, trained$markers)
+    thresh.effects <- scrapper::scoreMarkers(logcounts(training), training$label, threshold=1, all.pairwise=TRUE)
+    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=100, de.args=list(threshold=1))
+    VERIFY(ref$markers$full, thresh.effects$cohens.d, 0, extra=function(n, n2, markers) {
+        left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
+        right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
+        expect_true(all(left > right + 1))
+    })
 })
 
 test_that("trainSingleR is robust to non-character labels", {
