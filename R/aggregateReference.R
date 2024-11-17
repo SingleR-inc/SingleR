@@ -15,7 +15,7 @@
 #' @param subset.row Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering. 
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
-#' @param BSPARAM A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.
+#' @param BSPARAM Deprecated and ignored.
 #' 
 #' @details
 #' With single-cell reference datasets, it is often useful to aggregate individual cells into pseudo-bulk samples to serve as a reference.
@@ -75,34 +75,61 @@
 #' @export
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
-aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000, assay.type="logcounts", 
-    rank=20, subset.row=NULL, check.missing=TRUE, BPPARAM=SerialParam(), BSPARAM=bsparam())
+#' @importFrom Matrix rowMeans
+#' @importFrom DelayedArray sweep colsum DelayedArray
+#' @importFrom BiocParallel SerialParam bpnworkers
+aggregateReference <- function(
+    ref,
+    labels,
+    ncenters=NULL,
+    power=0.5,
+    ntop=1000,
+    assay.type="logcounts",
+    rank=20,
+    subset.row=NULL,
+    check.missing=TRUE,
+    num.threads=bpnworkers(BPPARAM),
+    BPPARAM=SerialParam(),
+    BSPARAM=NULL)
 {
     by.label <- split(seq_along(labels), labels)
     if (is(ref, "SummarizedExperiment")) {
         ref <- assay(ref, i=assay.type)
     }
+    ref <- DelayedArray(ref)
 
-    FRAGMENTER <- function(x, i, j) {
-        x <- x[,j,drop=FALSE] # this is usually smaller, so do this first.
-        if (!is.null(i)) {
-            x <- x[i,,drop=FALSE]
+    output.vals <- vector("list", length(by.label))
+    names(output.vals) <- names(by.label)
+    for (lab in names(by.label)) {
+        chosen <- by.label[[lab]]
+        current <- ref[,chosen,drop=FALSE]
+
+        cur.ncenters <- ncenters
+        if (is.null(cur.ncenters)) {
+            cur.ncenters <- floor(ncol(current)^power)
         }
-        x
-    }
 
-    all.seeds <- .define_seeds(length(by.label))
+        if (cur.ncenters <= 1) {
+            output <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
+        } else {
+            stats <- scrapper::modelGeneVariances(current, num.threads=num.threads)
+            keep <- scrapper::chooseHighlyVariableGenes(stats$statistics$residuals, top=ntop)
 
-    if (is.null(BPPARAM) || is(BPPARAM, "SerialParam") || is(BPPARAM, "MulticoreParam")) {
-        output.vals <- bpmapply(chosen=by.label, .seed=all.seeds,
-            FUN=function(chosen, x, ...) .aggregate_internal(FRAGMENTER(x, i=subset.row, j=chosen), ...), 
-            MoreArgs=list(x=ref, ncenters=ncenters, power=power, rank=rank, check.missing=check.missing, ntop=ntop, BSPARAM=BSPARAM),
-            BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
-    } else {
-        by.mat <- lapply(by.label, FRAGMENTER, x=ref, i=subset.row)
-        output.vals <- bpmapply(by.mat, .seed=all.seeds, FUN=.aggregate_internal,
-            MoreArgs=list(ncenters=ncenters, power=power, rank=rank, check.missing=check.missing, ntop=ntop, BSPARAM=BSPARAM),
-            BPPARAM=BPPARAM, SIMPLIFY=FALSE, USE.NAMES=FALSE)
+            # Identifying the top PCs to avoid realizing the entire matrix.
+            sub <- current[keep,,drop=FALSE]
+            if (rank <= min(dim(sub))-1L) {
+                pcs <- scrapper::runPca(sub, rank=rank, num.threads=num.threads)$components
+            } else {
+                pcs <- as.matrix(sub)
+            }
+
+            clustered <- scrapper::clusterKmeans(pcs, k=cur.ncenters, num.threads=num.threads)
+            agg <- colsum(current, clustered$cluster)
+            tab <- table(clustered$cluster)[colnames(agg)]
+            output <- sweep(agg, 2, tab, "/")
+        }
+
+        output.vals[[lab]] <- output
     }
 
     if (length(output.vals)==0L) {
@@ -116,58 +143,4 @@ aggregateReference <- function(ref, labels, ncenters=NULL, power=0.5, ntop=1000,
     output <- SummarizedExperiment(list(logcounts=do.call(cbind, output.vals)), colData=DataFrame(label=output.labels))
     colnames(output) <- sprintf("%s.%s", output.labels, sequence(num))
     output
-}
-
-#' @importFrom stats kmeans
-#' @importFrom utils head
-#' @importFrom Matrix t rowMeans
-#' @importFrom DelayedArray sweep colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
-#' @importFrom DelayedMatrixStats rowVars
-#' @importFrom beachmat realizeFileBackedMatrix
-.aggregate_internal <- function(current, ncenters, power, rank, ntop, check.missing, BSPARAM, .seed) {
-    oldseed <- .get_seed()
-    on.exit(.set_seed(oldseed))
-
-    old <- RNGkind("L'Ecuyer-CMRG")
-    on.exit(RNGkind(old[1]), add=TRUE, after=FALSE)
-    assign(".Random.seed", .seed, envir = .GlobalEnv)
-
-    old.bp <- getAutoBPPARAM()
-    setAutoBPPARAM(SerialParam())
-    on.exit(setAutoBPPARAM(old.bp), add=TRUE, after=FALSE)
-
-    cur.ncenters <- ncenters
-    if (is.null(cur.ncenters)) {
-        cur.ncenters <- floor(ncol(current)^power)
-    }
-
-    if (cur.ncenters <= 1) {
-        val <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
-    } else if (cur.ncenters >= ncol(current)) {
-        val <- current
-    } else {
-        to.use <- current 
-
-        if (ntop <= nrow(current)) {
-            o <- order(rowVars(to.use), decreasing=TRUE)
-            to.use <- to.use[head(o, ntop),,drop=FALSE]
-        }
-
-        to.use <- t(to.use)
-        to.use <- realizeFileBackedMatrix(to.use)
-        
-        # Identifying the top PCs to avoid realizing the entire matrix.
-        if (rank <= min(dim(to.use))-1L) {
-            pcs <- runPCA(to.use, rank=rank, get.rotation=FALSE, BSPARAM=BSPARAM)$x
-        } else {
-            pcs <- as.matrix(to.use)
-        }
-
-        clustered <- kmeans(pcs, centers=cur.ncenters)
-        val <- colsum(DelayedArray(current), clustered$cluster)
-        tab <- table(clustered$cluster)[colnames(val)]
-        val <- sweep(val, 2, tab, "/")
-    }
-
-    val
 }

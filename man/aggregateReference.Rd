@@ -14,8 +14,9 @@ aggregateReference(
   rank = 20,
   subset.row = NULL,
   check.missing = TRUE,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam(),
-  BSPARAM = bsparam()
+  BSPARAM = NULL
 )
 }
 \arguments{
@@ -41,7 +42,7 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.}
 
-\item{BSPARAM}{A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.}
+\item{BSPARAM}{Deprecated and ignored.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
