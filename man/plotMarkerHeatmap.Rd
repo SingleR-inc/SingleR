@@ -42,7 +42,9 @@ Defaults to all available labels.}
 
 \item{top}{Integer scalar indicating the top most interesting markers to show in the heatmap.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for marker scoring.}
+\item{num.threads}{Integer scalar specifying the number to threads to use.}
+
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.

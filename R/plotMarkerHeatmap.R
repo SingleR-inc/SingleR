@@ -16,7 +16,8 @@
 #' @param order.by.effect String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param order.by.summary String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param top Integer scalar indicating the top most interesting markers to show in the heatmap.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for marker scoring.
+#' @param num.threads Integer scalar specifying the number to threads to use.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #'
 #' @return 
 #' The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.

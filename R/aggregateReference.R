@@ -14,7 +14,8 @@
 #' @param ntop Integer scalar specifying the number of highly variable genes to use for the PCA step.
 #' @param subset.row Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering. 
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.
+#' @param num.threads Integer scalar specifying the number to threads to use.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #' @param BSPARAM Deprecated and ignored.
 #' 
 #' @details
@@ -35,13 +36,13 @@
 #' If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
 #' Setting \code{power=0} will aggregate all cells of a label into a single pseudo-bulk profile.
 #'
-#' In practice, k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link{runPCA}}.
-#' The use of PCs compacts the data for more efficient operation of \code{\link{kmeans}};
+#' In practice, k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link[scrapper]{runPca}}.
+#' The use of PCs compacts the data for more efficient operation of \code{\link[scrapper]{clusterKmeans}};
 #' it also removes some of the high-dimensional noise to highlight major factors of within-label heterogenity.
 #' Note that the PCs are only used for clustering and the full expression profiles are still used for the final averaging.
 #' Users can disable the PCA step by setting \code{rank=Inf}.
 #'
-#' By default, we speed things up by only using the top \code{ntop} genes with the largest variances in the PCA.
+#' By default, we speed things up by only using the top \code{ntop} genes with the largest variances in the PCA, as identified with \code{\link[scrapper]{modelGeneVariances}}.
 #' More subsetting of the matrix prior to the PCA can be achieved by setting \code{subset.row} to an appropriate indexing vector.
 #' This option may be useful for clustering based on known genes of interest but retaining all genes in the aggregated results.
 #' (If both options are set, subsetting by \code{subset.row} is done first, and then the top \code{ntop} genes are selected.)
@@ -112,13 +113,13 @@ aggregateReference <- function(
         if (cur.ncenters <= 1) {
             output <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
         } else {
+            # Doing a mini-analysis here: PCA on HVGs followed by k-means.
             stats <- scrapper::modelGeneVariances(current, num.threads=num.threads)
             keep <- scrapper::chooseHighlyVariableGenes(stats$statistics$residuals, top=ntop)
-
-            # Identifying the top PCs to avoid realizing the entire matrix.
             sub <- current[keep,,drop=FALSE]
+
             if (rank <= min(dim(sub))-1L) {
-                pcs <- scrapper::runPca(sub, rank=rank, num.threads=num.threads)$components
+                pcs <- scrapper::runPca(sub, number=rank, num.threads=num.threads)$components
             } else {
                 pcs <- as.matrix(sub)
             }

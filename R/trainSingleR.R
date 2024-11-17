@@ -35,7 +35,7 @@
 #' If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' Otherwise, defaults to 10.
 #' Ignored if \code{genes} is a list of markers/DE genes.
-#' @param de.args Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
+#' @param de.args Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"}.
 #' Ignored if \code{genes} is a list of markers/DE genes.
 #' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.
 #' @param aggr.args Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.
@@ -47,8 +47,7 @@
 #' @param BNPARAM A \linkS4class{BiocNeighborParam} object specifying how the neighbor search index should be constructed.
 #' @param approximate Deprecated, use \code{BNPARAM} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
-#' Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
 #' @param test.genes Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
@@ -177,7 +176,7 @@
 #' # Alternatively, supplying a custom set of markers for each label.
 #' custom.markers <- list()
 #' for (x in all.labels) {
-#'     current.markers[[x]] <- sample(rownames(ref), 20)
+#'     custom.markers[[x]] <- sample(rownames(ref), 20)
 #' }
 #' custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
 #' 

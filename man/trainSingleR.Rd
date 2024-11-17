@@ -68,7 +68,7 @@ If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \c
 Otherwise, defaults to 10.
 Ignored if \code{genes} is a list of markers/DE genes.}
 
-\item{de.args}{Named list of additional arguments to pass to \code{\link[scran]{pairwiseTTests}} or \code{\link[scran]{pairwiseWilcox}} when \code{de.method="wilcox"} or \code{"t"}.
+\item{de.args}{Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"}.
 Ignored if \code{genes} is a list of markers/DE genes.}
 
 \item{aggr.ref}{Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.}
@@ -92,8 +92,7 @@ If true and any missing values are found, the rows containing these values are s
 
 \item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying how the neighbor search index should be constructed.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
-Relevant for marker detection if \code{genes = NULL}, aggregation if \code{aggr.ref = TRUE}, and \code{NA} checking if \code{check.missing = TRUE}.}
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.}
 }
 \value{
 For a single reference, a \linkS4class{List} is returned containing:
@@ -218,7 +217,7 @@ custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
 # Alternatively, supplying a custom set of markers for each label.
 custom.markers <- list()
 for (x in all.labels) {
-    current.markers[[x]] <- sample(rownames(ref), 20)
+    custom.markers[[x]] <- sample(rownames(ref), 20)
 }
 custom.trained <- trainSingleR(ref, ref$label, genes=custom.markers)
 

@@ -95,14 +95,24 @@ test_that("trainSingleR works correctly for other DE testing methods", {
     # For t-tests.
     ref <- trainSingleR(training, training$label, genes='de', de.method="t")
     VERIFY(ref$markers$full, effects$cohens.d, 0, extra=function(n, n2, markers) {
+        expect_lte(length(markers), 10)
         left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
         right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
         expect_true(all(left > right))
     })
 
-    # Responds to the requested number of genes.
+    # Behaves with a large number of genes.
+    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=10000)
+    VERIFY(ref$markers$full, effects$cohens.d, 0, extra=function(n, n2, markers) {
+        expect_gt(length(markers), 10)
+        left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
+        right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
+        expect_true(all(left > right))
+    })
+
+    # Responds to threshold specification.
     thresh.effects <- scrapper::scoreMarkers(logcounts(training), training$label, threshold=1, all.pairwise=TRUE)
-    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=100, de.args=list(threshold=1))
+    ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.args=list(threshold=1))
     VERIFY(ref$markers$full, thresh.effects$cohens.d, 0, extra=function(n, n2, markers) {
         left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
         right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
@@ -181,14 +191,12 @@ test_that("trainSingleR behaves with multiple references, plus recomputation", {
 })
 
 test_that("trainSingleR behaves with aggregation turned on", {
-    set.seed(10000)
     suppressWarnings(out <- trainSingleR(training, training$label, aggr.ref=TRUE))
     expect_true(ncol(out$ref) <= ncol(training))
 
-    set.seed(10000)
     suppressWarnings(out2 <- trainSingleR(ref=list(training, training), label=list(training$label, training$label), aggr.ref=TRUE))
     expect_identical(out2[[1]]$ref, out$ref)
-    expect_false(identical(out2[[2]]$ref, out$ref)) # different k-means initialization.
+    expect_identical(out2[[2]]$ref, out$ref)
 })
 
 test_that("trainSingleR behaves with silly inputs", {
