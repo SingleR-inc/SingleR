@@ -24,15 +24,28 @@
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return 
-#' The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
+#' For \code{plotMarkerHeatmap}, the output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
+#'
+#' For \code{configureMarkerHeatmap}, a list is returned containing:
+#' \itemize{
+#' \item \code{rows}, an integer vector of row indices for the markers of \code{label}, ordered from most to least interesting.
+#' \item \code{columns}, an integer vector of column indices to show in the heatmap.
+#' This is ordered by the predicted labels so that cells assigned to the same label are contiguous.
+#' \item \code{predictions}, a character vector of predicted labels for cells to be shown in the heatmap.
+#' Each entry corresponds to an entry of \code{columns}.
+#' The labels in this vector are guaranteed to be sorted.
+#' }
 #'
 #' @details
-#' This function creates a heatmap where each row is a marker gene for \code{label} and each column is a cell in the test dataset.
+#' The \code{plotMarkerHeatmap} function creates a heatmap where each row is a marker gene for \code{label} and each column is a cell in the test dataset.
 #' The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
-#' Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
+#' \dQuote{Interesting} markers should show strong upregulation in cells assigned to \code{label} compared to cells assigned to all \code{other.labels}. 
 #' We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
 #' The \code{top} markers based on the specified \code{order.by.*} fields are shown in the heatmap.
 #' If only one label is present, markers are ranked by average abundance intead. 
+#'
+#' The \code{configureMarkerHeatmap} function performs all the calculations underlying \code{plotMarkerHeatmap}.
+#' This can be used to apply the same general approach with other plots, e.g., using functions from \pkg{scuttle} or \pkg{dittoSeq}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -42,9 +55,14 @@
 #' plotMarkerHeatmap(pred, test, pred$labels[1])
 #' plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
 #' plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
+#'
+#' # Manually configuring a simpler heatmap by label:
+#' config <- configureMarkerHeatmap(pred, test, pred$labels[1])
+#' mat <- assay(test, "logcounts")[head(config$rows, 20), config$columns]
+#' aggregated <- scuttle::summarizeAssayByGroup(mat, config$predictions)
+#' pheatmap::pheatmap(assay(aggregated), cluster_col=FALSE)
 #' 
 #' @export
-#' @importFrom S4Vectors metadata
 #' @importFrom BiocParallel SerialParam bpnworkers
 #' @importFrom Matrix rowMeans
 #' @importFrom utils head
@@ -64,6 +82,54 @@ plotMarkerHeatmap <- function(
     ...) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
+    config <- configureMarkerHeatmap(
+        results, 
+        test,
+        label=label,
+        other.labels=other.labels,
+        assay.type=assay.type,
+        use.pruned=use.pruned,
+        order.by.effect=order.by.effect,
+        order.by.summary=order.by.summary,
+        num.threads=num.threads
+    )
+
+    to.show <- head(config$rows, top)
+    predictions <- config$predictions
+    test <- test[to.show, config$columns, drop=FALSE]
+    if (!is.null(display.row.names)) {
+        rownames(test) <- display.row.names[to.show]
+    }
+
+    limits <- range(test, na.rm=TRUE)
+    colnames(test) <- seq_len(ncol(test))
+    pheatmap::pheatmap(
+        test,
+        breaks=seq(limits[1], limits[2], length.out=26),
+        color=viridis::viridis(25),
+        annotation_col=data.frame(labels=predictions, row.names=colnames(test)),
+        cluster_col=FALSE,
+        show_colnames=FALSE,
+        ...
+    )
+}
+
+#' @export
+#' @rdname plotMarkerHeatmap
+#' @importFrom S4Vectors metadata
+#' @importFrom Matrix rowMeans
+configureMarkerHeatmap <- function(
+    results,
+    test,
+    label,
+    other.labels=NULL,
+    assay.type="logcounts",
+    use.pruned=FALSE,
+    order.by.effect="cohens.d",
+    order.by.summary="min.rank",
+    num.threads=1)
+{
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
     all.markers <- metadata(results)$de.genes[[label]]
 
     if (use.pruned) {
@@ -75,7 +141,7 @@ plotMarkerHeatmap <- function(
 
     ckeep <- seq_len(ncol(test))
     if (!is.null(other.labels)) {
-        ckeep <- predictions %in% other.labels
+        ckeep <- which(predictions %in% other.labels)
         predictions <- predictions[ckeep]
         for (n in names(all.markers)) {
             if (!(n %in% other.labels) && n != label) {
@@ -83,11 +149,11 @@ plotMarkerHeatmap <- function(
             }
         }
     } else if (anyNA(predictions)) {
-        ckeep <- !is.na(predictions)
+        ckeep <- which(!is.na(predictions))
         predictions <- predictions[ckeep]
     }
 
-    rkeep <- rownames(test) %in% unlist(all.markers)
+    rkeep <- which(rownames(test) %in% unlist(all.markers, use.names=FALSE))
     test <- test[rkeep,ckeep,drop=FALSE]
 
     # Prioritize the markers with interesting variation in the test data for
@@ -102,32 +168,16 @@ plotMarkerHeatmap <- function(
             compute.delta.mean=(order.by.effect=="delta.mean"),
             compute.delta.detected=(order.by.effect=="delta.detected")
         )
+
         stats <- interesting[[order.by.effect]][[label]][[order.by.summary]]
-        o <- order(stats, decreasing=(order.by.summary!="min.rank"))
-        to.show <- rownames(test)[o]
+        decreasing <- (order.by.summary!="min.rank")
+
     } else {
-        abundance <- rowMeans(test)
-        to.show <- names(abundance)[order(abundance, decreasing=TRUE)]
+        stats <- rowMeans(test)
+        decreasing <- TRUE
     }
 
-    to.show <- match(head(to.show, top), rownames(test))
-    colnames(test) <- seq_len(ncol(test))
-    col.order <- order(predictions)
-    test <- test[to.show,col.order,drop=FALSE]
-    predictions <- predictions[col.order]
-
-    if (!is.null(display.row.names)) {
-        rownames(test) <- display.row.names[rkeep][to.show]
-    }
-
-    limits <- range(test, na.rm=TRUE)
-    pheatmap::pheatmap(
-        test,
-        breaks=seq(limits[1], limits[2], length.out=26),
-        color=viridis::viridis(25),
-        annotation_col=data.frame(labels=predictions, row.names=colnames(test)),
-        cluster_col=FALSE,
-        show_colnames=FALSE,
-        ...
-    )
+    ro <- order(stats, decreasing=decreasing)
+    co <- order(predictions)
+    list(rows=rkeep[ro], columns=ckeep[co], predictions=predictions[co])
 }

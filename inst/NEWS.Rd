@@ -8,6 +8,9 @@ This should give similar results to but is faster than the previous \pkg{scran} 
 
 \item Switch to \pkg{scrapper} for variance calculation, PCA and clustering in \code{aggregateReference()}.
 This should be faster than the previous \pkg{BiocSingular} and \code{stats::kmeans} functions, and avoids the need to consider the seed.
+
+\item Added a \code{configureMarkerHeatmap()} function to perform all the calculations used by \code{plotMarkerHeatmap()}.
+This allows users to re-use the calculations with a custom visualization for the expression values.
 }}
 
 \section{Version 2.8.0}{\itemize{
