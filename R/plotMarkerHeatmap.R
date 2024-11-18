@@ -21,6 +21,7 @@
 #' @param top Integer scalar indicating the top most interesting markers to show in the heatmap.
 #' @param num.threads Integer scalar specifying the number to threads to use.
 #' @param BPPARAM Deprecated, use \code{num.threads} instead.
+#' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
 #'
 #' @return 
 #' The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
@@ -59,7 +60,8 @@ plotMarkerHeatmap <- function(
     order.by.summary="min.rank",
     top=20,
     num.threads=bpnworkers(BPPARAM),
-    BPPARAM = SerialParam()) 
+    BPPARAM = SerialParam(),
+    ...) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
     all.markers <- metadata(results)$de.genes[[label]]
@@ -125,6 +127,7 @@ plotMarkerHeatmap <- function(
         color=viridis::viridis(25),
         annotation_col=data.frame(labels=predictions, row.names=colnames(test)),
         cluster_col=FALSE,
-        show_colnames=FALSE
+        show_colnames=FALSE,
+        ...
     )
 }

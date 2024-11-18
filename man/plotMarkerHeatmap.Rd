@@ -16,7 +16,8 @@ plotMarkerHeatmap(
   order.by.summary = "min.rank",
   top = 20,
   num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam()
+  BPPARAM = SerialParam(),
+  ...
 )
 }
 \arguments{
@@ -50,6 +51,8 @@ If \code{NULL}, the existing row names of \code{test} are used.}
 \item{num.threads}{Integer scalar specifying the number to threads to use.}
 
 \item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
+
+\item{...}{Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.}
 }
 \value{
 The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
