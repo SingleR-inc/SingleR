@@ -14,8 +14,9 @@ aggregateReference(
   rank = 20,
   subset.row = NULL,
   check.missing = TRUE,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam(),
-  BSPARAM = bsparam()
+  BSPARAM = NULL
 )
 }
 \arguments{
@@ -39,9 +40,11 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object indicating how parallelization should be performed.}
+\item{num.threads}{Integer scalar specifying the number to threads to use.}
 
-\item{BSPARAM}{A \linkS4class{BiocSingularParam} object indicating which SVD algorithm should be used in \code{\link{runPCA}}.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
+
+\item{BSPARAM}{Deprecated and ignored.}
 }
 \value{
 A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
@@ -69,13 +72,13 @@ This ensures that labels with more cells have more resolved representatives.
 If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
 Setting \code{power=0} will aggregate all cells of a label into a single pseudo-bulk profile.
 
-In practice, k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link{runPCA}}.
-The use of PCs compacts the data for more efficient operation of \code{\link{kmeans}};
+In practice, k-means clustering is actually performed on the first \code{rank} principal components as computed using \code{\link[scrapper]{runPca}}.
+The use of PCs compacts the data for more efficient operation of \code{\link[scrapper]{clusterKmeans}};
 it also removes some of the high-dimensional noise to highlight major factors of within-label heterogenity.
 Note that the PCs are only used for clustering and the full expression profiles are still used for the final averaging.
 Users can disable the PCA step by setting \code{rank=Inf}.
 
-By default, we speed things up by only using the top \code{ntop} genes with the largest variances in the PCA.
+By default, we speed things up by only using the top \code{ntop} genes with the largest variances in the PCA, as identified with \code{\link[scrapper]{modelGeneVariances}}.
 More subsetting of the matrix prior to the PCA can be achieved by setting \code{subset.row} to an appropriate indexing vector.
 This option may be useful for clustering based on known genes of interest but retaining all genes in the aggregated results.
 (If both options are set, subsetting by \code{subset.row} is done first, and then the top \code{ntop} genes are selected.)

@@ -13,12 +13,14 @@
 #' Defaults to all available labels.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
 #' @param use.pruned Logical scalar indicating whether the pruned labels should be used instead.
-#' @param order.by String specifying the column of the output of \code{\link[scran]{scoreMarkers}} with which to sort for interesting markers.
+#' @param order.by.effect String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
+#' @param order.by.summary String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param display.row.names Character vector of length equal to the number of rows of \code{test},
 #' containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).
 #' If \code{NULL}, the existing row names of \code{test} are used.
 #' @param top Integer scalar indicating the top most interesting markers to show in the heatmap.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for marker scoring.
+#' @param num.threads Integer scalar specifying the number to threads to use.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #'
 #' @return 
 #' The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
@@ -27,8 +29,8 @@
 #' This function creates a heatmap where each row is a marker gene for \code{label} and each column is a cell in the test dataset.
 #' The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
 #' Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
-#' We identify such markers by scoring all reference-derived markers with \code{\link[scran]{scoreMarkers}} on the \code{test} expression.
-#' The \code{top} markers based on the specified \code{order.by} field are shown in the heatmap.
+#' We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
+#' The \code{top} markers based on the specified \code{order.by.*} fields are shown in the heatmap.
 #' If only one label is present, markers are ranked by average abundance intead. 
 #'
 #' @author Aaron Lun
@@ -38,11 +40,11 @@
 #'
 #' plotMarkerHeatmap(pred, test, pred$labels[1])
 #' plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
-#' plotMarkerHeatmap(pred, test, pred$labels[1], order.by="rank.AUC")
+#' plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
 #' 
 #' @export
 #' @importFrom S4Vectors metadata
-#' @importFrom BiocParallel SerialParam
+#' @importFrom BiocParallel SerialParam bpnworkers
 #' @importFrom Matrix rowMeans
 #' @importFrom utils head
 plotMarkerHeatmap <- function(
@@ -53,8 +55,10 @@ plotMarkerHeatmap <- function(
     assay.type="logcounts",
     display.row.names=NULL,
     use.pruned=FALSE,
-    order.by="rank.logFC.cohen",
+    order.by.effect="cohens.d",
+    order.by.summary="min.rank",
     top=20,
+    num.threads=bpnworkers(BPPARAM),
     BPPARAM = SerialParam()) 
 {
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
@@ -87,9 +91,17 @@ plotMarkerHeatmap <- function(
     # Prioritize the markers with interesting variation in the test data for
     # visualization. If we only have one label, we use the most abundant markers.
     if (length(unique(predictions)) > 1L) {
-        interesting <- scran::scoreMarkers(test, predictions, BPPARAM=BPPARAM)
-        stats <- interesting[[label]]
-        o <- order(stats[[order.by]], decreasing=!startsWith(order.by, "rank."))
+        interesting <- scrapper::scoreMarkers(
+            test,
+            predictions,
+            num.threads=num.threads,
+            compute.auc=(order.by.effect=="auc"),
+            compute.cohens.d=(order.by.effect=="cohens.d"),
+            compute.delta.mean=(order.by.effect=="delta.mean"),
+            compute.delta.detected=(order.by.effect=="delta.detected")
+        )
+        stats <- interesting[[order.by.effect]][[label]][[order.by.summary]]
+        o <- order(stats, decreasing=(order.by.summary!="min.rank"))
         to.show <- rownames(test)[o]
     } else {
         abundance <- rowMeans(test)

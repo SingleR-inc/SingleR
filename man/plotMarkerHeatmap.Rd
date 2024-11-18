@@ -12,8 +12,10 @@ plotMarkerHeatmap(
   assay.type = "logcounts",
   display.row.names = NULL,
   use.pruned = FALSE,
-  order.by = "rank.logFC.cohen",
+  order.by.effect = "cohens.d",
+  order.by.summary = "min.rank",
   top = 20,
+  num.threads = bpnworkers(BPPARAM),
   BPPARAM = SerialParam()
 )
 }
@@ -39,11 +41,15 @@ If \code{NULL}, the existing row names of \code{test} are used.}
 
 \item{use.pruned}{Logical scalar indicating whether the pruned labels should be used instead.}
 
-\item{order.by}{String specifying the column of the output of \code{\link[scran]{scoreMarkers}} with which to sort for interesting markers.}
+\item{order.by.effect}{String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
+
+\item{order.by.summary}{String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
 
 \item{top}{Integer scalar indicating the top most interesting markers to show in the heatmap.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for marker scoring.}
+\item{num.threads}{Integer scalar specifying the number to threads to use.}
+
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 The output of \code{\link[pheatmap]{pheatmap}} is returned showing the heatmap on the current graphics device.
@@ -55,8 +61,8 @@ Create a heatmap of the log-normalized expression for the most interesting marke
 This function creates a heatmap where each row is a marker gene for \code{label} and each column is a cell in the test dataset.
 The aim is to check the effectiveness of the reference-derived markers for distinguishing between labels in the test dataset.
 Useful markers from the reference should show strong upregulation in \code{label} compared to all \code{other.labels}. 
-We identify such markers by scoring all reference-derived markers with \code{\link[scran]{scoreMarkers}} on the \code{test} expression.
-The \code{top} markers based on the specified \code{order.by} field are shown in the heatmap.
+We identify such markers by scoring all reference-derived markers with \code{\link[scrapper]{scoreMarkers}} on the \code{test} expression.
+The \code{top} markers based on the specified \code{order.by.*} fields are shown in the heatmap.
 If only one label is present, markers are ranked by average abundance intead.
 }
 \examples{
@@ -65,7 +71,7 @@ example(SingleR, echo=FALSE)
 
 plotMarkerHeatmap(pred, test, pred$labels[1])
 plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
-plotMarkerHeatmap(pred, test, pred$labels[1], order.by="rank.AUC")
+plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
 
 }
 \author{
