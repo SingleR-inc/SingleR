@@ -17,7 +17,7 @@ getClassicMarkers(
 \arguments{
 \item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
 Each row should be named with the gene name.
-In general, the expression values are expected to be log-transformed, see Details.
+In general, the expression values are expected to be normalized and log-transformed, see Details.
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 

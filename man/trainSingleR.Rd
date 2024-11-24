@@ -28,7 +28,7 @@ trainSingleR(
 \arguments{
 \item{ref}{A numeric matrix of expression values where rows are genes and columns are reference samples (individual cells or bulk samples).
 Each row should be named with the gene name.
-In general, the expression values are expected to be log-transformed, see Details.
+In general, the expression values are expected to be normalized and log-transformed, see Details.
 
 Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 
@@ -59,8 +59,7 @@ containing markers for labels in the corresponding entry of \code{ref}.}
 
 \item{de.method}{String specifying how DE genes should be detected between pairs of labels.
 Defaults to \code{"classic"}, which sorts genes by the log-fold changes and takes the top \code{de.n}.
-Setting to \code{"wilcox"} or \code{"t"} will use Wilcoxon ranked sum test or Welch t-test between labels, respectively,
-and take the top \code{de.n} upregulated genes per comparison.
+Other options are \code{"wilcox"} and \code{"t"}, see Details.
 Ignored if \code{genes} is a list of markers/DE genes.}
 
 \item{de.n}{An integer scalar specifying the number of DE genes to use when \code{genes="de"}.
@@ -117,10 +116,25 @@ This function uses a training data set to select interesting features and constr
 The resulting objects can be re-used across multiple classification steps with different test data sets via \code{\link{classifySingleR}}.
 This improves efficiency by avoiding unnecessary repetition of steps during the downstream analysis.
 
-The automatic marker detection (\code{genes="de"}) identifies genes that are differentially expressed between labels.
-This is done by identifying the median expression within each label, and computing differences between medians for each pair of labels.
-For each label, the top \code{de.n} genes with the largest differences compared to another label are chosen as markers to distinguish the two labels.
+The automatic marker detection (\code{genes="de"}) identifies genes that are differentially expressed between pairs of labels in the reference dataset.
 The expression values are expected to be log-transformed and normalized.
+For each pair of labels, the top \code{de.n} genes with strongest upregulation in one label are chosen as markers to distinguish it from the other label.
+The exact ranking depends on the \code{de.method=} argument:
+\itemize{
+\item The default \code{de.method="classic"} will use \code{\link{getClassicMarkers}} to compute the median expression for each label and each gene.
+Then, for each pair of labels, the top \code{de.n} genes with the largest positive differences are chosen as markers to distinguish the first label from the second.
+This is intended for reference datasets derived from bulk transcriptomic data (e.g., microarrays) with a high density of non-zero values. 
+It is less effective for single-cell data, where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
+\item \code{de.method="wilcox"} will rank genes based on the area under the curve (AUC) in each pairwise comparison between labels.
+The top \code{de.n} genes with the largest AUCs above 0.5 are chosen as markers for the first label compared to the second.
+This is analogous to ranking on significance in the Wilcoxon ranked sum test and is intended for use with single-cell data.
+The exact calculaton is performed using the \code{\link[scrapper]{scoreMarkers}} function.
+\item \code{de.method="t"} will rank genes on the Cohen's d in each pairiwse comparison.
+The top \code{de.n} genes with the largest positive Cohen's d are chosen as markers for the first label compared to the second.
+This is roughly analogous to ranking on significance in the t-test and is faster than the AUC.
+The exact calculaton is performed using the \code{\link[scrapper]{scoreMarkers}} function.
+}
+Alternatively, users can detect markers externally and pass a list of markers to \code{genes} (see \dQuote{Custom gene specification}).
 
 Classification with \code{classifySingleR} assumes that the test dataset contains all marker genes that were detected from the reference.
 If the test and reference datasets do not have the same genes in the same order, we can set \code{test.genes} to the row names of the test dataset.
@@ -132,7 +146,7 @@ This can be convenient for ignoring inappropriate genes like pseudogenes or pred
 It has the same effect as filtering out undesirable rows from \code{ref} prior to calling \code{trainSingleR}.
 Unlike \code{test.genes}, setting \code{restrict} does not introduce further checks on \code{rownames(test)} in \code{classifySingleR}.
 }
-\section{Custom feature specification}{
+\section{Custom gene specification}{
 
 Rather than relying on the in-built feature selection, users can pass in their own features of interest to \code{genes}.
 The function expects a named list of named lists of character vectors, with each vector containing the DE genes between a pair of labels.
@@ -160,9 +174,11 @@ The entry \code{genes$A} represent the genes that are upregulated in \code{A} co
 This allows the function to handle pre-defined marker lists for specific cell populations.
 However, it obviously captures less information than marker sets for the pairwise comparisons.
 
-If \code{genes} is manually passed, \code{ref} can be the raw counts or any monotonic transformation thereof.
+If \code{genes} is manually passed, \code{ref} can contain the raw counts or any monotonic transformation thereof.
 There is no need to supply (log-)normalized expression values for the benefit of the automatic marker detection.
 Similarly, for manual \code{genes}, the values of \code{de.method}, \code{de.n} and \code{sd.thresh} have no effect.
+
+Check out the Examples to see how manual \code{genes} can be passed to \code{trainSingleR}.
 }
 
 \section{Dealing with multiple references}{
@@ -179,13 +195,9 @@ where each inner list corresponds to a reference in \code{ref} and can be of any
 Thus, it is possible for \code{genes} to be - wait for it - a list (per reference) of lists (per label) of lists (per label) of character vectors.
 }
 
-\section{Note on single-cell references}{
+\section{Aggregating single-cell references}{
 
-The default marker selection is based on log-fold changes between the per-label medians and is very much designed with bulk references in mind.
-It may not be effective for single-cell reference data where it is not uncommon to have more than 50\% zero counts for a given gene such that the median is also zero for each group.
-Users are recommended to either set \code{de.method} to another DE ranking method, or detect markers externally and pass a list of markers to \code{genes} (see Examples).
-
-In addition, it is generally unnecessary to have single-cell resolution on the reference profiles.
+It is generally unnecessary to have single-cell resolution on the reference profiles.
 We can instead set \code{aggr.ref=TRUE} to aggregate per-cell references into a set of pseudo-bulk profiles using \code{\link{aggregateReference}}.
 This improves classification speed while using vector quantization to preserve within-label heterogeneity and mitigate the loss of information.
 Note that any aggregation is done \emph{after} marker gene detection; this ensures that the relevant tests can appropriately penalize within-label variation.

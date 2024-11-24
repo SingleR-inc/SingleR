@@ -6,7 +6,7 @@
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
 #' @inheritParams trainSingleR
-#' @param ref A numeric matrix of (usually log-transformed) expression values from a reference dataset,
+#' @param ref A numeric matrix of (usually normalized and log-transformed) expression values from a reference dataset,
 #' or a \linkS4class{SummarizedExperiment} object containing such a matrix;
 #' see \code{\link{trainSingleR}} for details.
 #'

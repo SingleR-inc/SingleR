@@ -55,6 +55,7 @@ hpca.se
 
 Our test dataset consists of some human embryonic stem cells [@lamanno2016molecular] from the `r Biocpkg("scRNAseq")` package. 
 For the sake of speed, we will only label the first 100 cells from this dataset.
+The test dataset does not need to be log-transformed, as only the ranks will be used by `SingleR()`.
 
 ```{r}
 library(scRNAseq)
@@ -110,6 +111,9 @@ To speed up this demonstration, we will subset to the first 100 cells.
 ```{r}
 sceG <- GrunPancreasData()
 sceG <- sceG[,colSums(counts(sceG)) > 0] # Remove libraries with no counts.
+
+# Log-transformation is not actually required for SingleR itself,
+# but we'll do it anyway as we need it for plotting heatmaps later.
 sceG <- logNormCounts(sceG) 
 ```
 
