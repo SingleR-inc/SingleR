@@ -90,7 +90,7 @@
 pruneScores <- function(results, nmads=3, min.diff.med=-Inf, min.diff.next=0, get.thresholds=FALSE) {
     delta <- getDeltaFromMedian(results)
     keep <- delta >= min.diff.med
-    
+
     dn <- results$delta.next
     if (!is.null(dn)) {
         keep <- keep & dn >= min.diff.next

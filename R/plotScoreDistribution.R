@@ -211,7 +211,7 @@ plotScoreDistribution <- function(
             name = labels.title,
             breaks = c("assigned", "pruned", "other"),
             values = c(this.color, pruned.color, other.color))
-    
+
     jit <- ggplot2::geom_jitter(height = 0, width = 0.3, color = "black",
         shape = 16, size = size, na.rm = TRUE)
 
@@ -223,7 +223,7 @@ plotScoreDistribution <- function(
     p <- p + ggplot2::theme_classic() +
         ggplot2::facet_wrap(facets = ~label, ncol = ncol) +
         ggplot2::ylab(scores.title)
-    
+
     if (nlevels(as.factor(df$label)) == 1) {
         p <- p + ggplot2::scale_x_discrete(name = NULL, labels = NULL)
     } else {

@@ -33,7 +33,7 @@ Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp
         }
         lab_ptrs.push_back(static_cast<const int*>(lab_vec.back().begin()));
     }
-    
+
     singlepp::ChooseClassicMarkersOptions opts;
     opts.number = de_n;
     opts.num_threads = nthreads;

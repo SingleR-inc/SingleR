@@ -83,7 +83,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         colnames(gm) <- levels(flabels)
         ref[[i]] <- gm
     }
-    
+
     ulabels <- .get_levels(unlist(lapply(ref, colnames)))
     labels <- list()
     for (i in seq_along(ref)) {

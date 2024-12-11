@@ -176,7 +176,7 @@ test_that("trainSingleR behaves with multiple references, plus recomputation", {
     training1 <- training2 <- training
     training1 <- training1[sample(nrow(training1)),]
     rownames(training1) <- rownames(training)
-    
+
     ref1 <- trainSingleR(training1, training1$label)
     ref2 <- trainSingleR(training2, training2$label)
     out <- trainSingleR(list(training1, training2), list(training1$label, training2$label))
@@ -213,7 +213,7 @@ test_that("trainSingleR works when 'genes' contains markers outside of the refer
     train.sub <- head(training, 90)
     collected <- SingleR:::.get_genes_by_de(logcounts(training), training$label)
     genes <- unique(unlist(collected))
-    
+
     # Make sure more genes than ref
     expect_false(all(genes %in% row.names(train.sub)))
     expect_error(out <- SingleR::trainSingleR(train.sub, training$label, genes = collected), NA)

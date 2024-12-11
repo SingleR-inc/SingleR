@@ -18,7 +18,7 @@ bibliography: ref.bib
 vignette: >
   %\VignetteIndexEntry{Annotating scRNA-seq data}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}    
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, echo=FALSE, results="hide", message=FALSE}

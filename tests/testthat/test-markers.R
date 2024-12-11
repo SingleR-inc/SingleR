@@ -38,7 +38,7 @@ REF <- function(ref, labels, de.n=NULL) {
     collected <- list()
     for (i in ulabels) {
         subcollected <- list()
-   
+
         for (j in ulabels) {
             s <- sort(mat[,i] - mat[,j], decreasing=TRUE)
             s <- s[s>0]
@@ -81,7 +81,7 @@ test_that("getClassicMarkers works with blocking", {
     out2 <- getClassicMarkers(list(logcounts(training), logcounts(training)), 
         list(training$label, training$label))
     expect_identical(out, out2)
-    
+
     # Blocking is robust to training sets that don't have the labels. 
     out3 <- getClassicMarkers(list(logcounts(training), logcounts(training)[,0]), 
         list(training$label, training$label[0]))

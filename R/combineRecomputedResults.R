@@ -186,7 +186,7 @@ combineRecomputedResults <- function(
     # Organizing the outputs.
     base.scores <- vector("list", length(results))
     for (r in seq_along(base.scores)) {
-        mat <- results[[r]]$scores   
+        mat <- results[[r]]$scores
         mat[] <- NA_real_
         idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
         mat[idx] <- irun$scores[,r]

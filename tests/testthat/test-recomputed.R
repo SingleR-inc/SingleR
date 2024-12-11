@@ -57,7 +57,7 @@ test_that("combineRecomputedResults matrix fragmentation works as expected", {
         test=test,
         trained=list(train1, train2))
 
-    # Testing that it works upon parallelization.   
+    # Testing that it works upon parallelization.
     combined1x <- combineRecomputedResults(
         results=list(pred1, pred2), 
         test=test,

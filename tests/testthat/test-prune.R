@@ -10,7 +10,7 @@ test_that("validating per-cell check without finetuning", {
         c(1,1,1,1,1)
     )
     colnames(scores) <- LETTERS[1:5]
-    
+
     results <- DataFrame(scores=I(scores), labels=colnames(scores)[max.col(scores)])
 
     expect_identical(pruneScores(results, min.diff.med=0.05), c(FALSE, FALSE, TRUE, TRUE, TRUE))

@@ -140,7 +140,7 @@ aggregateReference <- function(
     first <- labels[vapply(by.label, function(i) i[1], 0L)]
     num <- vapply(output.vals, ncol, 0L)
     output.labels <- rep(first, num)
-    
+
     output <- SummarizedExperiment(list(logcounts=do.call(cbind, output.vals)), colData=DataFrame(label=output.labels))
     colnames(output) <- sprintf("%s.%s", output.labels, sequence(num))
     output

@@ -18,7 +18,7 @@ test_that("SingleR works with custom gene selection", {
     out <- SingleR(test=test, ref=training, labels=training$label, genes=more.collected)
     tab <- table(out$labels, test$label)
     expect_true(sum(diag(tab))/sum(tab) > 0.95)
-    
+
     # We should get, in this case, the same result with a list of vectors.
     out2 <- SingleR(test=test, ref=training, labels=training$label, genes=collected)
     expect_identical(collected, lapply(metadata(out2)$de.genes, unlist, use.names=FALSE))
@@ -92,7 +92,7 @@ test_that("SingleR handles data.frame inputs", {
     ref1 <- SingleR(test=test, ref=training, labels=training$label)
     set.seed(10)
     ref2 <- SingleR(test=data.frame(logcounts(test)), ref=data.frame(logcounts(training)), labels=training$label)
-    
+
     rownames(ref2) <- NULL # as the data.frame coercion changes the cell's names.
     expect_identical(ref1, ref2)
 
