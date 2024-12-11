@@ -9,3 +9,5 @@ src/*.dll
 inst/include/source-*
 *.swp
 *.html
+*.rds
+.DS_Store
