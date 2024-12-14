@@ -58,6 +58,8 @@ For any given cell, entries of this matrix are only non-\code{NA} for the assign
 scores are not recomputed for the other labels.
 \item \code{labels}, a character vector containing the per-cell combined label across references.
 \item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
+\item \code{delta.next}, a numeric vector containing the difference between the best and next-best score.
+If \code{fine.tune=TRUE}, this is reported for scores after fine-tuning.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
 It may also contain \code{pruned.labels} if these were also present in \code{results}.

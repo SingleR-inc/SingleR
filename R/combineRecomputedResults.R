@@ -24,6 +24,8 @@
 #' scores are not recomputed for the other labels.
 #' \item \code{labels}, a character vector containing the per-cell combined label across references.
 #' \item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
+#' \item \code{delta.next}, a numeric vector containing the difference between the best and next-best score.
+#' If \code{fine.tune=TRUE}, this is reported for scores after fine-tuning.
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
 #' It may also contain \code{pruned.labels} if these were also present in \code{results}.
@@ -198,11 +200,11 @@ combineRecomputedResults <- function(
     metadata(output)$label.origin <- .create_label_origin(base.scores)
 
     chosen <- irun$best + 1L
-    cbind(output, .combine_result_frames(chosen, results))
+    cbind(output, .combine_result_frames(chosen, irun$delta, results))
 }
 
 #' @importFrom S4Vectors DataFrame
-.combine_result_frames <- function(chosen, results) {
+.combine_result_frames <- function(chosen, delta, results) {
     has.pruned <- !is.null(results[[1]]$pruned.labels)
 
     # Organizing the statistics based on the chosen results.
@@ -225,6 +227,7 @@ combineRecomputedResults <- function(
     }
 
     output$reference <- chosen
+    output$delta.next <- delta
 
     if (is.null(names(results))) {
         names(results) <- sprintf("ref%i", seq_along(results))
