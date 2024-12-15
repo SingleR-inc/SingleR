@@ -7,7 +7,7 @@
 plotDeltaDistribution(
   results,
   show = c("delta.med", "delta.next"),
-  labels.use = colnames(results$scores),
+  labels.use = NULL,
   references = NULL,
   chosen.only = TRUE,
   size = 2,

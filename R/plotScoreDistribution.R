@@ -91,7 +91,7 @@
 plotScoreDistribution <- function(
     results,
     show = NULL,
-    labels.use = colnames(results$scores),
+    labels.use = NULL,
     references = NULL,
     scores.use = NULL,
     calls.use = 0,
@@ -137,11 +137,15 @@ plotScoreDistribution <- function(
         chosen <- references[i]
         if (chosen==0L) {
             current.results <- results
+            scores <- current.results$scores
+            if (is(scores, "DataFrame")) { # i.e., from combineRecomputedResults.
+                scores <- .expand_recomputed_scores(scores)
+            }
         } else {
             current.results <- results$orig.results[[chosen]]
+            scores <- current.results$scores
         }
 
-        scores <- current.results$scores
         scores.title <- .values_title(is.combined, chosen, ref.names, show)
 
         # Pulling out the labels to use in this iteration.
@@ -152,6 +156,10 @@ plotScoreDistribution <- function(
         prune.calls <- NULL
         if (!is.na(pruned.color)) {
             prune.calls <- current.results$pruned.labels
+        }
+
+        if (is.null(labels.use)) {
+            labels.use <- colnames(scores)
         }
 
         # Actually creating the plot

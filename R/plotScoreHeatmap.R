@@ -223,11 +223,15 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         chosen.scores <- scores.use[i]
         if (chosen.scores==0L) {
             score.results <- results
+            scores <- score.results$scores
+            if (is(scores, "DataFrame")) { # i.e., from combineRecomputedResults.
+                scores <- .expand_recomputed_scores(scores)
+            }
         } else {
             score.results <- results$orig.results[[chosen.scores]]
+            scores <- score.results$scores
         }
 
-        scores <- score.results$scores
         rownames(scores) <- rownames(results)
         scores.title <- .values_title(is.combined, chosen.scores, ref.names, "Scores")
         scores.labels <- score.results$labels
@@ -244,6 +248,10 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
         prune.calls <- call.results$pruned.labels
         names(labels) <- names(prune.calls) <- rownames(scores)
         labels.title <- .values_title(is.combined, chosen.calls, ref.names, "Labels")
+
+        if (is.null(labels.use)) {
+            labels.use <- colnames(scores)
+        }
 
         # Actually creating the heatmap.
         output <- .plot_score_heatmap(
@@ -465,10 +473,6 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 .trim_byLabel_and_normalize_scores <- function(
     scores, labels.use, max.labels, normalize, scores.title, scores.labels) {
 
-    # Trim by labels (remove any with no scores)
-    all.na <- apply(scores, 2, FUN = function(x) all(is.na(x)))
-    scores <- scores[,!all.na, drop = FALSE]
-
     # Trim by labels (labels.use)
     if (!is.null(labels.use)) {
         labels.use <- labels.use[labels.use %in% colnames(scores)]
@@ -481,7 +485,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
 
     # Trim by labels (max.labels), using primarily the most frequent labels.
     times.best <- table(factor(scores.labels, levels = unique(colnames(scores))))[colnames(scores)]
-    if (!any(is.na(scores))) {
+    if (!anyNA(scores)) {
         # To break ties, we sort by the scaled maximum if there are no NAs.
         # This is done _before_ within-cell normalization of the scores,
         # after which it makes little sense to compare scores between cells.
@@ -489,7 +493,7 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     } else {
         # If there are NAs - usually from combineRecomputedResults -
         # we sort by the frequency of non-NA occurrences.
-        secondary <- apply(scores, 2, FUN = function(x) sum(!is.na(x)))
+        secondary <- colSums(!is.na(scores))
     }
     to.keep <- order(times.best, secondary, decreasing=TRUE)
     to.keep <- head(to.keep, max.labels)
@@ -649,4 +653,17 @@ plotScoreHeatmap <- function(results, cells.use = NULL, labels.use = NULL,
     list(df_colors = df_colors,
         next.color.index.discrete = next.color.index.discrete,
         next.color.index.numeric = next.color.index.numeric)
+}
+
+.expand_recomputed_scores <- function(scores) {
+    expanded.scores <- vector("list", ncol(scores))
+    for (i in seq_along(expanded.scores)) {
+        curscores <- scores[[i]]
+        u <- unique(curscores$labels)
+        expanded <- matrix(NA_real_, nrow(curscores), length(u))
+        expanded[cbind(seq_len(nrow(curscores)), match(curscores$labels, u))] <- curscores$scores
+        colnames(expanded) <- u
+        expanded.scores[[i]] <- expanded
+    }
+    do.call(cbind, expanded.scores)
 }

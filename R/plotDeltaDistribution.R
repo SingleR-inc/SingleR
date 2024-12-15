@@ -76,7 +76,7 @@
 plotDeltaDistribution <- function(
     results,
     show = c("delta.med", "delta.next"),
-    labels.use = colnames(results$scores),
+    labels.use = NULL,
     references = NULL,
     chosen.only = TRUE,
     size = 2,
@@ -133,6 +133,14 @@ plotDeltaDistribution <- function(
         pruned <- NULL
         if (!is.na(pruned.color)) {
             pruned <- is.na(current.results$pruned.labels)
+        }
+
+        if (is.null(labels.use)) {
+            if (is(results$scores, "DataFrame")) {
+                labels.use <- unlist(lapply(results$scores, function(x) unique(x$labels)))
+            } else {
+                labels.use <- colnames(results$scores)
+            }
         }
 
         # Actually creating the plot

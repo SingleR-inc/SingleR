@@ -30,12 +30,17 @@ test_that("combineRecomputedResults works as expected (light check)", {
     combined <- combineRecomputedResults(
         results=list(pred1, pred2), 
         test=test,
-        trained=list(train1, train2))
+        trained=list(train1, train2),
+        fine.tune=FALSE
+    )
 
-    # Checking the sanity of the output.
-    obs <- apply(combined$scores, 1, FUN=function(x) colnames(combined$scores)[!is.na(x)])
-    ref <- rbind(pred1$labels, pred2$labels) 
-    expect_identical(obs, ref)
+    expect_identical(combined$scores$ref1$labels, pred1$labels)
+    expect_identical(combined$scores$ref2$labels, pred2$labels)
+
+    aggregated.scores <- do.call(cbind, lapply(combined$scores, function(x) x$scores))
+    aggregated.labels <- do.call(cbind, lapply(combined$scores, function(x) as.character(x$labels)))
+    expect_identical(max.col(aggregated.scores), combined$reference)
+    expect_identical(aggregated.labels[cbind(seq_len(nrow(aggregated.labels)), max.col(aggregated.scores))], combined$labels)
 
     expect_true(all(combined$labels == pred1$labels | combined$labels==pred2$labels))
     expect_true(all(combined$first.labels == pred1$first.labels | combined$first.labels==pred2$first.labels))
@@ -46,9 +51,6 @@ test_that("combineRecomputedResults works as expected (light check)", {
         is.na(combined$pruned.labels)==is.na(pred1$pruned.labels) | 
         is.na(combined$pruned.labels)==is.na(pred2$pruned.labels)
     ))
-
-    top <- apply(combined$scores, 1, FUN=function(x) colnames(combined$scores)[which.max(x)])
-    expect_identical(top, combined$labels)
 })
 
 test_that("combineRecomputedResults matrix fragmentation works as expected", {

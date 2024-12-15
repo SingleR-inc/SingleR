@@ -53,9 +53,8 @@ see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more deta
 A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
 \itemize{
-\item \code{scores}, a numeric matrix of correlations containing the \emph{recomputed} scores.
-For any given cell, entries of this matrix are only non-\code{NA} for the assigned label in each reference;
-scores are not recomputed for the other labels.
+\item \code{scores}, a DataFrame of DataFrames containing the \emph{recomputed} scores for the best label in each reference.
+Each nested DataFrame corresponds to a reference and contains \code{labels} (the best label for that cell in this reference) and \code{scores} (the recomputed score).
 \item \code{labels}, a character vector containing the per-cell combined label across references.
 \item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
 \item \code{delta.next}, a numeric vector containing the difference between the best and next-best score.

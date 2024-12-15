@@ -7,7 +7,7 @@
 plotScoreDistribution(
   results,
   show = NULL,
-  labels.use = colnames(results$scores),
+  labels.use = NULL,
   references = NULL,
   scores.use = NULL,
   calls.use = 0,

@@ -19,9 +19,8 @@
 #' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
 #' \itemize{
-#' \item \code{scores}, a numeric matrix of correlations containing the \emph{recomputed} scores.
-#' For any given cell, entries of this matrix are only non-\code{NA} for the assigned label in each reference;
-#' scores are not recomputed for the other labels.
+#' \item \code{scores}, a DataFrame of DataFrames containing the \emph{recomputed} scores for the best label in each reference.
+#' Each nested DataFrame corresponds to a reference and contains \code{labels} (the best label for that cell in this reference) and \code{scores} (the recomputed score).
 #' \item \code{labels}, a character vector containing the per-cell combined label across references.
 #' \item \code{reference}, an integer vector specifying the reference from which the combined label was derived.
 #' \item \code{delta.next}, a numeric vector containing the difference between the best and next-best score.
@@ -186,21 +185,19 @@ combineRecomputedResults <- function(
     ) 
 
     # Organizing the outputs.
-    base.scores <- vector("list", length(results))
-    for (r in seq_along(base.scores)) {
-        mat <- results[[r]]$scores
-        mat[] <- NA_real_
-        idx <- cbind(seq_len(nrow(mat)), collated[[r]] + 1L)
-        mat[idx] <- irun$scores[,r]
-        base.scores[[r]] <- mat
+    if (is.null(names(results))) {
+        names(results) <- sprintf("ref%i", seq_along(results))
     }
 
-    all.scores <- do.call(cbind, base.scores)
-    output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
-    metadata(output)$label.origin <- .create_label_origin(base.scores)
+    base.scores <- vector("list", length(results))
+    names(base.scores) <- names(results)
+    for (i in seq_along(base.scores)) {
+        base.scores[[i]] <- DataFrame(labels=results[[i]]$labels, trained[[i]]$labels$unique, scores=irun$scores[,i])
+    }
 
-    chosen <- irun$best + 1L
-    cbind(output, .combine_result_frames(chosen, irun$delta, results))
+    all.scores <- DataFrame(lapply(base.scores, I))
+    output <- DataFrame(scores = I(all.scores), row.names=rownames(results[[1]]))
+    cbind(output, .combine_result_frames(irun$best + 1L, irun$delta, results))
 }
 
 #' @importFrom S4Vectors DataFrame
@@ -228,19 +225,7 @@ combineRecomputedResults <- function(
 
     output$reference <- chosen
     output$delta.next <- delta
-
-    if (is.null(names(results))) {
-        names(results) <- sprintf("ref%i", seq_along(results))
-    }
     output$orig.results <- do.call(DataFrame, lapply(results, I))
 
     output
-}
-
-#' @importFrom S4Vectors DataFrame
-.create_label_origin <- function(collected.scores) {
-    DataFrame(
-        label=unlist(lapply(collected.scores, colnames)),
-        reference=rep(seq_along(collected.scores), vapply(collected.scores, ncol, 0L))
-    )
 }
