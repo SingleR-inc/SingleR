@@ -22,7 +22,9 @@
 #' if \code{test} is a \linkS4class{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 #' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
-#' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
+#' @param check.missing.test Logical scalar indicating whether rows of \code{test} should be checked for missing values (and if found, removed).
+#' @param check.missing.ref Logical scalar indicating whether rows of \code{ref} should be checked for missing values (and if found, removed).
+#' @param check.missing Deprecated, use \code{check.missing.test} and \code{check.missing.ref} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building and classification.
 #' @param BNPARAM Deprecated and ignored.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
@@ -93,6 +95,8 @@ SingleR <- function(
     prune=TRUE, 
     assay.type.test = "logcounts", 
     assay.type.ref="logcounts", 
+    check.missing.test=FALSE, 
+    check.missing.ref=check.missing, 
     check.missing=TRUE, 
     num.threads = bpnworkers(BPPARAM),
     BNPARAM = NULL,
@@ -105,7 +109,7 @@ SingleR <- function(
 
     # We have to do all this row-subsetting at the start before trainSingleR,
     # otherwise 'test.genes' won't match up to the filtered 'test'.
-    test <- .to_clean_matrix(test, assay.type.test, check.missing, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type.test, check.missing.test, msg="test", BPPARAM=BPPARAM)
 
     tmp.ref <- ref
     if (!is.list(tmp.ref) || is.data.frame(tmp.ref)) {
@@ -134,7 +138,7 @@ SingleR <- function(
         recompute=recompute,
         restrict = restrict, 
         test.genes=rownames(test),
-        check.missing=check.missing, 
+        check.missing=check.missing.ref, 
         BNPARAM=BNPARAM, 
         num.threads = num.threads, 
         BPPARAM=BPPARAM

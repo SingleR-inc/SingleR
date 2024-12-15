@@ -25,6 +25,8 @@ SingleR(
   prune = TRUE,
   assay.type.test = "logcounts",
   assay.type.ref = "logcounts",
+  check.missing.test = FALSE,
+  check.missing.ref = check.missing,
   check.missing = TRUE,
   num.threads = bpnworkers(BPPARAM),
   BNPARAM = NULL,
@@ -69,7 +71,11 @@ if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 \item{assay.type.ref}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
-\item{check.missing}{Logical scalar indicating whether rows should be checked for missing values (and if found, removed).}
+\item{check.missing.test}{Logical scalar indicating whether rows of \code{test} should be checked for missing values (and if found, removed).}
+
+\item{check.missing.ref}{Logical scalar indicating whether rows of \code{ref} should be checked for missing values (and if found, removed).}
+
+\item{check.missing}{Deprecated, use \code{check.missing.test} and \code{check.missing.ref} instead.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
