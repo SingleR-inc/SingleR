@@ -11,6 +11,18 @@ This should be faster than the previous \pkg{BiocSingular} and \code{stats::kmea
 
 \item Added a \code{configureMarkerHeatmap()} function to perform all the calculations used by \code{plotMarkerHeatmap()}.
 This allows users to re-use the calculations with a custom visualization for the expression values.
+
+\item Automatically remove duplicated gene names in \code{trainSingleR()}.
+This avoids matching to the wrong gene after identifying markers from the reference dataset.
+
+\item Report scores as a DataFrame of nested Dataframes in \code{combineRecomputedResults()}.
+Each inner DataFrame corresponds to a reference and contains the identity of the best label and the recomputed score in that reference.
+This is simpler and more efficient than the previous "expanded with NA" format.
+
+\item Report the deltas (i.e., difference between the best and next-best scores) in \code{combineRecomputedResults()}.
+
+\item Separate the missingness check arguments in \code{SingleR()} with the new \code{check.missing.test=} and \code{check.missing.ref=} options.
+The former is disabled by default, to avoid an unnecessary missingness check in the vast majority of test cases.
 }}
 
 \section{Version 2.8.0}{\itemize{
