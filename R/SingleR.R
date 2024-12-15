@@ -72,7 +72,7 @@
 #' @importFrom SummarizedExperiment assay
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
-#' @importFrom DelayedArray colsum DelayedArray getAutoBPPARAM setAutoBPPARAM
+#' @importFrom DelayedArray DelayedArray
 #' @importFrom BiocParallel SerialParam
 SingleR <- function(
     test, 
@@ -144,10 +144,9 @@ SingleR <- function(
     }
 
     if (!is.null(clusters)) {
-        oldp <- getAutoBPPARAM()
-        setAutoBPPARAM(BPPARAM)
-        on.exit(setAutoBPPARAM(oldp), add=TRUE)
-        test <- colsum(DelayedArray(test), clusters)
+        agg <- scrapper::aggregateAcrossCells(test, list(clusters=clusters), num.threads=num.threads)
+        test <- agg$sums
+        colnames(test) <- agg$combinations$clusters
     }
 
     classifySingleR(

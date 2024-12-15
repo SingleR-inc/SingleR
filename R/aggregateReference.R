@@ -77,7 +77,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
 #' @importFrom Matrix rowMeans
-#' @importFrom DelayedArray sweep colsum DelayedArray
+#' @importFrom DelayedArray DelayedArray
 #' @importFrom BiocParallel SerialParam bpnworkers
 aggregateReference <- function(
     ref,
@@ -125,9 +125,8 @@ aggregateReference <- function(
             }
 
             clustered <- scrapper::clusterKmeans(pcs, k=cur.ncenters, num.threads=num.threads)
-            agg <- colsum(current, clustered$cluster)
-            tab <- table(clustered$cluster)[colnames(agg)]
-            output <- sweep(agg, 2, tab, "/")
+            agg <- scrapper::aggregateAcrossCells(current, list(cluster=clustered$cluster), num.threads=num.threads)
+            output <- sweep(agg$sums, 2, agg$counts, "/")
         }
 
         output.vals[[lab]] <- output
