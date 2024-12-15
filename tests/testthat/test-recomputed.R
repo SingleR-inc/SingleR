@@ -53,6 +53,40 @@ test_that("combineRecomputedResults works as expected (light check)", {
     ))
 })
 
+test_that("combineRecomputedResults works as expected (sanity check)", {
+    set.seed(9999)
+    ref1 <- matrix(runif(10000), ncol=10)
+    ref2 <- matrix(runif(20000), ncol=20)
+    rownames(ref1) <- rownames(ref2) <- sprintf("GENE_%i", seq_len(nrow(ref1)))
+
+    ref1[1:100,1:5] <- 0
+    ref1[201:300,6:10] <- 0
+    ref2[101:200,1:10] <- 0
+    ref2[201:300,11:20] <- 0
+
+    lab1 <- rep(c("A", "C"), each=5)
+    lab2 <- rep(c("B", "C"), each=10)
+
+    test <- matrix(runif(20000), ncol=20)
+    test[1:100,(1:10)*2 -1] <- 0
+    test[101:200,(1:10)*2] <- 0
+    rownames(test) <- rownames(ref1)
+
+    train1 <- trainSingleR(ref1, labels=lab1)
+    pred1 <- classifySingleR(test, train1)
+    train2 <- trainSingleR(ref2, labels=lab2)
+    pred2 <- classifySingleR(test, train2)
+
+    combined <- combineRecomputedResults(
+        results=list(pred1, pred2), 
+        test=test,
+        trained=list(train1, train2),
+    )
+
+    expect_identical(combined$labels, rep(c("A", "B"), 10))
+    expect_identical(combined$reference, rep(1:2, 10))
+})
+
 test_that("combineRecomputedResults matrix fragmentation works as expected", {
     combined1 <- combineRecomputedResults(
         results=list(pred1, pred2), 
