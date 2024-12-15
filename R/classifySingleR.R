@@ -104,7 +104,7 @@ classifySingleR <- function(
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam()) 
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, msg="test", num.threads=num.threads)
 
     solo <- .is_solo(trained)
     if (solo) { 

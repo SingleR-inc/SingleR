@@ -120,7 +120,7 @@ combineRecomputedResults <- function(
     num.threads = bpnworkers(BPPARAM),
     BPPARAM=SerialParam())
 {
-    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=FALSE, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=FALSE, msg="test", num.threads=num.threads)
 
     # Applying the sanity checks.
     stopifnot(length(results) == length(trained))

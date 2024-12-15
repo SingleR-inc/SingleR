@@ -195,7 +195,7 @@
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
 #' @importFrom BiocNeighbors defineBuilder AnnoyParam KmknnParam
-#' @importFrom BiocParallel SerialParam bpisup bpstart bpstop
+#' @importFrom BiocParallel SerialParam
 #' @importFrom beachmat initializeCpp
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
@@ -243,15 +243,10 @@ trainSingleR <- function(
         }
     }
 
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
     output <- vector("list", length(ref))
     names(output) <- names(ref)
     for (l in seq_along(ref)) {
-        curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+        curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", num.threads=num.threads)
 
         curlabels <- as.character(labels[[l]])
         stopifnot(length(curlabels) == ncol(curref))
@@ -274,7 +269,7 @@ trainSingleR <- function(
         )
 
         if (aggr.ref) {
-            aggr <- do.call(aggregateReference, c(list(ref=quote(curref), label=curlabels, check.missing=FALSE, BPPARAM=BPPARAM), aggr.args))
+            aggr <- do.call(aggregateReference, c(list(ref=quote(curref), label=curlabels, check.missing=FALSE, num.threads=num.threads), aggr.args))
             curref <- assay(aggr)
             curlabels <- aggr$label
         }

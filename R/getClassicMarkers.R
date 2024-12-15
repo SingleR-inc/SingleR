@@ -54,18 +54,13 @@
 #' @importFrom utils relist
 #' @importFrom beachmat initializeCpp
 getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=bpnworkers(BPPARAM), BPPARAM=SerialParam()) { 
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
     if (!.is_list(ref)) { 
         ref <- list(ref)
         labels <- list(labels)
     }
 
     for (i in seq_along(ref)) {
-        ref[[i]] <- .to_clean_matrix(ref[[i]], assay.type, check.missing, msg="ref", BPPARAM=BPPARAM)
+        ref[[i]] <- .to_clean_matrix(ref[[i]], assay.type, check.missing, msg="ref", num.threads=num.threads)
     }
 
     # Setting up references.

@@ -102,14 +102,9 @@ SingleR <- function(
     BNPARAM = NULL,
     BPPARAM=SerialParam()) 
 {
-    if (!bpisup(BPPARAM) && !is(BPPARAM, "MulticoreParam")) {
-        bpstart(BPPARAM)
-        on.exit(bpstop(BPPARAM))
-    }
-
     # We have to do all this row-subsetting at the start before trainSingleR,
     # otherwise 'test.genes' won't match up to the filtered 'test'.
-    test <- .to_clean_matrix(test, assay.type.test, check.missing.test, msg="test", BPPARAM=BPPARAM)
+    test <- .to_clean_matrix(test, assay.type.test, check.missing.test, msg="test", num.threads=num.threads)
 
     tmp.ref <- ref
     if (!is.list(tmp.ref) || is.data.frame(tmp.ref)) {

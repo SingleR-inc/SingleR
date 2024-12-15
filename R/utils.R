@@ -1,8 +1,9 @@
+#' @importFrom beachmat initializeCpp tatami.row.nan.counts
 #' @importFrom SummarizedExperiment assay
 #' @importFrom DelayedMatrixStats rowAnyNAs
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom DelayedArray DelayedArray setAutoBPPARAM getAutoBPPARAM
-.to_clean_matrix <- function(x, assay.type, check.missing, msg="x", BPPARAM=SerialParam()) {
+#' @importFrom DelayedArray DelayedArray
+.to_clean_matrix <- function(x, assay.type, check.missing, msg="x", num.threads=1) {
     if (is.null(rownames(x)) && nrow(x)) { # zero-length matrices have NULL dimnames.
         stop(sprintf("'%s' must have row names", msg))
     }
@@ -20,15 +21,11 @@
 
     # Stripping out genes with NA's from 'x'.
     if (check.missing) {
-        old <- getAutoBPPARAM()
-        setAutoBPPARAM(BPPARAM)
-        on.exit(setAutoBPPARAM(old))
-
-        y <- DelayedArray(x)
-        discard <- rowAnyNAs(y)
-        if (any(discard)) {
+        ptr <- initializeCpp(x)
+        keep <- tatami.row.nan.counts(ptr, num.threads=num.threads) == 0
+        if (!all(keep)) {
             # Returning a DelayedArray to avoid making an actual subset.
-            x <- y[!discard,,drop=FALSE]
+            x <- DelayedArray(x)[keep,,drop=FALSE]
         }
     }
 

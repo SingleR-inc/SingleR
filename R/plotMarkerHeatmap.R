@@ -81,7 +81,7 @@ plotMarkerHeatmap <- function(
     BPPARAM = SerialParam(),
     ...) 
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, num.threads=num.threads)
     config <- configureMarkerHeatmap(
         results, 
         test,
@@ -129,7 +129,7 @@ configureMarkerHeatmap <- function(
     order.by.summary="min.rank",
     num.threads=1)
 {
-    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE)
+    test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, num.threads=num.threads)
     all.markers <- metadata(results)$de.genes[[label]]
 
     if (use.pruned) {
