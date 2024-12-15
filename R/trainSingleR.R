@@ -199,6 +199,7 @@
 #' @importFrom beachmat initializeCpp
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
+#' @importFrom DelayedArray DelayedArray
 trainSingleR <- function(
     ref, 
     labels, 
@@ -248,11 +249,17 @@ trainSingleR <- function(
     for (l in seq_along(ref)) {
         curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", num.threads=num.threads)
 
+        # Removing duplicated names and missing labels.
+        if (anyDuplicated(rownames(curref))) {
+            keep <- !duplicated(rownames(curref))
+            curref <- DelayedArray(curref)[keep,,drop=FALSE]
+        }
+
         curlabels <- as.character(labels[[l]])
         stopifnot(length(curlabels) == ncol(curref))
         keep <- !is.na(curlabels)
         if (!all(keep)) {
-            curref <- curref[,keep,drop=FALSE]
+            curref <- DelayedArray(curref)[,keep,drop=FALSE]
             curlabels <- curlabels[keep]
         }
 

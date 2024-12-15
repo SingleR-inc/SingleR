@@ -240,5 +240,17 @@ test_that("trainSingleR auto-eliminates NA labels", {
     out <- trainSingleR(training, training$label)
     ref <- trainSingleR(training[,!populate], training$label[!populate])
     expect_identical(out$labels, ref$labels)
-    expect_identical(out$ref, ref$ref)
+    expect_identical(as.matrix(out$ref), ref$ref)
+})
+
+test_that("trainSingleR auto-eliminates duplicate row names", {
+    expect_identical(anyDuplicated(rownames(training)), 0L) # make sure there weren't any to begin with.
+
+    rownames(training) <- head(rep(rownames(training), each=2), nrow(training))
+    out <- trainSingleR(training, training$label)
+
+    keep <- !duplicated(rownames(training))
+    ref <- trainSingleR(training[keep,], training$label)
+    expect_identical(out$labels, ref$labels)
+    expect_identical(as.matrix(out$ref), ref$ref)
 })
