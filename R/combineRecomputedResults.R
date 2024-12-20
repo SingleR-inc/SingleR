@@ -102,6 +102,8 @@
 #' 
 #' combined[,1:5]
 #'
+#' @aliases
+#' combineCommonResults
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
 #' @importFrom beachmat initializeCpp
@@ -192,7 +194,7 @@ combineRecomputedResults <- function(
     base.scores <- vector("list", length(results))
     names(base.scores) <- names(results)
     for (i in seq_along(base.scores)) {
-        base.scores[[i]] <- DataFrame(labels=results[[i]]$labels, trained[[i]]$labels$unique, scores=irun$scores[,i])
+        base.scores[[i]] <- DataFrame(labels=results[[i]]$labels, scores=irun$scores[,i])
     }
 
     all.scores <- DataFrame(lapply(base.scores, I))

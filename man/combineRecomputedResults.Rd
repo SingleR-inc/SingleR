@@ -2,6 +2,7 @@
 % Please edit documentation in R/combineRecomputedResults.R
 \name{combineRecomputedResults}
 \alias{combineRecomputedResults}
+\alias{combineCommonResults}
 \title{Combine SingleR results with recomputation}
 \usage{
 combineRecomputedResults(
