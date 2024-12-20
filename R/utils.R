@@ -21,7 +21,7 @@
 
     # Stripping out genes with NA's from 'x'.
     if (check.missing) {
-        ptr <- initializeCpp(x)
+        ptr <- initializeCpp(x, .check.na=TRUE)
         keep <- tatami.row.nan.counts(ptr, num.threads=num.threads) == 0
         if (!all(keep)) {
             # Returning a DelayedArray to avoid making an actual subset.

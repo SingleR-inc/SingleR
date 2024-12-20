@@ -161,7 +161,7 @@ combineRecomputedResults <- function(
     # Applying the integration.
     ibuilt <- train_integrated(
         test_features=all.inter.test,
-        references=lapply(trained, function(x) initializeCpp(x$ref)),
+        references=lapply(trained, function(x) initializeCpp(x$ref, .check.na=FALSE)),
         ref_features=all.inter.ref,
         labels=lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
         prebuilt=lapply(trained, function(x) rebuildIndex(x)$built),
@@ -173,7 +173,7 @@ combineRecomputedResults <- function(
         collated[[i]] <- match(results[[i]]$labels, trained[[i]]$labels$unique) - 1L
     }
 
-    parsed <- initializeCpp(test)
+    parsed <- initializeCpp(test, .check.na=FALSE)
     irun <- classify_integrated(
         test=parsed,
         results=collated,

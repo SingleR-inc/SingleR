@@ -196,7 +196,6 @@
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
 #' @importFrom BiocNeighbors defineBuilder AnnoyParam KmknnParam
 #' @importFrom BiocParallel SerialParam
-#' @importFrom beachmat initializeCpp
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
 #' @importFrom DelayedArray DelayedArray
@@ -371,7 +370,7 @@ trainSingleR <- function(
     }
 
     builder <- defineBuilder(BNPARAM)
-    parsed <- initializeCpp(ref)
+    parsed <- initializeCpp(ref, .check.na=FALSE)
     train_single(
         test_features=test.genes - 1L, 
         ref=parsed,

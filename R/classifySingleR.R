@@ -151,12 +151,13 @@ classifySingleR <- function(
     }
 }
 
+#' @importFrom beachmat initializeCpp
 #' @importFrom S4Vectors DataFrame metadata metadata<- I
 .classify_internals <- function(test, trained, quantile, fine.tune, tune.thresh=0.05, prune=TRUE, num.threads=1) {
     .check_test_genes(test, trained)
     trained <- rebuildIndex(trained, num.threads = num.threads)
 
-    parsed <- initializeCpp(test)
+    parsed <- initializeCpp(test, .check.na=FALSE)
     out <- classify_single(
         test = parsed, 
         prebuilt = trained$built, 

@@ -72,7 +72,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
 
     for (i in seq_along(ref)) {
         current <- ref[[i]][common,,drop=FALSE]
-        curptr <- initializeCpp(current)
+        curptr <- initializeCpp(current, .check.na=FALSE)
         flabels <- factor(labels[[i]])
         gm <- grouped_medians(curptr, as.integer(flabels) - 1L, nlevels(flabels), nthreads = num.threads)
         colnames(gm) <- levels(flabels)
@@ -97,7 +97,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
     out <- find_classic_markers(nlabels=length(ulabels), 
         ngenes=length(common), 
         labels=labels,
-        ref=lapply(ref, initializeCpp), 
+        ref=lapply(ref, initializeCpp, .check.na=FALSE), 
         de_n=de.n,
         nthreads=num.threads
     )
