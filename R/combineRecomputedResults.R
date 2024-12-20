@@ -1,8 +1,7 @@
 #' Combine SingleR results with recomputation
 #'
 #' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
-#' The label from the results with the highest score for each cell is retained.
-#' Unlike \code{\link{combineCommonResults}}, this does not assume that each run of \code{\link{classifySingleR}} was performed using the same set of common genes, instead recomputing the scores for comparison across references.
+#' This involves recomputing the scores so that they are comparable across references.
 #'
 #' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' @inheritParams SingleR
@@ -66,8 +65,6 @@
 #'
 #' @seealso
 #' \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
-#'
-#' \code{\link{combineCommonResults}}, for another approach to combining predictions.
 #'
 #' @references
 #' Lun A, Bunis D, Andrews J (2020).

@@ -117,7 +117,7 @@ table(predicted=pred$labels, truth=test$label)
 
 \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 
-\code{\link{combineCommonResults}}, to combine results from multiple references.
+\code{\link{combineRecomputedResults}}, to combine results from multiple references.
 }
 \author{
 Aaron Lun, based on the original \code{SingleR} code by Dvir Aran.

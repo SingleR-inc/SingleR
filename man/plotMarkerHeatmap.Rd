@@ -34,8 +34,7 @@ configureMarkerHeatmap(
 )
 }
 \arguments{
-\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}},
-\code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.}
+\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
 
 \item{test}{A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 Each row should be named with the same gene name that was used to compute \code{results}.

@@ -87,7 +87,7 @@
 #'
 #' \code{\link{pruneScores}}, to remove low-quality labels based on the scores.
 #'
-#' \code{\link{combineCommonResults}}, to combine results from multiple references.
+#' \code{\link{combineRecomputedResults}}, to combine results from multiple references.
 #'
 #' @export
 #' @importFrom BiocParallel bpnworkers

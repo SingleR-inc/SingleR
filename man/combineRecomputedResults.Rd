@@ -69,8 +69,7 @@ a DataFrame specifying the reference of origin for each label in \code{scores}.
 }
 \description{
 Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
-The label from the results with the highest score for each cell is retained.
-Unlike \code{\link{combineCommonResults}}, this does not assume that each run of \code{\link{classifySingleR}} was performed using the same set of common genes, instead recomputing the scores for comparison across references.
+This involves recomputing the scores so that they are comparable across references.
 }
 \details{
 Here, the strategy is to perform classification separately within each reference, 
@@ -140,8 +139,6 @@ Thoughts on a more scalable algorithm for multiple references.
 }
 \seealso{
 \code{\link{SingleR}} and \code{\link{classifySingleR}}, for generating predictions to use in \code{results}.
-
-\code{\link{combineCommonResults}}, for another approach to combining predictions.
 }
 \author{
 Aaron Lun

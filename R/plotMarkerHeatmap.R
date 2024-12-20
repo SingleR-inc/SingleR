@@ -2,8 +2,7 @@
 #'
 #' Create a heatmap of the log-normalized expression for the most interesting markers of a particular label.
 #'
-#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}},
-#' \code{\link{classifySingleR}}, \code{\link{combineCommonResults}}, or \code{\link{combineRecomputedResults}}.
+#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
 #' @param test A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 #' Each row should be named with the same gene name that was used to compute \code{results}.
 #'

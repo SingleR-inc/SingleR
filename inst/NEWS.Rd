@@ -23,6 +23,8 @@ This is simpler and more efficient than the previous "expanded with NA" format.
 
 \item Separate the missingness check arguments in \code{SingleR()} with the new \code{check.missing.test=} and \code{check.missing.ref=} options.
 The former is disabled by default, to avoid an unnecessary missingness check in the vast majority of test cases.
+
+\item Removed the deprecated \code{combineCommonResults()} function.
 }}
 
 \section{Version 2.8.0}{\itemize{
