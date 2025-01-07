@@ -4,13 +4,13 @@
 #' given a labelled reference dataset in the same feature space.
 #'
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+#' Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
 #' @inheritParams trainSingleR
 #' @param ref A numeric matrix of (usually normalized and log-transformed) expression values from a reference dataset,
-#' or a \linkS4class{SummarizedExperiment} object containing such a matrix;
+#' or a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix;
 #' see \code{\link{trainSingleR}} for details.
 #'
-#' Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
+#' Alternatively, a list or \link[S4Vectors]{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
 #' Row names may be different across entries but only the intersection will be used, see Details.
 #' @param method Deprecated.
 #' @param clusters A character vector or factor of cluster identities for each cell in \code{test}.
@@ -19,18 +19,18 @@
 #' @param aggr.ref,aggr.args Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.
 #' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
-#' if \code{test} is a \linkS4class{SummarizedExperiment} object.
+#' if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-#' if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).
+#' if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing.test Logical scalar indicating whether rows of \code{test} should be checked for missing values (and if found, removed).
 #' @param check.missing.ref Logical scalar indicating whether rows of \code{ref} should be checked for missing values (and if found, removed).
 #' @param check.missing Deprecated, use \code{check.missing.test} and \code{check.missing.ref} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building and classification.
 #' @param BNPARAM Deprecated and ignored.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
 #' see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.
 #'
-#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
+#' @return A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
 #'
 #' @details

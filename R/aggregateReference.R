@@ -4,13 +4,15 @@
 #' This can be done with varying degrees of resolution to preserve the within-label heterogeneity.
 #'
 #' @param ref A numeric matrix of reference expression values, usually containing log-expression values.
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+#' Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
 #' @param labels A character vector or factor of known labels for all cells in \code{ref}.
 #' @param ncenters Integer scalar specifying the maximum number of aggregated profiles to produce for each label.
+#' If \code{NULL}, a suitable number of profiles is automatically chosen. 
 #' @param power Numeric scalar between 0 and 1 indicating how much aggregation should be performed, see Details.
+#' Ignored if \code{ncenters} is not \code{NULL}.
 #' @param rank Integer scalar specfiying the number of principal components to use during clustering.
 #' @param assay.type An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-#' if \code{ref} is a \linkS4class{SummarizedExperiment} object.
+#' if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object.
 #' @param ntop Integer scalar specifying the number of highly variable genes to use for the PCA step.
 #' @param subset.row Integer, character or logical vector indicating the rows of \code{ref} to use for k-means clustering. 
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values (and if found, removed).
@@ -31,7 +33,7 @@
 #' This reduces the number of separate observations (for speed) while preserving some level of population heterogeneity (for fidelity).
 #' 
 #' The number of pseudo-bulk samples per label is controlled by \code{ncenters}.
-#' By default, we set the number of clusters to \code{X^power} where \code{X} is the number of cells for that label.
+#' If \code{ncenters=NULL}, we set the number of clusters to \code{X^power} where \code{X} is the number of cells for that label.
 #' This ensures that labels with more cells have more resolved representatives.
 #' If \code{ncenters} is greater than the number of samples for a label and/or \code{power=1}, no aggregation is performed.
 #' Setting \code{power=0} will aggregate all cells of a label into a single pseudo-bulk profile.
@@ -53,7 +55,7 @@
 #' We do not use the median to avoid consistently obtaining zeros for lowly expressed genes.
 #' 
 #' @return
-#' A \linkS4class{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
+#' A \link[SummarizedExperiment]{SummarizedExperiment} object with a \code{"logcounts"} assay containing a matrix of aggregated expression values,
 #' and a \code{label} column metadata field specifying the label corresponding to each column.
 #' 
 #' @author Aaron Lun

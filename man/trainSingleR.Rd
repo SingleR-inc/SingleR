@@ -30,9 +30,9 @@ trainSingleR(
 Each row should be named with the gene name.
 In general, the expression values are expected to be normalized and log-transformed, see Details.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
 
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
+Alternatively, a list or \link[S4Vectors]{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
@@ -80,7 +80,7 @@ Ignored if \code{genes} is a list of markers/DE genes.}
 By default, all genes in \code{ref} are used.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
+if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
 If true and any missing values are found, the rows containing these values are silently removed.}
@@ -89,12 +89,12 @@ If true and any missing values are found, the rows containing these values are s
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building.}
 
-\item{BNPARAM}{A \linkS4class{BiocNeighborParam} object specifying how the neighbor search index should be constructed.}
+\item{BNPARAM}{A \link[BiocNeighbors]{BiocNeighborParam} object specifying how the neighbor search index should be constructed.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.}
+\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.}
 }
 \value{
-For a single reference, a \linkS4class{List} is returned containing:
+For a single reference, a \link[S4Vectors]{List} is returned containing:
 \describe{
 \item{\code{built}:}{An external pointer to various indices in C++ space.
 Note that this cannot be serialized and should be removed prior to any \code{\link{saveRDS}} step.}

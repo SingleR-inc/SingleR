@@ -2,7 +2,7 @@
 #'
 #' Plot the distribution of assignment scores across all cells assigned to each reference label.
 #'
-#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
+#' @param results A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
 #' @param show Deprecated, use \code{\link{plotDeltaDistribution}} instead for \code{show!="scores"}.
 #' @param labels.use Character vector specifying the labels to show in the plot facets.
 #' Defaults to all labels in \code{results}.

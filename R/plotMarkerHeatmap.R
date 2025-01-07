@@ -2,15 +2,15 @@
 #'
 #' Create a heatmap of the log-normalized expression for the most interesting markers of a particular label.
 #'
-#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
+#' @param results A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
 #' @param test A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 #' Each row should be named with the same gene name that was used to compute \code{results}.
 #'
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+#' Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
 #' @param label String specifying the label of interest.
 #' @param other.labels Character vector specifying the other labels to be compared to \code{label} when finding interesting markers.
 #' Defaults to all available labels.
-#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
+#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment}.
 #' @param use.pruned Logical scalar indicating whether the pruned labels should be used instead.
 #' @param order.by.effect String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param order.by.summary String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.

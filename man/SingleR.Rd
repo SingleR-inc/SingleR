@@ -35,13 +35,13 @@ SingleR(
 }
 \arguments{
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.}
 
 \item{ref}{A numeric matrix of (usually normalized and log-transformed) expression values from a reference dataset,
-or a \linkS4class{SummarizedExperiment} object containing such a matrix;
+or a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix;
 see \code{\link{trainSingleR}} for details.
 
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
+Alternatively, a list or \link[S4Vectors]{List} of SummarizedExperiment objects or numeric matrices containing multiple references.
 Row names may be different across entries but only the intersection will be used, see Details.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
@@ -66,10 +66,10 @@ By default, all genes in \code{ref} are used.}
 \item{quantile, fine.tune, tune.thresh, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
-if \code{test} is a \linkS4class{SummarizedExperiment} object.}
+if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment} object.}
 
 \item{assay.type.ref}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
+if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
 \item{check.missing.test}{Logical scalar indicating whether rows of \code{test} should be checked for missing values (and if found, removed).}
 
@@ -81,11 +81,11 @@ if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that 
 
 \item{BNPARAM}{Deprecated and ignored.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
 see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
 }
 \value{
-A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
+A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 This is identical to the output of \code{\link{classifySingleR}}.
 }
 \description{

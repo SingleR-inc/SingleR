@@ -29,7 +29,7 @@ MonacoImmuneData(...)
 \item{...}{Further arguments to pass to the \pkg{celldex} function of the same name.}
 }
 \value{
-A \linkS4class{SummarizedExperiment} object containing the reference dataset.
+A \link[SummarizedExperiment]{SummarizedExperiment} object containing the reference dataset.
 }
 \description{
 These dataset getter functions are deprecated as they have been migrated to the \pkg{celldex} package

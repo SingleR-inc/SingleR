@@ -21,12 +21,12 @@ combineRecomputedResults(
 )
 }
 \arguments{
-\item{results}{A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.}
+\item{results}{A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.}
 
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.}
 
-\item{trained}{A list of \linkS4class{List}s containing the trained outputs of multiple references,
+\item{trained}{A list of \link[S4Vectors]{List}gs containing the trained outputs of multiple references,
 equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.}
 
@@ -37,7 +37,7 @@ or (ii) running \code{trainSingleR} on each reference separately and manually ma
 \item{tune.thresh}{A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.}
 
 \item{assay.type.test}{An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
-if \code{test} is a \linkS4class{SummarizedExperiment} object.}
+if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment} object.}
 
 \item{check.missing}{Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.}
 
@@ -47,11 +47,11 @@ if \code{test} is a \linkS4class{SummarizedExperiment} object.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed in other steps,
+\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
 see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
 }
 \value{
-A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
 \itemize{
 \item \code{scores}, a DataFrame of DataFrames containing the \emph{recomputed} scores for the best label in each reference.
@@ -63,12 +63,9 @@ If \code{fine.tune=TRUE}, this is reported for scores after fine-tuning.
 \item \code{orig.results}, a DataFrame containing \code{results}.
 }
 It may also contain \code{pruned.labels} if these were also present in \code{results}.
-
-The \code{\link{metadata}} contains \code{label.origin}, 
-a DataFrame specifying the reference of origin for each label in \code{scores}.
 }
 \description{
-Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
+Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \link[S4Vectors]{DataFrame}.
 This involves recomputing the scores so that they are comparable across references.
 }
 \details{

@@ -18,13 +18,13 @@
 
 \item{prop}{Numeric scalar specifying the proportion of genes that are DE between groups.}
 
-\item{mock.ref}{A \linkS4class{SummarizedExperiment} object produced by \code{.mockRefData}.}
+\item{mock.ref}{A \link[SummarizedExperiment]{SummarizedExperiment} object produced by \code{.mockRefData}.}
 
 \item{ncells}{Integer scalar specifying the number of cells to simulate.}
 }
 \value{
-Both functions return a \linkS4class{SummarizedExperiment} object containing simulated counts in the \code{counts} assay,
-with the group assignment of each sample in the \code{"label"} field of the \code{\link{colData}}.
+Both functions return a \link[SummarizedExperiment]{SummarizedExperiment} object containing simulated counts in the \code{counts} assay,
+with the group assignment of each sample in the \code{"label"} field of the \code{\link[SummarizedExperiment]{colData}}.
 }
 \description{
 Make up some test and reference data for the various examples in the \pkg{SingleR} package.

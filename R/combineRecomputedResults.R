@@ -1,12 +1,12 @@
 #' Combine SingleR results with recomputation
 #'
-#' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \linkS4class{DataFrame}.
+#' Combine results from multiple runs of \code{\link{classifySingleR}} (usually against different references) into a single \link[S4Vectors]{DataFrame}.
 #' This involves recomputing the scores so that they are comparable across references.
 #'
-#' @param results A list of \linkS4class{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
+#' @param results A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' @inheritParams SingleR
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
-#' @param trained A list of \linkS4class{List}s containing the trained outputs of multiple references,
+#' @param trained A list of \link[S4Vectors]{List}gs containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
 #' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.
@@ -15,7 +15,7 @@
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param allow.lost Deprecated.
 #'
-#' @return A \linkS4class{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
+#' @return A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).
 #' This mimics the output of \code{\link{classifySingleR}} and contains the following fields:
 #' \itemize{
 #' \item \code{scores}, a DataFrame of DataFrames containing the \emph{recomputed} scores for the best label in each reference.
@@ -27,9 +27,6 @@
 #' \item \code{orig.results}, a DataFrame containing \code{results}.
 #' }
 #' It may also contain \code{pruned.labels} if these were also present in \code{results}.
-#'
-#' The \code{\link{metadata}} contains \code{label.origin}, 
-#' a DataFrame specifying the reference of origin for each label in \code{scores}.
 #'
 #' @details
 #' Here, the strategy is to perform classification separately within each reference, 

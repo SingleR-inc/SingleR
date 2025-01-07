@@ -34,19 +34,19 @@ configureMarkerHeatmap(
 )
 }
 \arguments{
-\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
+\item{results}{A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
 
 \item{test}{A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 Each row should be named with the same gene name that was used to compute \code{results}.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.}
+Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.}
 
 \item{label}{String specifying the label of interest.}
 
 \item{other.labels}{Character vector specifying the other labels to be compared to \code{label} when finding interesting markers.
 Defaults to all available labels.}
 
-\item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.}
+\item{assay.type}{Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment}.}
 
 \item{display.row.names}{Character vector of length equal to the number of rows of \code{test},
 containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).

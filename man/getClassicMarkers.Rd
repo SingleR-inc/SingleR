@@ -19,9 +19,9 @@ getClassicMarkers(
 Each row should be named with the gene name.
 In general, the expression values are expected to be normalized and log-transformed, see Details.
 
-Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
+Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
 
-Alternatively, a list or \linkS4class{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
+Alternatively, a list or \link[S4Vectors]{List} of SummarizedExperiment objects or numeric matrices containing multiple references.}
 
 \item{labels}{A character vector or factor of known labels for all samples in \code{ref}.
 
@@ -29,7 +29,7 @@ Alternatively, if \code{ref} is a list, \code{labels} should be a list of the sa
 Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
-if \code{ref} is a \linkS4class{SummarizedExperiment} object (or is a list that contains one or more such objects).}
+if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).}
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
 If true and any missing values are found, the rows containing these values are silently removed.}
@@ -39,7 +39,7 @@ Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique 
 
 \item{num.threads}{Integer scalar specifying the number of threads to use.}
 
-\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.}
+\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed.}
 }
 \value{
 A list of lists of character vectors, 

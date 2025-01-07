@@ -6,7 +6,7 @@
 #' @param nreps Integer scalar specifying the number of replicates per group.
 #' @param ngenes Integer scalar specifying the number of genes in the dataset.
 #' @param prop Numeric scalar specifying the proportion of genes that are DE between groups.
-#' @param mock.ref A \linkS4class{SummarizedExperiment} object produced by \code{.mockRefData}.
+#' @param mock.ref A \link[SummarizedExperiment]{SummarizedExperiment} object produced by \code{.mockRefData}.
 #' @param ncells Integer scalar specifying the number of cells to simulate.
 #'
 #' @details
@@ -14,8 +14,8 @@
 #' The simulations are very simple and should not be used for performance comparisons.
 #'
 #' @return 
-#' Both functions return a \linkS4class{SummarizedExperiment} object containing simulated counts in the \code{counts} assay,
-#' with the group assignment of each sample in the \code{"label"} field of the \code{\link{colData}}.
+#' Both functions return a \link[SummarizedExperiment]{SummarizedExperiment} object containing simulated counts in the \code{counts} assay,
+#' with the group assignment of each sample in the \code{"label"} field of the \code{\link[SummarizedExperiment]{colData}}.
 #' 
 #' @author Aaron Lun
 #' @examples

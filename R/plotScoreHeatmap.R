@@ -2,7 +2,7 @@
 #'
 #' Create a heatmap of the \code{\link{SingleR}} assignment scores across all cell-label combinations.
 #'
-#' @param results A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
+#' @param results A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
 #' @param cells.use Integer or string vector specifying the single cells (i.e., rows of \code{results}) to show.
 #' If \code{NULL}, all cells are shown.
 #' @param labels.use Character vector specifying the labels to show in the heatmap rows.

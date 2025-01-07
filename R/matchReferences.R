@@ -4,7 +4,7 @@
 #' but with differences in nomenclature.
 #' 
 #' @param ref1,ref2 Numeric matrices of single-cell (usually normalized and log-transformed) expression values where rows are genes and columns are cells.
-#' Alternatively, \linkS4class{SummarizedExperiment} objects containing such matrices.
+#' Alternatively, \link[SummarizedExperiment]{SummarizedExperiment} objects containing such matrices.
 #' @param labels1,labels2 A character vector or factor of known labels for all cells in \code{ref1} and \code{ref2}, respectively.
 #' @param ... Further arguments to pass to \code{\link{SingleR}}.
 #'

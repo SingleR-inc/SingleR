@@ -5,7 +5,7 @@
 #'
 #' @param ... Further arguments to pass to the \pkg{celldex} function of the same name.
 #'
-#' @return A \linkS4class{SummarizedExperiment} object containing the reference dataset.
+#' @return A \link[SummarizedExperiment]{SummarizedExperiment} object containing the reference dataset.
 #'
 #' @author Aaron Lun
 #' 

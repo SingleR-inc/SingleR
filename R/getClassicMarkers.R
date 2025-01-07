@@ -7,7 +7,7 @@
 #' @param de.n An integer scalar specifying the number of DE genes to use.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param num.threads Integer scalar specifying the number of threads to use.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization should be performed.
+#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed.
 #'
 #' @return
 #' A list of lists of character vectors, 

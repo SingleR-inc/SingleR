@@ -24,7 +24,7 @@ plotScoreDistribution(
 )
 }
 \arguments{
-\item{results}{A \linkS4class{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
+\item{results}{A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
 
 \item{show}{Deprecated, use \code{\link{plotDeltaDistribution}} instead for \code{show!="scores"}.}
 

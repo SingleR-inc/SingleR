@@ -5,8 +5,8 @@
 #' @param test A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 #' Each row should be named with the gene name.
 #'
-#' Alternatively, a \linkS4class{SummarizedExperiment} object containing such a matrix.
-#' @param trained A \linkS4class{List} containing the output of the \code{\link{trainSingleR}} function.
+#' Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.
+#' @param trained A \link[S4Vectors]{List} containing the output of the \code{\link{trainSingleR}} function.
 #' If the row names of \code{test} are not exactly the same as the reference dataset, the call to \code{trainSingleR} should set \code{test.genes=rownames(test)}.
 #'
 #' Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multiple references.
@@ -14,13 +14,13 @@
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
 #' @param sd.thresh Deprecated and ignored.
-#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \linkS4class{SummarizedExperiment}.
+#' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment}.
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param prune A logical scalar indicating whether label pruning should be performed.
 #' @param num.threads Integer scalar specifying the number of threads to use for classification.
-#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.
+#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.
 #' 
-#' @return A \linkS4class{DataFrame} where each row corresponds to a cell in \code{test}.
+#' @return A \link[S4Vectors]{DataFrame} where each row corresponds to a cell in \code{test}.
 #' In the case of a single reference, this contains:
 #' \itemize{
 #' \item \code{scores}, a numeric matrix of correlations at the specified \code{quantile} for each label (column) in each cell (row).
@@ -33,7 +33,7 @@
 #' Only added if \code{prune=TRUE}.
 #' }
 #'
-#' The \code{\link{metadata}} of the DataFrame contains:
+#' The \code{\link[S4Vectors]{metadata}} of the DataFrame contains:
 #' \itemize{
 #' \item \code{common.genes}, a character vector of genes used to compute the correlations prior to fine-tuning.
 #' \item \code{de.genes}, a list of list of character vectors, containing the genes used to distinguish between each pair of labels.
