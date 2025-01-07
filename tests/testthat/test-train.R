@@ -68,21 +68,27 @@ test_that("trainSingleR works correctly for other DE testing methods", {
     effects <- scrapper::scoreMarkers(logcounts(training), training$label, all.pairwise=TRUE)
 
     VERIFY <- function(ref.markers, effect.sizes, hard.limit, extra) {
-        expect_identical(sort(names(ref.markers)), sort(unique(training$label)))
+        sulabels <- sort(unique(training$label))
+        expect_identical(sort(names(ref.markers)), sulabels)
 
         for (n in names(ref.markers)) {
             current.markers <- ref.markers[[n]]
-            expect_identical(sort(names(current.markers)), sort(unique(training$label)))
-            expect_identical(current.markers[[n]], character(0))
+            expect_identical(sort(names(current.markers)), sulabels)
 
-            for (n2 in setdiff(names(current.markers), n)) {
-                my.effects <- effect.sizes[n2, n,]
-                is.chosen <- rownames(training) %in% current.markers[[n2]]
-                expect_gte(min(my.effects[is.chosen]), max(my.effects[!is.chosen]))
-                expect_gt(min(my.effects[is.chosen]), hard.limit)
-
-                if (!is.null(extra)) {
-                    extra(n, n2, current.markers[[n2]])
+            for (n2 in names(current.markers)) {
+                my.markers <- current.markers[[n2]]
+                if (n == n2) {
+                    expect_identical(length(my.markers), 0L)
+                } else {
+                    expect_gt(length(my.markers), 0L)
+                    my.effects <- effect.sizes[n2, n,]
+                    is.chosen <- rownames(training) %in% current.markers[[n2]]
+                    min.chosen <- min(my.effects[is.chosen])
+                    expect_gte(min.chosen, max(my.effects[!is.chosen]))
+                    expect_gt(min.chosen, hard.limit)
+                    if (!is.null(extra)) {
+                        extra(n, n2, my.markers)
+                    }
                 }
             }
         }
