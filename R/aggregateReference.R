@@ -113,15 +113,20 @@ aggregateReference <- function(
         if (cur.ncenters <= 1) {
             output <- matrix(rowMeans(current), dimnames=list(rownames(current), NULL))
         } else {
-            # Doing a mini-analysis here: PCA on HVGs followed by k-means.
-            stats <- scrapper::modelGeneVariances(current, num.threads=num.threads)
-            keep <- scrapper::chooseHighlyVariableGenes(stats$statistics$residuals, top=ntop)
-            sub <- current[keep,,drop=FALSE]
+            subcurrent <- current
+            if (!is.null(subset.row)) {
+                subcurrent <- subcurrent[subset.row,,drop=FALSE]
+            }
 
-            if (rank <= min(dim(sub))-1L) {
-                pcs <- scrapper::runPca(sub, number=rank, num.threads=num.threads)$components
+            # Doing a mini-analysis here: PCA on HVGs followed by k-means.
+            stats <- scrapper::modelGeneVariances(subcurrent, num.threads=num.threads)
+            keep <- scrapper::chooseHighlyVariableGenes(stats$statistics$residuals, top=ntop)
+            subcurrent <- subcurrent[keep,,drop=FALSE]
+
+            if (rank <= min(dim(subcurrent))-1L) {
+                pcs <- scrapper::runPca(subcurrent, number=rank, num.threads=num.threads)$components
             } else {
-                pcs <- as.matrix(sub)
+                pcs <- as.matrix(subcurrent)
             }
 
             clustered <- scrapper::clusterKmeans(pcs, k=cur.ncenters, num.threads=num.threads)

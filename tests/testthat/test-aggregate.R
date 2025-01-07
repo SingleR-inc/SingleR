@@ -36,6 +36,15 @@ test_that("aggregateReference works as expected for partial aggregation", {
     expect_equal(aggr1, aggr2)
 })
 
+test_that("aggregateReference works as expected with subset.row=", {
+    labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+    sub <- aggregateReference(sce, labels, subset.row=10:50)
+    ref <- aggregateReference(sce[10:50,], labels)
+    expect_identical(colnames(sub), colnames(ref))
+    expect_identical(rownames(sub), rownames(sce)) 
+    expect_identical(assay(sub)[10:50,], assay(ref))
+})
+
 test_that("aggregateReference works as expected for no aggregation", {
     labels <- sample(LETTERS, ncol(sce), replace=TRUE)
     aggr <- aggregateReference(sce, labels, power=1)
