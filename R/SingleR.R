@@ -17,7 +17,7 @@
 #' If set, annotation is performed on the aggregated cluster profiles, otherwise it defaults to per-cell annotation.
 #' @param genes,sd.thresh,de.method,de.n,de.args Arguments controlling the choice of marker genes used for annotation, see \code{\link{trainSingleR}}.
 #' @param aggr.ref,aggr.args Arguments controlling the aggregation of the references prior to annotation, see \code{\link{trainSingleR}}.
-#' @param quantile,fine.tune,tune.thresh,prune Further arguments to pass to \code{\link{classifySingleR}}.
+#' @param quantile,fine.tune,tune.thresh,fine.tune.combined,prune Further arguments to pass to \code{\link{classifySingleR}}.
 #' @param assay.type.test An integer scalar or string specifying the assay of \code{test} containing the relevant expression matrix,
 #' if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment} object.
 #' @param assay.type.ref An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
@@ -91,7 +91,8 @@ SingleR <- function(
     restrict=NULL,
     quantile = 0.8, 
     fine.tune = TRUE, 
-    tune.thresh = 0.05, 
+    tune.thresh = 0.05,
+    fine.tune.combined=fine.tune,
     prune=TRUE, 
     assay.type.test = "logcounts", 
     assay.type.ref="logcounts", 
@@ -155,6 +156,7 @@ SingleR <- function(
         quantile=quantile, 
         fine.tune=fine.tune,
         tune.thresh=tune.thresh, 
+        fine.tune.combined=fine.tune.combined,
         prune=prune, 
         check.missing=FALSE, 
         num.threads = num.threads, 

@@ -10,6 +10,7 @@ classifySingleR(
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
+  fine.tune.combined = fine.tune,
   sd.thresh = NULL,
   prune = TRUE,
   assay.type = "logcounts",
@@ -34,6 +35,8 @@ Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multip
 \item{fine.tune}{A logical scalar indicating whether fine-tuning should be performed.}
 
 \item{tune.thresh}{A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.}
+
+\item{fine.tune.combined}{A logical scalar indicating whether fine-tuning should be performed when combining references in \code{\link{combineRecomputedResults}}.}
 
 \item{sd.thresh}{Deprecated and ignored.}
 

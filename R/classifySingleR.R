@@ -13,6 +13,7 @@
 #' @param quantile A numeric scalar specifying the quantile of the correlation distribution to use to compute the score for each label.
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
 #' @param tune.thresh A numeric scalar specifying the maximum difference from the maximum correlation to use in fine-tuning.
+#' @param fine.tune.combined A logical scalar indicating whether fine-tuning should be performed when combining references in \code{\link{combineRecomputedResults}}.
 #' @param sd.thresh Deprecated and ignored.
 #' @param assay.type Integer scalar or string specifying the matrix of expression values to use if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment}.
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
@@ -97,6 +98,7 @@ classifySingleR <- function(
     quantile=0.8, 
     fine.tune=TRUE, 
     tune.thresh=0.05, 
+    fine.tune.combined=fine.tune,
     sd.thresh=NULL, 
     prune=TRUE, 
     assay.type="logcounts", 
@@ -134,7 +136,7 @@ classifySingleR <- function(
             trained=trained, 
             check.missing=FALSE, 
             quantile=quantile,
-            fine.tune=fine.tune,
+            fine.tune=fine.tune.combined,
             tune.thresh=tune.thresh,
             num.threads=num.threads
         )

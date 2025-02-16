@@ -24,6 +24,9 @@ This is simpler and more efficient than the previous "expanded with NA" format.
 \item Separate the missingness check arguments in \code{SingleR()} with the new \code{check.missing.test=} and \code{check.missing.ref=} options.
 The former is disabled by default, to avoid an unnecessary missingness check in the vast majority of test cases.
 
+\item Added a \code{fine.tune.combined=} option to \code{classifySingleR()}, to disable fine-tuning only when combining multiple references.
+This allows users to recover pre-2.8.0 behavior and trades accuracy for speed.
+
 \item Removed the deprecated \code{combineCommonResults()} function.
 }}
 
