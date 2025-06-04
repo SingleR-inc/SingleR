@@ -69,6 +69,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// set_executor
+SEXP set_executor(SEXP ptr);
+RcppExport SEXP _SingleR_set_executor(SEXP ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type ptr(ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(set_executor(ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
 // train_integrated
 SEXP train_integrated(Rcpp::List test_features, Rcpp::List references, Rcpp::List ref_features, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
 RcppExport SEXP _SingleR_train_integrated(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
@@ -126,6 +136,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_classify_single", (DL_FUNC) &_SingleR_classify_single, 6},
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
     {"_SingleR_grouped_medians", (DL_FUNC) &_SingleR_grouped_medians, 4},
+    {"_SingleR_set_executor", (DL_FUNC) &_SingleR_set_executor, 1},
     {"_SingleR_train_integrated", (DL_FUNC) &_SingleR_train_integrated, 6},
     {"_SingleR_train_single", (DL_FUNC) &_SingleR_train_single, 7},
     {"_SingleR_get_ref_subset", (DL_FUNC) &_SingleR_get_ref_subset, 1},

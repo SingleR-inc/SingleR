@@ -19,6 +19,10 @@ grouped_medians <- function(ref, groups, ngroups, nthreads) {
     .Call('_SingleR_grouped_medians', PACKAGE = 'SingleR', ref, groups, ngroups, nthreads)
 }
 
+set_executor <- function(ptr) {
+    .Call('_SingleR_set_executor', PACKAGE = 'SingleR', ptr)
+}
+
 train_integrated <- function(test_features, references, ref_features, labels, prebuilt, nthreads) {
     .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_features, references, ref_features, labels, prebuilt, nthreads)
 }
