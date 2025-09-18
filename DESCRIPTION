@@ -23,6 +23,7 @@ Imports:
     stats,
     utils,
     Rcpp,
+    scrapper,
     beachmat (>= 2.25.1)
 LinkingTo:
     Rcpp,
@@ -37,7 +38,6 @@ Suggests:
     BiocGenerics,
     SingleCellExperiment,
     scuttle,
-    scrapper,
     scRNAseq,
     ggplot2,
     pheatmap,
