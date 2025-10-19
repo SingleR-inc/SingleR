@@ -29,6 +29,7 @@ jobs:
       run: |
         deets <- read.dcf("DESCRIPTION")
         installs <- unlist(strsplit(deets[,c("Imports", "Depends", "Suggests", "LinkingTo")], ",\\s+"), use.names=FALSE)
+        installs <- sub(" .*", "", installs)
         BiocManager::install(installs)
         BiocManager::install("BiocCheck")
 
