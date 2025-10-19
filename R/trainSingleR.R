@@ -398,12 +398,14 @@ trainSingleR <- function(
         compute.auc <- FALSE
         compute.cohens.d <- TRUE
         effect.size <- "cohens.d"
-        upregulation.boundary <- 0
     } else {
         compute.auc <- TRUE
         compute.cohens.d <- FALSE 
         effect.size <- "auc"
-        upregulation.boundary <- 0.5
+    }
+
+    if (is.null(de.n)) {
+        de.n <- 10
     }
 
     pairwise <- do.call(
@@ -413,7 +415,9 @@ trainSingleR <- function(
                 ref,
                 groups=labels,
                 num.threads=num.threads,
-                all.pairwise=TRUE,
+                all.pairwise=de.n,
+                compute.group.mean=FALSE,
+                compute.group.detected=FALSE,
                 compute.delta.detected=FALSE,
                 compute.delta.mean=FALSE,
                 compute.auc=compute.auc,
@@ -423,31 +427,19 @@ trainSingleR <- function(
         )
     )[[effect.size]]
 
-    if (is.null(de.n)) {
-        de.n <- 10
-    }
-
-    all.labels <- dimnames(pairwise)[[1]]
-    all.genes <- dimnames(pairwise)[[3]]
-    output <- vector("list", length(all.labels))
-    names(output) <- all.labels
-
+    all.labels <- names(pairwise)
+    all.genes <- rownames(ref)
     for (g1 in all.labels) {
-        current <- vector("list", length(all.labels))
-        names(current) <- all.labels
         for (g2 in all.labels) {
             if (g1 == g2) {
-                current[[g2]] <- character(0)
-                next
+                pairwise[[g1]][[g2]] <- character(0)
+            } else {
+                pairwise[[g1]][[g2]] <- all.genes[pairwise[[g1]][[g2]]$index]
             }
-            stats <- pairwise[g2, g1,] # remember, second dimension is the first group in the comparison.
-            keep <- which(stats > upregulation.boundary)
-            o <- order(stats[keep], decreasing=TRUE)
-            current[[g2]] <- all.genes[keep[head(o, de.n)]]
         }
-        output[[g1]] <- current
     }
-    output
+
+    pairwise
 }
 
 .convert_per_label_set <- function(genes) {

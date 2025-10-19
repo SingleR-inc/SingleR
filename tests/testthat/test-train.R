@@ -67,7 +67,7 @@ test_that("trainSingleR fails correctly for a list of lists of genes", {
 test_that("trainSingleR works correctly for other DE testing methods", {
     effects <- scrapper::scoreMarkers(logcounts(training), training$label, all.pairwise=TRUE)
 
-    VERIFY <- function(ref.markers, effect.sizes, hard.limit, extra) {
+    VERIFY <- function(ref.markers, effect.sizes, hard.limit, extra, de.n = 10) {
         sulabels <- sort(unique(training$label))
         expect_identical(sort(names(ref.markers)), sulabels)
 
@@ -81,11 +81,17 @@ test_that("trainSingleR works correctly for other DE testing methods", {
                     expect_identical(length(my.markers), 0L)
                 } else {
                     expect_gt(length(my.markers), 0L)
+
                     my.effects <- effect.sizes[n2, n,]
-                    is.chosen <- rownames(training) %in% current.markers[[n2]]
+                    keep <- which(my.effects > hard.limit)
+                    o <- order(my.effects[keep], decreasing=TRUE)
+                    expect_identical(rownames(training)[keep[head(o, de.n)]], my.markers)
+
+                    is.chosen <- rownames(training) %in% my.markers
                     min.chosen <- min(my.effects[is.chosen])
                     expect_gte(min.chosen, max(my.effects[!is.chosen]))
                     expect_gt(min.chosen, hard.limit)
+
                     if (!is.null(extra)) {
                         extra(n, n2, my.markers)
                     }
@@ -107,14 +113,20 @@ test_that("trainSingleR works correctly for other DE testing methods", {
         expect_true(all(left > right))
     })
 
-    # Behaves with a large number of genes.
+    # Behaves with a large number of top genes.
     ref <- trainSingleR(training, training$label, genes='de', de.method="t", de.n=10000)
-    VERIFY(ref$markers$full, effects$cohens.d, 0, extra=function(n, n2, markers) {
-        expect_gt(length(markers), 10)
-        left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
-        right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
-        expect_true(all(left > right))
-    })
+    VERIFY(
+        ref$markers$full,
+        effects$cohens.d,
+        0,
+        extra=function(n, n2, markers) {
+            expect_gt(length(markers), 10)
+            left <- Matrix::rowMeans(logcounts(training)[markers, training$label == n])
+            right <- Matrix::rowMeans(logcounts(training)[markers, training$label == n2])
+            expect_true(all(left > right))
+        },
+        de.n=10000
+    )
 
     # Responds to threshold specification.
     thresh.effects <- scrapper::scoreMarkers(logcounts(training), training$label, threshold=1, all.pairwise=TRUE)
