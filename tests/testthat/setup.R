@@ -19,7 +19,7 @@ training <- SingleCellExperiment(
 )
 
 rownames(training) <- sprintf("GENE_%s", seq_len(nrow(training)))
-training <- scuttle::logNormCounts(training)
+training <- scrapper::normalizeRnaCounts.se(training, more.norm.args=list(delayed=FALSE))
 
 ##################################################
 ## Mocking up some test data for classification ##
@@ -33,7 +33,7 @@ test <- SingleCellExperiment(
 )
 
 rownames(test) <- sprintf("GENE_%s", seq_len(nrow(test)))
-test <- scuttle::logNormCounts(test)
+test <- scrapper::normalizeRnaCounts.se(test, more.norm.args=list(delayed=FALSE))
 
 ##################################################
 ## Setting up flush tests for inadvertent DA BP ##

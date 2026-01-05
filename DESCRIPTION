@@ -36,7 +36,6 @@ Suggests:
     BiocStyle,
     BiocGenerics,
     SingleCellExperiment,
-    scuttle,
     scrapper (>= 1.3.14),
     scRNAseq,
     ggplot2,

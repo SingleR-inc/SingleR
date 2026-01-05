@@ -44,7 +44,7 @@
 #' If only one label is present, markers are ranked by average abundance intead. 
 #'
 #' The \code{configureMarkerHeatmap} function performs all the calculations underlying \code{plotMarkerHeatmap}.
-#' This can be used to apply the same general approach with other plots, e.g., using functions from \pkg{scuttle} or \pkg{dittoSeq}.
+#' This can be used to construct a similar heatmap in other plotting frameworks, e.g., \pkg{scater}, \pkg{dittoSeq}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -58,8 +58,10 @@
 #' # Manually configuring a simpler heatmap by label:
 #' config <- configureMarkerHeatmap(pred, test, pred$labels[1])
 #' mat <- assay(test, "logcounts")[head(config$rows, 20), config$columns]
-#' aggregated <- scuttle::summarizeAssayByGroup(mat, config$predictions)
-#' pheatmap::pheatmap(assay(aggregated), cluster_col=FALSE)
+#' aggregated <- scrapper::aggregateAcrossCells(mat, list(config$predictions))
+#' averages <- t(t(aggregated$sums) / aggregated$counts)
+#' colnames(averages) <- aggregated$combinations[,1]
+#' pheatmap::pheatmap(averages, cluster_col=FALSE)
 #' 
 #' @export
 #' @importFrom BiocParallel SerialParam bpnworkers

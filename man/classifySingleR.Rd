@@ -102,10 +102,9 @@ However, the default settings can be somewhat aggressive and discard otherwise u
 \examples{
 # Mocking up data with log-normalized expression values:
 ref <- .mockRefData()
+ref <- scrapper::normalizeRnaCounts.se(ref)
 test <- .mockTestData(ref)
-
-ref <- scuttle::logNormCounts(ref)
-test <- scuttle::logNormCounts(test)
+test <- scrapper::normalizeRnaCounts.se(test)
 
 # Setting up the training:
 trained <- trainSingleR(ref, label=ref$label)

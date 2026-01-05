@@ -57,8 +57,8 @@
 #' ref <- .mockRefData()
 #' test <- .mockTestData(ref)
 #'
-#' ref <- scuttle::logNormCounts(ref)
-#' test <- scuttle::logNormCounts(test)
+#' ref <- scrapper::normalizeRnaCounts.se(ref)
+#' test <- scrapper::normalizeRnaCounts.se(test)
 #'
 #' # Running the classification with different options:
 #' pred <- SingleR(test, ref, labels=ref$label)

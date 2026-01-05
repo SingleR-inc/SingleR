@@ -40,7 +40,7 @@
 
     counter <- 0L
     for (i in seq_len(ngroups)) {
-        means[counter + seq_len(nmarkers.per.group),i] <- rnorm(nmarkers.per.group)
+        means[counter + seq_len(nmarkers.per.group),i] <- abs(rnorm(nmarkers.per.group))
         counter <- counter + nmarkers.per.group
     }
 
@@ -62,7 +62,7 @@
     means <- metadata(mock.ref)$means
 
     g <- sample(colnames(means), ncells, replace=TRUE)
-    mat <- matrix(rpois(nrow(means)*ncells, lambda=2^means[,g]), ncol=ncells)
+    mat <- matrix(rpois(nrow(means)*ncells, lambda=2^means[,g]), ncol=ncells) # Deliberately omit the 10x used in the reference, to make the correspondence non-trivial.
     rownames(mat) <- rownames(means)
 
     SummarizedExperiment(

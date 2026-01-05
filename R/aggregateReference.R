@@ -61,20 +61,14 @@
 #' @author Aaron Lun
 #'
 #' @examples
-#' library(scuttle)
-#' sce <- mockSCE()
-#' sce <- logNormCounts(sce)
-#' 
-#' # Making up some labels for demonstration purposes:
-#' labels <- sample(LETTERS, ncol(sce), replace=TRUE)
+#' sce <- .mockRefData(nreps=50)
+#' sce <- scrapper::normalizeRnaCounts.se(sce)
+#' labels <- sce$label
 #'
-#' # Aggregation at different resolutions:
 #' (aggr <- aggregateReference(sce, labels, power=0.5))
+#' (aggr <- aggregateReference(sce, labels, power=0)) # centroids only
+#' (aggr <- aggregateReference(sce, labels, power=1)) # no aggregation
 #'
-#' (aggr <- aggregateReference(sce, labels, power=0))
-#'
-#' # No aggregation:
-#' (aggr <- aggregateReference(sce, labels, power=1))
 #' @export
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame

@@ -14,7 +14,7 @@
 #' @examples
 #' # Making up the training set.
 #' ref <- .mockRefData()
-#' ref <- scuttle::logNormCounts(ref)
+#' ref <- scrapper::normalizeRnaCounts.se(ref)
 #' trained <- trainSingleR(ref, ref$label)
 #' trained$built # a valid address
 #' 

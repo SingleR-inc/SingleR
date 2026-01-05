@@ -1,9 +1,9 @@
 # This tests the aggregator function.
 # library(testthat); library(SingleR); source("setup.R"); source("test-aggregate.R")
 
-library(scuttle)
-sce <- mockSCE()
-sce <- logNormCounts(sce)
+library(SingleCellExperiment)
+sce <- as(.mockRefData(nreps=50), "SingleCellExperiment")
+sce <- scrapper::normalizeRnaCounts.se(sce, more.norm.args=list(delayed=FALSE))
 
 test_that("aggregateReference works as expected for full aggregation", {
     labels <- sample(LETTERS, ncol(sce), replace=TRUE)

@@ -212,13 +212,15 @@ test_that("Row and Column annotation coloring works", {
 #######################################
 
 ref <- .mockRefData(nreps=8)
-ref1 <- ref[,1:4%%4==0]
-ref1 <- ref1[,sample(ncol(ref1))]
-ref1 <- scuttle::logNormCounts(ref1)
+partition <- seq_len(ncol(ref)) %% 4
 
-ref2 <- ref[,1:4%%4!=0]
+ref1 <- ref[,partition == 0]
+ref1 <- ref1[,sample(ncol(ref1))]
+ref1 <- scrapper::normalizeRnaCounts.se(ref1)
+
+ref2 <- ref[,partition != 0]
 ref2 <- ref2[,sample(ncol(ref2))]
-ref2 <- scuttle::logNormCounts(ref2)
+ref2 <- scrapper::normalizeRnaCounts.se(ref2)
 
 ref2$label <- tolower(ref2$label)
 

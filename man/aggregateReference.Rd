@@ -91,20 +91,14 @@ Moreover, unlike counts, the sum of transformed and normalized expression values
 We do not use the median to avoid consistently obtaining zeros for lowly expressed genes.
 }
 \examples{
-library(scuttle)
-sce <- mockSCE()
-sce <- logNormCounts(sce)
+sce <- .mockRefData(nreps=50)
+sce <- scrapper::normalizeRnaCounts.se(sce)
+labels <- sce$label
 
-# Making up some labels for demonstration purposes:
-labels <- sample(LETTERS, ncol(sce), replace=TRUE)
-
-# Aggregation at different resolutions:
 (aggr <- aggregateReference(sce, labels, power=0.5))
+(aggr <- aggregateReference(sce, labels, power=0)) # centroids only
+(aggr <- aggregateReference(sce, labels, power=1)) # no aggregation
 
-(aggr <- aggregateReference(sce, labels, power=0))
-
-# No aggregation:
-(aggr <- aggregateReference(sce, labels, power=1))
 }
 \author{
 Aaron Lun

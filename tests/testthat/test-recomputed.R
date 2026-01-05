@@ -16,13 +16,13 @@ ref2$label <- tolower(ref2$label)
 test <- .mockTestData(ref)
 
 # Computing scores.
-test <- scuttle::logNormCounts(test)
+test <- scrapper::normalizeRnaCounts.se(test)
 
-ref1 <- scuttle::logNormCounts(ref1)
+ref1 <- scrapper::normalizeRnaCounts.se(ref1)
 train1 <- trainSingleR(ref1, labels=ref1$label, test.genes=rownames(test))
 pred1 <- classifySingleR(test, train1)
 
-ref2 <- scuttle::logNormCounts(ref2)
+ref2 <- scrapper::normalizeRnaCounts.se(ref2)
 train2 <- trainSingleR(ref2, labels=ref2$label, test.genes=rownames(test))
 pred2 <- classifySingleR(test, train2)
 
@@ -198,7 +198,7 @@ test_that("combineRecomputedResults works with intersections", {
 
 test_that("combineRecomputedResults is invariant to ordering", {
     ref3 <- .mockRefData(nreps=8)
-    ref3 <- scuttle::logNormCounts(ref3)
+    ref3 <- scrapper::normalizeRnaCounts.se(ref3)
     ref3$label <- paste0(ref3$label, "X")
     train3 <- trainSingleR(ref3, labels=ref3$label)
     pred3 <- classifySingleR(test, train3)

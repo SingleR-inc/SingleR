@@ -23,7 +23,7 @@ This is because the indices are held in external memory and are not serialized c
 \examples{
 # Making up the training set.
 ref <- .mockRefData()
-ref <- scuttle::logNormCounts(ref)
+ref <- scrapper::normalizeRnaCounts.se(ref)
 trained <- trainSingleR(ref, ref$label)
 trained$built # a valid address
 

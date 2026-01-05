@@ -38,13 +38,13 @@
 #' 
 #' @examples
 #' ref <- .mockRefData()
-#' ref <- scuttle::logNormCounts(ref)
+#' ref <- scrapper::normalizeRnaCounts.se(ref)
 #' out <- getClassicMarkers(ref, labels=ref$label)
 #' str(out)
 #'
 #' # Works with multiple references:
 #' ref2 <- .mockRefData()
-#' ref2 <- scuttle::logNormCounts(ref2)
+#' ref2 <- scrapper::normalizeRnaCounts.se(ref2)
 #' out2 <- getClassicMarkers(list(ref, ref2), labels=list(ref$label, ref2$label))
 #' str(out2)
 #'
