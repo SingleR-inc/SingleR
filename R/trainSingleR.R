@@ -256,7 +256,7 @@ trainSingleR <- function(
             if (de.method == "classic") {
                 hints <- c(hints, "'de.method = \"t\"' or \"wilcox\"")
             }
-            if (ncol(curref) >= 1000) {
+            if (ncol(curref) >= 1000 && !aggr.ref) {
                 what <- paste("large", what)
                 hints <- c(hints, "'aggr.ref = TRUE' for speed")
             }
