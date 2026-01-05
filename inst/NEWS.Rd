@@ -2,6 +2,17 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 2.14.0}{\itemize{
+\item Added \code{hint.sce=} to \code{trainSingleR()} to nudge users towards setting a more appropriate \code{de.method=} for single-cell references.
+Similarly, suggest the use of \code{aggr.ref=TRUE} for large single-cell references.
+
+\item Added a warning when names of \code{results=} and \code{trained=} are different in \code{combineRecomputedResults()}.
+}}
+
+\section{Version 2.12.0}{\itemize{
+\item Bugfix to enable parallel execution for matrix representations that are unknown to \pkg{beachmat}.
+}}
+
 \section{Version 2.10.0}{\itemize{
 \item Switch to \pkg{scrapper} for DE detection when \code{de.method="t"} or \code{de.method="wilcox"} in \code{trainSingleR()}.
 This should give similar results to but is faster than the previous \pkg{scran} functions. 
