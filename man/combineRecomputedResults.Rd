@@ -21,14 +21,16 @@ combineRecomputedResults(
 )
 }
 \arguments{
-\item{results}{A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.}
+\item{results}{A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
+This should have the same names as \code{trained}.}
 
 \item{test}{A numeric matrix of single-cell expression values where rows are genes and columns are cells.
 Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object containing such a matrix.}
 
-\item{trained}{A list of \link[S4Vectors]{List}gs containing the trained outputs of multiple references,
+\item{trained}{A list of \link[S4Vectors]{List}s containing the trained outputs of multiple references,
 equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
-or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.}
+or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
+The list should have the same names as \code{results}.}
 
 \item{quantile}{Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.}
 
@@ -103,9 +105,10 @@ This is perhaps as reliable as one might imagine.
 \examples{
 # Making up data.
 ref <- .mockRefData(nreps=8)
-ref1 <- ref[,1:2\%\%2==0]
-ref2 <- ref[,1:2\%\%2==1]
-ref2$label <- tolower(ref2$label)
+partition <- seq_len(ncol(ref)) \%\% 2
+ref1 <- ref[,partition == 0]
+ref2 <- ref[,partition == 1]
+ref2$label <- tolower(ref2$label) # make lower-case for some more variety.
 
 test <- .mockTestData(ref)
 

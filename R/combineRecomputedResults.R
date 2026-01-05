@@ -4,11 +4,13 @@
 #' This involves recomputing the scores so that they are comparable across references.
 #'
 #' @param results A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
+#' This should have the same names as \code{trained}.
 #' @inheritParams SingleR
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
-#' @param trained A list of \link[S4Vectors]{List}gs containing the trained outputs of multiple references,
+#' @param trained A list of \link[S4Vectors]{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 #' or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
+#' The list should have the same names as \code{results}.
 #' @param warn.lost Logical scalar indicating whether to emit a warning if markers from one reference in \code{trained} are absent in other references.
 #' @param quantile Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.
 #' @param fine.tune A logical scalar indicating whether fine-tuning should be performed. 
@@ -71,9 +73,10 @@
 #' @examples
 #' # Making up data.
 #' ref <- .mockRefData(nreps=8)
-#' ref1 <- ref[,1:2%%2==0]
-#' ref2 <- ref[,1:2%%2==1]
-#' ref2$label <- tolower(ref2$label)
+#' partition <- seq_len(ncol(ref)) %% 2
+#' ref1 <- ref[,partition == 0]
+#' ref2 <- ref[,partition == 1]
+#' ref2$label <- tolower(ref2$label) # make lower-case for some more variety.
 #'
 #' test <- .mockTestData(ref)
 #'
@@ -133,6 +136,10 @@ combineRecomputedResults <- function(
             stop("not all labels in 'results' are present in 'trained'")
         }
         .check_test_genes(test, curtrain)
+    }
+
+    if (!identical(names(results), names(trained))) {
+        warning("'results' and 'trained' have different names")
     }
 
     # Checking the genes.
