@@ -89,6 +89,7 @@ SingleR <- function(
     aggr.args = list(), 
     recompute=TRUE, 
     restrict=NULL,
+    hint.sce = TRUE,
     quantile = 0.8, 
     fine.tune = TRUE, 
     tune.thresh = 0.05,
@@ -135,6 +136,7 @@ SingleR <- function(
         restrict = restrict, 
         test.genes=rownames(test),
         check.missing=check.missing.ref, 
+        hint.sce=hint.sce,
         BNPARAM=BNPARAM, 
         num.threads = num.threads, 
         BPPARAM=BPPARAM

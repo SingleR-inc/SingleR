@@ -46,6 +46,8 @@
 #' @param BNPARAM A \link[BiocNeighbors]{BiocNeighborParam} object specifying how the neighbor search index should be constructed.
 #' @param approximate Deprecated, use \code{BNPARAM} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
+#' @param hint.sce Boolean indicating whether to print a hint to change \code{de.method=} when any entry of \code{ref} is a \link[SingleCellExperiment]{SingleCellExperiment}.
+#' It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \code{ref} contains 1000 cells or more.
 #' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
@@ -214,11 +216,12 @@ trainSingleR <- function(
     restrict=NULL,
     assay.type="logcounts", 
     check.missing=TRUE,
+    hint.sce=TRUE,
     approximate = FALSE,
     num.threads = bpnworkers(BPPARAM),
     BNPARAM = NULL,
-    BPPARAM = SerialParam()) 
-{
+    BPPARAM = SerialParam()
+) {
     de.method <- match.arg(de.method)
 
     if (solo <- !.is_list(ref)) {
@@ -246,7 +249,26 @@ trainSingleR <- function(
     output <- vector("list", length(ref))
     names(output) <- names(ref)
     for (l in seq_along(ref)) {
-        curref <- .to_clean_matrix(ref[[l]], assay.type, check.missing, msg="ref", num.threads=num.threads)
+        curref <- ref[[l]]
+        if (is(curref, "SingleCellExperiment") && hint.sce) {
+            hints <- character()
+            what <- "SingleCellExperiment"
+            if (de.method == "classic") {
+                hints <- c(hints, "'de.method = \"t\"' or \"wilcox\"")
+            }
+            if (ncol(curref) >= 1000) {
+                what <- paste("large", what)
+                hints <- c(hints, "'aggr.ref = TRUE' for speed")
+            }
+            if (length(hints)) {
+                msg <- sprintf("Detected a %s as the reference dataset, consider setting %s in trainSingleR().", what, paste(hints, collapse=" and "))
+                msg <- paste(msg, "If you know better, this hint can be disabled with 'hint.sce=FALSE'.")
+                message(paste(strwrap(msg, 80), collapse="\n"))
+                hint.sce <- FALSE # only need to print this message once.
+            }
+        }
+
+        curref <- .to_clean_matrix(curref, assay.type, check.missing, msg="ref", num.threads=num.threads)
 
         # Removing duplicated names and missing labels.
         if (anyDuplicated(rownames(curref))) {

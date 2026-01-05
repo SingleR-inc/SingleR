@@ -19,6 +19,7 @@ trainSingleR(
   restrict = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
+  hint.sce = TRUE,
   approximate = FALSE,
   num.threads = bpnworkers(BPPARAM),
   BNPARAM = NULL,
@@ -84,6 +85,9 @@ if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or 
 
 \item{check.missing}{Logical scalar indicating whether rows should be checked for missing values.
 If true and any missing values are found, the rows containing these values are silently removed.}
+
+\item{hint.sce}{Boolean indicating whether to print a hint to change \code{de.method=} when any entry of \code{ref} is a \link[SingleCellExperiment]{SingleCellExperiment}.
+It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \code{ref} contains 1000 cells or more.}
 
 \item{approximate}{Deprecated, use \code{BNPARAM} instead.}
 

@@ -19,6 +19,7 @@ SingleR(
   aggr.args = list(),
   recompute = TRUE,
   restrict = NULL,
+  hint.sce = TRUE,
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
@@ -63,6 +64,9 @@ If set, annotation is performed on the aggregated cluster profiles, otherwise it
 
 \item{restrict}{A character vector of gene names to use for marker selection.
 By default, all genes in \code{ref} are used.}
+
+\item{hint.sce}{Boolean indicating whether to print a hint to change \code{de.method=} when any entry of \code{ref} is a \link[SingleCellExperiment]{SingleCellExperiment}.
+It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \code{ref} contains 1000 cells or more.}
 
 \item{quantile, fine.tune, tune.thresh, fine.tune.combined, prune}{Further arguments to pass to \code{\link{classifySingleR}}.}
 
