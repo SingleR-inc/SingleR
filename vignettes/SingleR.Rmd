@@ -101,8 +101,7 @@ sceM <- MuraroPancreasData()
 sceM <- sceM[,!is.na(sceM$label)]
 
 # SingleR() expects reference datasets to be normalized and log-transformed.
-library(scuttle)
-sceM <- logNormCounts(sceM)
+sceM <- scrapper::normalizeRnaCounts.se(sceM)
 ```
 
 We then set up our test dataset from @grun2016denovo.
@@ -114,7 +113,7 @@ sceG <- sceG[,colSums(counts(sceG)) > 0] # Remove libraries with no counts.
 
 # Log-transformation is not actually required for SingleR itself,
 # but we'll do it anyway as we need it for plotting heatmaps later.
-sceG <- logNormCounts(sceG) 
+sceG <- scrapper::normalizeRnaCounts.se(sceG) 
 ```
 
 We then run `SingleR()` as described previously but with a marker detection mode that considers the variance of expression across cells.
