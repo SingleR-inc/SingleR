@@ -19,18 +19,14 @@ set_executor <- function(ptr) {
     .Call('_SingleR_set_executor', PACKAGE = 'SingleR', ptr)
 }
 
-train_integrated <- function(test_features, references, ref_features, labels, prebuilt, nthreads) {
-    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_features, references, ref_features, labels, prebuilt, nthreads)
+train_integrated <- function(test_nrow, test_features, references, ref_features, labels, prebuilt, nthreads) {
+    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_nrow, test_features, references, ref_features, labels, prebuilt, nthreads)
 }
 
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib SingleR
-train_single <- function(test_features, ref, ref_features, labels, markers, builder, nthreads) {
-    .Call('_SingleR_train_single', PACKAGE = 'SingleR', test_features, ref, ref_features, labels, markers, builder, nthreads)
-}
-
-get_ref_subset <- function(built) {
-    .Call('_SingleR_get_ref_subset', PACKAGE = 'SingleR', built)
+train_single <- function(test_nrow, test_features, ref, ref_features, labels, markers, nthreads) {
+    .Call('_SingleR_train_single', PACKAGE = 'SingleR', test_nrow, test_features, ref, ref_features, labels, markers, nthreads)
 }
 
 is_valid_built <- function(built) {

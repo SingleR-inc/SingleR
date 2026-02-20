@@ -7,7 +7,7 @@
 //[[Rcpp::export(rng=false)]]
 SEXP classify_single(Rcpp::RObject test, SEXP prebuilt, double quantile, bool use_fine_tune, double fine_tune_threshold, int nthreads) {
     Rtatami::BoundNumericPointer parsed(test);
-    TrainedSingleIntersectPointer built(prebuilt);
+    TrainedSinglePointer built(prebuilt);
 
     // Setting up outputs.
     size_t ncells = parsed->ptr->ncol();
@@ -34,7 +34,7 @@ SEXP classify_single(Rcpp::RObject test, SEXP prebuilt, double quantile, bool us
     opts.quantile = quantile;
     opts.fine_tune = use_fine_tune;
     opts.fine_tune_threshold = fine_tune_threshold;
-    singlepp::classify_single_intersect(*(parsed->ptr), *built, buffers, opts);
+    singlepp::classify_single(*(parsed->ptr), *built, buffers, opts);
 
     return Rcpp::List::create(
         Rcpp::Named("best") = best,

@@ -5,9 +5,9 @@
 #include "Rtatami.h" // before singlepp includes to ensure the tatami_r::parallelize() override is set.
 #include "singlepp/singlepp.hpp"
 
-typedef singlepp::TrainedSingleIntersect<int, double> TrainedSingleIntersect;
+typedef singlepp::TrainedSingle<int, double> TrainedSingle;
 
-typedef Rcpp::XPtr<TrainedSingleIntersect> TrainedSingleIntersectPointer;
+typedef Rcpp::XPtr<TrainedSingle> TrainedSinglePointer;
 
 typedef singlepp::TrainedIntegrated<int> TrainedIntegrated;
 

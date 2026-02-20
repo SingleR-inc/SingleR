@@ -43,7 +43,7 @@
 #' if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).
 #' @param check.missing Logical scalar indicating whether rows should be checked for missing values.
 #' If true and any missing values are found, the rows containing these values are silently removed.
-#' @param BNPARAM A \link[BiocNeighbors]{BiocNeighborParam} object specifying how the neighbor search index should be constructed.
+#' @param BNPARAM Deprecated and ignored.
 #' @param approximate Deprecated, use \code{BNPARAM} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
 #' @param hint.sce Boolean indicating whether to print a hint to change \code{de.method=} when any entry of \code{ref} is a \link[SingleCellExperiment]{SingleCellExperiment}.
@@ -196,7 +196,6 @@
 #' 
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
-#' @importFrom BiocNeighbors defineBuilder AnnoyParam KmknnParam
 #' @importFrom BiocParallel SerialParam
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
@@ -236,14 +235,6 @@ trainSingleR <- function(
         genes <- rep(genes, length(ref))
     } else if (length(genes)!=length(ref)) {
         stop("list-like 'genes' should be the same length as 'ref'")
-    }
-
-    if (is.null(BNPARAM)) {
-        if (approximate) {
-            BNPARAM <- AnnoyParam()
-        } else {
-            BNPARAM <- KmknnParam()
-        }
     }
 
     output <- vector("list", length(ref))
@@ -309,16 +300,15 @@ trainSingleR <- function(
             ulabels=ulabels,
             test.genes=test.genes,
             markers=markers,
-            BNPARAM=BNPARAM,
             num.threads=num.threads
         )
 
         output[[l]] <- List(
-            built = built,
+            built = built$index,
             ref = curref,
             labels = list(full = curlabels, unique = ulabels),
-            markers = list(full = markers, unique = rownames(curref)[get_ref_subset(built) + 1]),
-            options = list(BNPARAM = BNPARAM, test.genes = test.genes)
+            markers = list(full = markers, unique = rownames(curref)[built$ref_subset + 1]),
+            options = list(test.genes = test.genes)
         )
     }
 
@@ -370,7 +360,7 @@ trainSingleR <- function(
 }
 
 #' @importFrom beachmat initializeCpp
-.build_index <- function(ref, labels, ulabels, markers, test.genes, BNPARAM, num.threads) {
+.build_index <- function(ref, labels, ulabels, markers, test.genes, num.threads) {
     for (m in seq_along(markers)) {
         current <- markers[[m]]
         for (n in seq_along(current)) {
@@ -384,22 +374,23 @@ trainSingleR <- function(
     }
 
     if (is.null(test.genes)) {
+        test.nrow <- nrow(ref)
         test.genes <- ref.genes <- seq_len(nrow(ref))
     } else {
+        test.nrow <- length(test.genes)
         intersection <- .create_intersection(test.genes, rownames(ref))
         test.genes <- intersection$test
         ref.genes <- intersection$reference
     }
 
-    builder <- defineBuilder(BNPARAM)
     parsed <- initializeCpp(ref, .check.na=FALSE)
     train_single(
+        test_nrow=test.nrow,
         test_features=test.genes - 1L, 
         ref=parsed,
         ref_features=ref.genes - 1L,
         labels=match(labels, ulabels) - 1L,
         markers=markers,
-        builder=builder$builder,
         nthreads=num.threads
     )
 }

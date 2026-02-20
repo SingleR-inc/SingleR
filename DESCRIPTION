@@ -20,7 +20,6 @@ Imports:
     DelayedArray,
     DelayedMatrixStats,
     BiocParallel,
-    BiocNeighbors,
     stats,
     utils,
     Rcpp,
@@ -28,8 +27,7 @@ Imports:
 LinkingTo:
     Rcpp,
     beachmat,
-    assorthead (>= 1.3.5),
-    BiocNeighbors
+    assorthead (>= 1.3.5)
 Suggests:
     testthat,
     knitr,
