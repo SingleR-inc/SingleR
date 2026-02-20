@@ -11,12 +11,8 @@ classify_single <- function(test, prebuilt, quantile, use_fine_tune, fine_tune_t
     .Call('_SingleR_classify_single', PACKAGE = 'SingleR', test, prebuilt, quantile, use_fine_tune, fine_tune_threshold, nthreads)
 }
 
-find_classic_markers <- function(nlabels, ngenes, labels, ref, de_n, nthreads) {
-    .Call('_SingleR_find_classic_markers', PACKAGE = 'SingleR', nlabels, ngenes, labels, ref, de_n, nthreads)
-}
-
-grouped_medians <- function(ref, groups, ngroups, nthreads) {
-    .Call('_SingleR_grouped_medians', PACKAGE = 'SingleR', ref, groups, ngroups, nthreads)
+find_classic_markers <- function(mat, nlabels, labels, blocks, de_n, nthreads) {
+    .Call('_SingleR_find_classic_markers', PACKAGE = 'SingleR', mat, nlabels, labels, blocks, de_n, nthreads)
 }
 
 set_executor <- function(ptr) {

@@ -15,19 +15,6 @@ median_by_label <- function(mat, labels) {
     output
 }
 
-test_that("grouped_medians works as expected", {
-    set.seed(999)
-    x <- matrix(rnorm(10000), ncol=50)
-    y <- sample(7, 50, replace=TRUE)
-    expected <- median_by_label(x, y)
-
-    f <- factor(y)
-    ptr <- beachmat::initializeCpp(x)
-    obs <- SingleR:::grouped_medians(ptr, as.integer(f) - 1L, nlevels(f), 1)
-    colnames(obs) <- levels(f)
-    expect_equal(expected, obs)
-})
-
 REF <- function(ref, labels, de.n=NULL) {
     mat <- median_by_label(ref, labels)
     if (is.null(de.n)) {

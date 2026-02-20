@@ -42,30 +42,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // find_classic_markers
-Rcpp::List find_classic_markers(int nlabels, int ngenes, Rcpp::List labels, Rcpp::List ref, int de_n, int nthreads);
-RcppExport SEXP _SingleR_find_classic_markers(SEXP nlabelsSEXP, SEXP ngenesSEXP, SEXP labelsSEXP, SEXP refSEXP, SEXP de_nSEXP, SEXP nthreadsSEXP) {
+Rcpp::List find_classic_markers(Rcpp::RObject mat, int nlabels, Rcpp::IntegerVector labels, Rcpp::Nullable<Rcpp::IntegerVector> blocks, Rcpp::Nullable<int> de_n, int nthreads);
+RcppExport SEXP _SingleR_find_classic_markers(SEXP matSEXP, SEXP nlabelsSEXP, SEXP labelsSEXP, SEXP blocksSEXP, SEXP de_nSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
     Rcpp::traits::input_parameter< int >::type nlabels(nlabelsSEXP);
-    Rcpp::traits::input_parameter< int >::type ngenes(ngenesSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type labels(labelsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type ref(refSEXP);
-    Rcpp::traits::input_parameter< int >::type de_n(de_nSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type labels(labelsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type blocks(blocksSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type de_n(de_nSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_classic_markers(nlabels, ngenes, labels, ref, de_n, nthreads));
-    return rcpp_result_gen;
-END_RCPP
-}
-// grouped_medians
-Rcpp::NumericMatrix grouped_medians(Rcpp::RObject ref, Rcpp::IntegerVector groups, int ngroups, int nthreads);
-RcppExport SEXP _SingleR_grouped_medians(SEXP refSEXP, SEXP groupsSEXP, SEXP ngroupsSEXP, SEXP nthreadsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Rcpp::RObject >::type ref(refSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type groups(groupsSEXP);
-    Rcpp::traits::input_parameter< int >::type ngroups(ngroupsSEXP);
-    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(grouped_medians(ref, groups, ngroups, nthreads));
+    rcpp_result_gen = Rcpp::wrap(find_classic_markers(mat, nlabels, labels, blocks, de_n, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -135,7 +122,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_classify_integrated", (DL_FUNC) &_SingleR_classify_integrated, 7},
     {"_SingleR_classify_single", (DL_FUNC) &_SingleR_classify_single, 6},
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
-    {"_SingleR_grouped_medians", (DL_FUNC) &_SingleR_grouped_medians, 4},
     {"_SingleR_set_executor", (DL_FUNC) &_SingleR_set_executor, 1},
     {"_SingleR_train_integrated", (DL_FUNC) &_SingleR_train_integrated, 6},
     {"_SingleR_train_single", (DL_FUNC) &_SingleR_train_single, 7},
