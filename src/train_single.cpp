@@ -1,5 +1,4 @@
 #include "utils.h" 
-#include "BiocNeighbors.h"
 
 #include <vector>
 #include <memory>
@@ -7,13 +6,18 @@
 //' @importFrom Rcpp sourceCpp
 //' @useDynLib SingleR
 //[[Rcpp::export(rng=false)]]
-SEXP train_single(Rcpp::IntegerVector test_features, Rcpp::RObject ref, Rcpp::IntegerVector ref_features, Rcpp::IntegerVector labels, Rcpp::List markers, Rcpp::RObject builder, int nthreads) {
+SEXP train_single(
+    int test_nrow, 
+    Rcpp::IntegerVector test_features,
+    Rcpp::RObject ref,
+    Rcpp::IntegerVector ref_features,
+    Rcpp::IntegerVector labels,
+    Rcpp::List markers,
+    int nthreads
+) {
+    // We use all available markers; assume subsetting was applied on the R side.
     singlepp::TrainSingleOptions opts;
     opts.num_threads = nthreads;
-    opts.top = -1; // Use all available markers; assume subsetting was applied on the R side.
-
-    BiocNeighbors::BuilderPointer bptr(builder);
-    opts.trainer = std::shared_ptr<BiocNeighbors::Builder>(std::shared_ptr<BiocNeighbors::Builder>{}, bptr.get()); // make a no-op shared pointer.
 
     Rtatami::BoundNumericPointer parsed(ref);
     int NR = parsed->ptr->nrow();
@@ -50,22 +54,21 @@ SEXP train_single(Rcpp::IntegerVector test_features, Rcpp::RObject ref, Rcpp::In
     }
 
     // Building the indices.
-    auto built = singlepp::train_single_intersect(
+    std::vector<int> ref_subset;
+    auto built = singlepp::train_single(
+        test_nrow,
         inter,
         *(parsed->ptr),
         static_cast<const int*>(labels.begin()),
         std::move(markers2),
+        &ref_subset,
         opts
     );
 
-    return TrainedSingleIntersectPointer(new TrainedSingleIntersect(std::move(built)), true);
-}
-
-//[[Rcpp::export(rng=false)]]
-Rcpp::IntegerVector get_ref_subset(SEXP built) {
-    TrainedSingleIntersectPointer ptr(built);
-    const auto& rsub = ptr->get_ref_subset();
-    return Rcpp::IntegerVector(rsub.begin(), rsub.end());
+    return Rcpp::List::create(
+        Rcpp::Named("index") = TrainedSinglePointer(new TrainedSingle(std::move(built)), true),
+        Rcpp::Named("ref_subset") = Rcpp::IntegerVector(ref_subset.begin(), ref_subset.end())
+    );
 }
 
 //[[Rcpp::export(rng=false)]]

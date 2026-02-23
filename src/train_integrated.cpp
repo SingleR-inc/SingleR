@@ -4,7 +4,15 @@
 #include <memory>
 
 //[[Rcpp::export(rng=false)]]
-SEXP train_integrated(Rcpp::List test_features, Rcpp::List references, Rcpp::List ref_features, Rcpp::List labels, Rcpp::List prebuilt, int nthreads) {
+SEXP train_integrated(
+    int test_nrow,
+    Rcpp::List test_features,
+    Rcpp::List references,
+    Rcpp::List ref_features,
+    Rcpp::List labels,
+    Rcpp::List prebuilt,
+    int nthreads
+) {
     size_t nrefs = references.size();
 
     std::vector<singlepp::TrainIntegratedInput<double, int, int> > inputs;
@@ -29,9 +37,10 @@ SEXP train_integrated(Rcpp::List test_features, Rcpp::List references, Rcpp::Lis
 
         holding_labs[r] = labels[r];
         Rcpp::RObject built = prebuilt[r];
-        TrainedSingleIntersectPointer curbuilt(built);
+        TrainedSinglePointer curbuilt(built);
 
-        inputs.push_back(singlepp::prepare_integrated_input_intersect(
+        inputs.push_back(singlepp::prepare_integrated_input(
+            test_nrow,
             curinter,
             *(parsed->ptr),
             static_cast<const int*>(holding_labs[r].begin()), 

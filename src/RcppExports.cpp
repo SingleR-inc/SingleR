@@ -67,43 +67,34 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_integrated
-SEXP train_integrated(Rcpp::List test_features, Rcpp::List references, Rcpp::List ref_features, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
-RcppExport SEXP _SingleR_train_integrated(SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
+SEXP train_integrated(int test_nrow, Rcpp::List test_features, Rcpp::List references, Rcpp::List ref_features, Rcpp::List labels, Rcpp::List prebuilt, int nthreads);
+RcppExport SEXP _SingleR_train_integrated(SEXP test_nrowSEXP, SEXP test_featuresSEXP, SEXP referencesSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP prebuiltSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< int >::type test_nrow(test_nrowSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type test_features(test_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type references(referencesSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type ref_features(ref_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type labels(labelsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type prebuilt(prebuiltSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(train_integrated(test_features, references, ref_features, labels, prebuilt, nthreads));
+    rcpp_result_gen = Rcpp::wrap(train_integrated(test_nrow, test_features, references, ref_features, labels, prebuilt, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
 // train_single
-SEXP train_single(Rcpp::IntegerVector test_features, Rcpp::RObject ref, Rcpp::IntegerVector ref_features, Rcpp::IntegerVector labels, Rcpp::List markers, Rcpp::RObject builder, int nthreads);
-RcppExport SEXP _SingleR_train_single(SEXP test_featuresSEXP, SEXP refSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP markersSEXP, SEXP builderSEXP, SEXP nthreadsSEXP) {
+SEXP train_single(int test_nrow, Rcpp::IntegerVector test_features, Rcpp::RObject ref, Rcpp::IntegerVector ref_features, Rcpp::IntegerVector labels, Rcpp::List markers, int nthreads);
+RcppExport SEXP _SingleR_train_single(SEXP test_nrowSEXP, SEXP test_featuresSEXP, SEXP refSEXP, SEXP ref_featuresSEXP, SEXP labelsSEXP, SEXP markersSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< int >::type test_nrow(test_nrowSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type test_features(test_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::RObject >::type ref(refSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type ref_features(ref_featuresSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type labels(labelsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type markers(markersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::RObject >::type builder(builderSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(train_single(test_features, ref, ref_features, labels, markers, builder, nthreads));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_ref_subset
-Rcpp::IntegerVector get_ref_subset(SEXP built);
-RcppExport SEXP _SingleR_get_ref_subset(SEXP builtSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type built(builtSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ref_subset(built));
+    rcpp_result_gen = Rcpp::wrap(train_single(test_nrow, test_features, ref, ref_features, labels, markers, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -123,9 +114,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SingleR_classify_single", (DL_FUNC) &_SingleR_classify_single, 6},
     {"_SingleR_find_classic_markers", (DL_FUNC) &_SingleR_find_classic_markers, 6},
     {"_SingleR_set_executor", (DL_FUNC) &_SingleR_set_executor, 1},
-    {"_SingleR_train_integrated", (DL_FUNC) &_SingleR_train_integrated, 6},
+    {"_SingleR_train_integrated", (DL_FUNC) &_SingleR_train_integrated, 7},
     {"_SingleR_train_single", (DL_FUNC) &_SingleR_train_single, 7},
-    {"_SingleR_get_ref_subset", (DL_FUNC) &_SingleR_get_ref_subset, 1},
     {"_SingleR_is_valid_built", (DL_FUNC) &_SingleR_is_valid_built, 1},
     {NULL, NULL, 0}
 };

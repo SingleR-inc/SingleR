@@ -71,7 +71,10 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
     }
     common <- as.character(common) # avoid problems with NULL rownames for zero-row inputs.
     for (i in seq_along(ref)) {
-        ref[[i]] <- DelayedArray(ref[[i]])[common,,drop=FALSE]
+        # Use match() as this works with zero-row matrices that aren't allowed to have rownames,
+        # see discussion at https://mailman.stat.ethz.ch/pipermail/r-devel/2006-August/038893.html.
+        curmat <- ref[[i]]
+        ref[[i]] <- DelayedArray(curmat)[match(common, rownames(curmat)),,drop=FALSE]
     }
 
     blocks <- NULL

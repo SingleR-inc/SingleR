@@ -163,6 +163,7 @@ combineRecomputedResults <- function(
 
     # Applying the integration.
     ibuilt <- train_integrated(
+        test_nrow=length(test.genes),
         test_features=all.inter.test,
         references=lapply(trained, function(x) initializeCpp(x$ref, .check.na=FALSE)),
         ref_features=all.inter.ref,
