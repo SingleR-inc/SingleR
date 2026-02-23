@@ -7,6 +7,9 @@
 Similarly, suggest the use of \code{aggr.ref=TRUE} for large single-cell references.
 
 \item Added a warning when names of \code{results=} and \code{trained=} are different in \code{combineRecomputedResults()}.
+
+\item Updated to the latest version of \pkg{singlepp}, which provides direct support for sparse test/reference matrices.
+This also eliminates the need for \pkg{BiocNeighbors} so all \code{BNPARAM=} arguments are now soft-deprecated.
 }}
 
 \section{Version 2.12.0}{\itemize{
