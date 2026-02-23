@@ -93,7 +93,7 @@ It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \c
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building.}
 
-\item{BNPARAM}{A \link[BiocNeighbors]{BiocNeighborParam} object specifying how the neighbor search index should be constructed.}
+\item{BNPARAM}{Deprecated and ignored.}
 
 \item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.}
 }

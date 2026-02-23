@@ -47,7 +47,8 @@ rebuildIndex <- function(trained, num.threads=1) {
             labels=trained$labels$full, 
             ulabels=trained$labels$unique, 
             test.genes=trained$options$test.genes,
-            num.threads=num.threads) 
+            num.threads=num.threads
+        )$index
     }
     trained
 }
