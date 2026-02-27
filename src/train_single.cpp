@@ -20,8 +20,7 @@ SEXP train_single(
     opts.num_threads = nthreads;
 
     Rtatami::BoundNumericPointer parsed(ref);
-    int NR = parsed->ptr->nrow();
-    int NC = parsed->ptr->ncol();
+    const int NC = parsed->ptr->ncol();
     if (static_cast<int>(labels.size()) != NC) {
         throw std::runtime_error("length of 'labels' is equal to the number of columns of 'ref'");
     }
