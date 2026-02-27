@@ -15,8 +15,8 @@ classifySingleR(
   prune = TRUE,
   assay.type = "logcounts",
   check.missing = FALSE,
-  num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam()
+  num.threads = 1,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -48,7 +48,7 @@ Alternatively, a List of Lists produced by \code{\link{trainSingleR}} for multip
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for classification.}
 
-\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 A \link[S4Vectors]{DataFrame} where each row corresponds to a cell in \code{test}.

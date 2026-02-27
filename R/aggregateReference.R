@@ -74,7 +74,6 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom Matrix rowMeans
 #' @importFrom DelayedArray DelayedArray
-#' @importFrom BiocParallel SerialParam bpnworkers
 aggregateReference <- function(
     ref,
     labels,
@@ -85,10 +84,12 @@ aggregateReference <- function(
     rank=20,
     subset.row=NULL,
     check.missing=TRUE,
-    num.threads=bpnworkers(BPPARAM),
-    BPPARAM=SerialParam(),
+    num.threads = 1,
+    BPPARAM = NULL,
     BSPARAM=NULL)
 {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
+
     by.label <- split(seq_along(labels), labels)
     if (is(ref, "SummarizedExperiment")) {
         ref <- assay(ref, i=assay.type)

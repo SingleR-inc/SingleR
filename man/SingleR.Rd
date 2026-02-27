@@ -30,9 +30,9 @@ SingleR(
   check.missing.test = FALSE,
   check.missing.ref = check.missing,
   check.missing = TRUE,
-  num.threads = bpnworkers(BPPARAM),
+  num.threads = 1,
   BNPARAM = NULL,
-  BPPARAM = SerialParam()
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -86,8 +86,7 @@ if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or 
 
 \item{BNPARAM}{Deprecated and ignored.}
 
-\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
-see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).

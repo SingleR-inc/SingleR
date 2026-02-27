@@ -21,9 +21,9 @@ trainSingleR(
   check.missing = TRUE,
   hint.sce = TRUE,
   approximate = FALSE,
-  num.threads = bpnworkers(BPPARAM),
+  num.threads = 1,
   BNPARAM = NULL,
-  BPPARAM = SerialParam()
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -95,7 +95,7 @@ It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \c
 
 \item{BNPARAM}{Deprecated and ignored.}
 
-\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 For a single reference, a \link[S4Vectors]{List} is returned containing:

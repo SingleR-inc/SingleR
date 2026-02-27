@@ -95,4 +95,11 @@
     }
 }
 
+.get_num_threads <- function(num.threads, BPPARAM) {
+    if (!is.null(BPPARAM)) {
+        num.threads <- BiocParallel::bpnworkers(BPPARAM)
+    }
+    num.threads
+}
+
 utils::globalVariables(".data")

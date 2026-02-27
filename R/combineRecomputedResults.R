@@ -115,9 +115,10 @@ combineRecomputedResults <- function(
     check.missing=FALSE,
     warn.lost=TRUE,
     allow.lost=FALSE, 
-    num.threads = bpnworkers(BPPARAM),
-    BPPARAM=SerialParam())
-{
+    num.threads = 1,
+    BPPARAM= NULL
+) {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
     test <- .to_clean_matrix(test, assay.type=assay.type.test, check.missing=FALSE, msg="test", num.threads=num.threads)
 
     # Applying the sanity checks.

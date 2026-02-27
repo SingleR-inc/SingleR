@@ -64,7 +64,6 @@
 #' pheatmap::pheatmap(averages, cluster_col=FALSE)
 #' 
 #' @export
-#' @importFrom BiocParallel SerialParam bpnworkers
 #' @importFrom Matrix rowMeans
 #' @importFrom utils head
 plotMarkerHeatmap <- function(
@@ -78,10 +77,11 @@ plotMarkerHeatmap <- function(
     order.by.effect="cohens.d",
     order.by.summary="min.rank",
     top=20,
-    num.threads=bpnworkers(BPPARAM),
-    BPPARAM = SerialParam(),
+    num.threads = 1,
+    BPPARAM = NULL,
     ...) 
 {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, num.threads=num.threads)
     config <- configureMarkerHeatmap(
         results, 

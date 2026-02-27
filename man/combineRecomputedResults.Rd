@@ -16,8 +16,8 @@ combineRecomputedResults(
   check.missing = FALSE,
   warn.lost = TRUE,
   allow.lost = FALSE,
-  num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam()
+  num.threads = 1,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -49,8 +49,7 @@ if \code{test} is a \link[SummarizedExperiment]{SummarizedExperiment} object.}
 
 \item{num.threads}{Integer scalar specifying the number of threads to use for index building and classification.}
 
-\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
-see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell or cluster (row).

@@ -14,8 +14,8 @@ aggregateReference(
   rank = 20,
   subset.row = NULL,
   check.missing = TRUE,
-  num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam(),
+  num.threads = 1,
+  BPPARAM = NULL,
   BSPARAM = NULL
 )
 }

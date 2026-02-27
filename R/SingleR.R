@@ -27,8 +27,7 @@
 #' @param check.missing Deprecated, use \code{check.missing.test} and \code{check.missing.ref} instead.
 #' @param num.threads Integer scalar specifying the number of threads to use for index building and classification.
 #' @param BNPARAM Deprecated and ignored.
-#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed in other steps,
-#' see \code{?\link{trainSingleR}} and \code{?\link{classifySingleR}} for more details.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #'
 #' @return A \link[S4Vectors]{DataFrame} is returned containing the annotation statistics for each cell (one cell per row).
 #' This is identical to the output of \code{\link{classifySingleR}}.
@@ -73,7 +72,6 @@
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom methods is
 #' @importFrom DelayedArray DelayedArray
-#' @importFrom BiocParallel SerialParam
 SingleR <- function(
     test, 
     ref, 
@@ -100,14 +98,15 @@ SingleR <- function(
     check.missing.test=FALSE, 
     check.missing.ref=check.missing, 
     check.missing=TRUE, 
-    num.threads = bpnworkers(BPPARAM),
+    num.threads = 1,
     BNPARAM = NULL,
-    BPPARAM=SerialParam()) 
-{
+    BPPARAM = NULL
+) {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
+
     # We have to do all this row-subsetting at the start before trainSingleR,
     # otherwise 'test.genes' won't match up to the filtered 'test'.
     test <- .to_clean_matrix(test, assay.type.test, check.missing.test, msg="test", num.threads=num.threads)
-
     tmp.ref <- ref
     if (!is.list(tmp.ref) || is.data.frame(tmp.ref)) {
         tmp.ref <- list(ref)

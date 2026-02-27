@@ -10,8 +10,8 @@ getClassicMarkers(
   assay.type = "logcounts",
   check.missing = TRUE,
   de.n = NULL,
-  num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam()
+  num.threads = 1,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -39,7 +39,7 @@ Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique 
 
 \item{num.threads}{Integer scalar specifying the number of threads to use.}
 
-\item{BPPARAM}{A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed.}
+\item{BPPARAM}{Deprecated, use \code{num.threads} instead.}
 }
 \value{
 A list of lists of character vectors, 

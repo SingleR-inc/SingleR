@@ -16,8 +16,8 @@ plotMarkerHeatmap(
   order.by.effect = "cohens.d",
   order.by.summary = "min.rank",
   top = 20,
-  num.threads = bpnworkers(BPPARAM),
-  BPPARAM = SerialParam(),
+  num.threads = 1,
+  BPPARAM = NULL,
   ...
 )
 

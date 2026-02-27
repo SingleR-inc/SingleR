@@ -48,7 +48,7 @@
 #' @param num.threads Integer scalar specifying the number of threads to use for index building.
 #' @param hint.sce Boolean indicating whether to print a hint to change \code{de.method=} when any entry of \code{ref} is a \link[SingleCellExperiment]{SingleCellExperiment}.
 #' It will also suggest setting \code{aggr.ref=TRUE} for greater efficiency when \code{ref} contains 1000 cells or more.
-#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed when \code{check.missing = TRUE}.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #' @param restrict A character vector of gene names to use for marker selection.
 #' By default, all genes in \code{ref} are used.
 #' @param test.genes Character vector of the names of the genes in the test dataset, i.e., the row names of \code{test} in \code{\link{classifySingleR}}.
@@ -196,7 +196,6 @@
 #' 
 #' @export
 #' @importFrom S4Vectors List isSingleString metadata metadata<-
-#' @importFrom BiocParallel SerialParam
 #' @importFrom S4Vectors List
 #' @importFrom SummarizedExperiment assay
 #' @importFrom DelayedArray DelayedArray
@@ -217,10 +216,11 @@ trainSingleR <- function(
     check.missing=TRUE,
     hint.sce=TRUE,
     approximate = FALSE,
-    num.threads = bpnworkers(BPPARAM),
+    num.threads = 1,
     BNPARAM = NULL,
-    BPPARAM = SerialParam()
+    BPPARAM = NULL
 ) {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
     de.method <- match.arg(de.method)
 
     if (solo <- !.is_list(ref)) {

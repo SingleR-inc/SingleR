@@ -19,7 +19,7 @@
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param prune A logical scalar indicating whether label pruning should be performed.
 #' @param num.threads Integer scalar specifying the number of threads to use for classification.
-#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying the parallelization scheme to use for \code{NA} scanning, when \code{check.missing=TRUE}.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #' 
 #' @return A \link[S4Vectors]{DataFrame} where each row corresponds to a cell in \code{test}.
 #' In the case of a single reference, this contains:
@@ -90,7 +90,6 @@
 #' \code{\link{combineRecomputedResults}}, to combine results from multiple references.
 #'
 #' @export
-#' @importFrom BiocParallel bpnworkers
 classifySingleR <- function(
     test, 
     trained, 
@@ -102,9 +101,10 @@ classifySingleR <- function(
     prune=TRUE, 
     assay.type="logcounts", 
     check.missing=FALSE,
-    num.threads = bpnworkers(BPPARAM),
-    BPPARAM=SerialParam()) 
-{
+    num.threads = 1,
+    BPPARAM = NULL
+) {
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, msg="test", num.threads=num.threads)
 
     solo <- .is_solo(trained)

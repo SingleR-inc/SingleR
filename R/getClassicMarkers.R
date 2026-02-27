@@ -7,7 +7,7 @@
 #' @param de.n An integer scalar specifying the number of DE genes to use.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param num.threads Integer scalar specifying the number of threads to use.
-#' @param BPPARAM A \link[BiocParallel]{BiocParallelParam} object specifying how parallelization should be performed.
+#' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #'
 #' @return
 #' A list of lists of character vectors, 
@@ -50,11 +50,12 @@
 #'
 #' @export
 #' @importFrom S4Vectors selfmatch DataFrame
-#' @importFrom BiocParallel SerialParam bpnworkers
 #' @importFrom BiocGenerics cbind
 #' @importFrom utils relist
 #' @importFrom beachmat initializeCpp
-getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=bpnworkers(BPPARAM), BPPARAM=SerialParam()) { 
+getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=1, BPPARAM=NULL) { 
+    num.threads <- .get_num_threads(num.threads, BPPARAM)
+
     if (!.is_list(ref)) { 
         ref <- list(ref)
     } else {
