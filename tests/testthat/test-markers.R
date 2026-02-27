@@ -9,8 +9,7 @@ median_by_label <- function(mat, labels) {
     colnames(output) <- ulabels
 
     for (u in ulabels) {
-        # Disambiguate from Biobase::rowMedians.
-        output[,u] <- DelayedMatrixStats::rowMedians(DelayedArray(mat), cols=u==labels)
+        output[,u] <- apply(as.matrix(mat[,u==labels]), 1, median)
     }
     output
 }

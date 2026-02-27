@@ -18,11 +18,10 @@ Imports:
     BiocGenerics,
     S4Vectors,
     DelayedArray,
-    DelayedMatrixStats,
     stats,
     utils,
     Rcpp,
-    beachmat (>= 2.25.1)
+    beachmat (>= 2.27.3)
 LinkingTo:
     Rcpp,
     beachmat,

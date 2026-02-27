@@ -1,6 +1,5 @@
 #' @importFrom beachmat initializeCpp tatami.row.nan.counts
 #' @importFrom SummarizedExperiment assay
-#' @importFrom DelayedMatrixStats rowAnyNAs
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom DelayedArray DelayedArray
 .to_clean_matrix <- function(x, assay.type, check.missing, msg="x", num.threads=1) {

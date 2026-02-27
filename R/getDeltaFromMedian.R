@@ -23,11 +23,10 @@
 #' summary(getDeltaFromMedian(pred))
 #' 
 #' @export
-#' @importFrom DelayedMatrixStats rowMedians 
-#' @importFrom DelayedArray DelayedArray 
+#' @importFrom beachmat initializeCpp tatami.row.medians
 getDeltaFromMedian <- function(results) {
     scores <- results$scores
     labels <- results$labels
     assigned <- scores[cbind(seq_along(labels), match(labels, colnames(scores)))]
-    assigned - rowMedians(DelayedArray(scores))
+    assigned - tatami.row.medians(initializeCpp(scores), num.threads=1)
 }
