@@ -15,6 +15,8 @@ plotMarkerHeatmap(
   use.pruned = FALSE,
   order.by.effect = "cohens.d",
   order.by.summary = "min.rank",
+  average = FALSE,
+  center = FALSE,
   top = 20,
   num.threads = 1,
   BPPARAM = NULL,
@@ -34,7 +36,7 @@ configureMarkerHeatmap(
 )
 }
 \arguments{
-\item{results}{A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.}
+\item{results}{A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}} on a single reference.}
 
 \item{test}{A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 Each row should be named with the same gene name that was used to compute \code{results}.
@@ -57,6 +59,11 @@ If \code{NULL}, the existing row names of \code{test} are used.}
 \item{order.by.effect}{String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
 
 \item{order.by.summary}{String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
+
+\item{average}{Boolean indicating whether to visualize the average expression profile for each label.
+If \code{FALSE}, the expression profile for each cell in \code{test} is shown.}
+
+\item{center}{Boolean indicating whether to center the expression profiles for each gene at zero.}
 
 \item{top}{Integer scalar indicating the top most interesting markers to show in the heatmap.}
 
@@ -100,6 +107,7 @@ example(SingleR, echo=FALSE)
 plotMarkerHeatmap(pred, test, pred$labels[1])
 plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
 plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
+plotMarkerHeatmap(pred, test, pred$labels[1], center=TRUE)
 
 # Manually configuring a simpler heatmap by label:
 config <- configureMarkerHeatmap(pred, test, pred$labels[1])
@@ -108,6 +116,9 @@ aggregated <- scrapper::aggregateAcrossCells(mat, list(config$predictions))
 averages <- t(t(aggregated$sums) / aggregated$counts)
 colnames(averages) <- aggregated$combinations[,1]
 pheatmap::pheatmap(averages, cluster_col=FALSE)
+
+# ... which is basically the same as this:
+plotMarkerHeatmap(pred, test, pred$labels[1], average=TRUE)
 
 }
 \author{

@@ -2,7 +2,7 @@
 #'
 #' Create a heatmap of the log-normalized expression for the most interesting markers of a particular label.
 #'
-#' @param results A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}}, \code{\link{classifySingleR}}, or \code{\link{combineRecomputedResults}}.
+#' @param results A \link[S4Vectors]{DataFrame} containing the output from \code{\link{SingleR}} or \code{\link{classifySingleR}} on a single reference.
 #' @param test A numeric matrix of log-normalized expression values where rows are genes and columns are cells.
 #' Each row should be named with the same gene name that was used to compute \code{results}.
 #'
@@ -18,6 +18,9 @@
 #' containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).
 #' If \code{NULL}, the existing row names of \code{test} are used.
 #' @param top Integer scalar indicating the top most interesting markers to show in the heatmap.
+#' @param average Boolean indicating whether to visualize the average expression profile for each label.
+#' If \code{FALSE}, the expression profile for each cell in \code{test} is shown.
+#' @param center Boolean indicating whether to center the expression profiles for each gene at zero.
 #' @param num.threads Integer scalar specifying the number to threads to use.
 #' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #' @param ... Additional parameters for heatmap control passed to \code{\link[pheatmap]{pheatmap}}.
@@ -54,6 +57,7 @@
 #' plotMarkerHeatmap(pred, test, pred$labels[1])
 #' plotMarkerHeatmap(pred, test, pred$labels[1], use.pruned=TRUE)
 #' plotMarkerHeatmap(pred, test, pred$labels[1], order.by.effect="auc")
+#' plotMarkerHeatmap(pred, test, pred$labels[1], center=TRUE)
 #'
 #' # Manually configuring a simpler heatmap by label:
 #' config <- configureMarkerHeatmap(pred, test, pred$labels[1])
@@ -62,6 +66,9 @@
 #' averages <- t(t(aggregated$sums) / aggregated$counts)
 #' colnames(averages) <- aggregated$combinations[,1]
 #' pheatmap::pheatmap(averages, cluster_col=FALSE)
+#'
+#' # ... which is basically the same as this:
+#' plotMarkerHeatmap(pred, test, pred$labels[1], average=TRUE)
 #' 
 #' @export
 #' @importFrom Matrix rowMeans
@@ -76,11 +83,13 @@ plotMarkerHeatmap <- function(
     use.pruned=FALSE,
     order.by.effect="cohens.d",
     order.by.summary="min.rank",
+    average=FALSE,
+    center=FALSE,
     top=20,
     num.threads = 1,
     BPPARAM = NULL,
-    ...) 
-{
+    ... 
+) {
     num.threads <- .get_num_threads(num.threads, BPPARAM)
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, num.threads=num.threads)
     config <- configureMarkerHeatmap(
@@ -102,12 +111,29 @@ plotMarkerHeatmap <- function(
         rownames(test) <- display.row.names[to.show]
     }
 
-    limits <- range(test, na.rm=TRUE)
+    if (average) {
+        aggregated <- scrapper::aggregateAcrossCells(test, list(predictions), num.threads=num.threads)
+        test <- t(t(aggregated$sums) / aggregated$counts)
+        predictions <- aggregated$combinations[,1]
+    }
+
+    N <- 25
+    if (center) {
+        test <- test - rowMeans(test)
+        color <- grDevices::colorRampPalette(c("blue", "white", "red"))(N)
+        maxed <- max(abs(test)) 
+        breaks <- seq(-maxed, maxed, length.out=N+1)
+    } else {
+        color <- viridis::viridis(N)
+        limits <- range(test, na.rm=TRUE)
+        breaks <- seq(limits[1], limits[2], length.out=N+1)
+    }
+
     colnames(test) <- seq_len(ncol(test))
     pheatmap::pheatmap(
         test,
-        breaks=seq(limits[1], limits[2], length.out=26),
-        color=viridis::viridis(25),
+        breaks=breaks,
+        color=color,
         annotation_col=data.frame(labels=predictions, row.names=colnames(test)),
         cluster_col=FALSE,
         show_colnames=FALSE,

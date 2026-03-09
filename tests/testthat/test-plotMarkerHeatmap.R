@@ -5,6 +5,11 @@ pred <- SingleR(test=test, ref=training, labels=training$label, genes="de")
 
 test_that("We can produce heatmaps of markers", {
     expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1]), "pheatmap")
+
+    # Works correctly with the various options.
+    expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1], center=TRUE), "pheatmap")
+    expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1], average=TRUE), "pheatmap")
+    expect_s3_class(plotMarkerHeatmap(pred, test, pred$labels[1], center=TRUE, average=TRUE), "pheatmap")
 })
 
 test_that("marker heatmaps handle pruned NAs correctly", {
