@@ -15,6 +15,7 @@ plotMarkerHeatmap(
   use.pruned = FALSE,
   order.by.effect = "cohens.d",
   order.by.summary = "min.rank",
+  score.args = list(),
   average = FALSE,
   center = FALSE,
   top = 20,
@@ -32,6 +33,7 @@ configureMarkerHeatmap(
   use.pruned = FALSE,
   order.by.effect = "cohens.d",
   order.by.summary = "min.rank",
+  score.args = list(),
   num.threads = 1
 )
 }
@@ -59,6 +61,8 @@ If \code{NULL}, the existing row names of \code{test} are used.}
 \item{order.by.effect}{String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
 
 \item{order.by.summary}{String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.}
+
+\item{score.args}{Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}}, e.g., \code{block}, \code{threshold}.}
 
 \item{average}{Boolean indicating whether to visualize the average expression profile for each label.
 If \code{FALSE}, the expression profile for each cell in \code{test} is shown.}

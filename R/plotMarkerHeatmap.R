@@ -14,6 +14,7 @@
 #' @param use.pruned Logical scalar indicating whether the pruned labels should be used instead.
 #' @param order.by.effect String specifying the effect size from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
 #' @param order.by.summary String specifying the summary statistic from \code{\link[scrapper]{scoreMarkers}} with which to sort for interesting markers.
+#' @param score.args Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}}, e.g., \code{block}, \code{threshold}.
 #' @param display.row.names Character vector of length equal to the number of rows of \code{test},
 #' containing the names of the features to show on the heatmap (e.g., to replace IDs with symbols).
 #' If \code{NULL}, the existing row names of \code{test} are used.
@@ -77,15 +78,16 @@ plotMarkerHeatmap <- function(
     results,
     test,
     label,
-    other.labels=NULL,
-    assay.type="logcounts",
-    display.row.names=NULL,
-    use.pruned=FALSE,
-    order.by.effect="cohens.d",
-    order.by.summary="min.rank",
-    average=FALSE,
-    center=FALSE,
-    top=20,
+    other.labels = NULL,
+    assay.type = "logcounts",
+    display.row.names = NULL,
+    use.pruned = FALSE,
+    order.by.effect = "cohens.d",
+    order.by.summary = "min.rank",
+    score.args = list(),
+    average = FALSE,
+    center = FALSE,
+    top = 20,
     num.threads = 1,
     BPPARAM = NULL,
     ... 
@@ -101,6 +103,7 @@ plotMarkerHeatmap <- function(
         use.pruned=use.pruned,
         order.by.effect=order.by.effect,
         order.by.summary=order.by.summary,
+        score.args=score.args,
         num.threads=num.threads
     )
 
@@ -149,13 +152,14 @@ configureMarkerHeatmap <- function(
     results,
     test,
     label,
-    other.labels=NULL,
-    assay.type="logcounts",
-    use.pruned=FALSE,
-    order.by.effect="cohens.d",
-    order.by.summary="min.rank",
-    num.threads=1)
-{
+    other.labels = NULL,
+    assay.type = "logcounts",
+    use.pruned = FALSE,
+    order.by.effect = "cohens.d",
+    order.by.summary = "min.rank",
+    score.args = list(),
+    num.threads=1
+) {
     test <- .to_clean_matrix(test, assay.type, check.missing=FALSE, num.threads=num.threads)
     all.markers <- metadata(results)$de.genes[[label]]
 
@@ -186,16 +190,13 @@ configureMarkerHeatmap <- function(
     # Prioritize the markers with interesting variation in the test data for
     # visualization. If we only have one label, we use the most abundant markers.
     if (length(unique(predictions)) > 1L) {
-        interesting <- scrapper::scoreMarkers(
-            test,
-            predictions,
-            num.threads=num.threads,
-            compute.auc=(order.by.effect=="auc"),
-            compute.cohens.d=(order.by.effect=="cohens.d"),
-            compute.delta.mean=(order.by.effect=="delta.mean"),
-            compute.delta.detected=(order.by.effect=="delta.detected")
-        )
+        score.args$num.threads <- num.threads
+        score.args$compute.auc <- (order.by.effect == "auc")
+        score.args$compute.cohens.d <- (order.by.effect == "cohens.d")
+        score.args$compute.delta.mea <- (order.by.effect == "delta.mean")
+        score.args$compute.delta.detected <- (order.by.effect == "delta.detected")
 
+        interesting <- do.call(scrapper::scoreMarkers, c(list(test, predictions), score.args))
         stats <- interesting[[order.by.effect]][[label]][[order.by.summary]]
         decreasing <- (order.by.summary!="min.rank")
 
