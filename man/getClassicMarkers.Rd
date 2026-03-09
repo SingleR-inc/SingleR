@@ -7,6 +7,7 @@
 getClassicMarkers(
   ref,
   labels,
+  block = NULL,
   assay.type = "logcounts",
   check.missing = TRUE,
   de.n = NULL,
@@ -27,6 +28,10 @@ Alternatively, a list or \link[S4Vectors]{List} of SummarizedExperiment objects 
 
 Alternatively, if \code{ref} is a list, \code{labels} should be a list of the same length.
 Each element should contain a character vector or factor specifying the labels for the columns of the corresponding element of \code{ref}.}
+
+\item{block}{Vector or factor specifying the assigned block for each reference sample.
+If \code{NULL}, all samples are assumed to originate from the same block.
+Only relevant if one matrix is supplied in \code{ref}, otherwise each reference is treated as its own block.}
 
 \item{assay.type}{An integer scalar or string specifying the assay of \code{ref} containing the relevant expression matrix,
 if \code{ref} is a \link[SummarizedExperiment]{SummarizedExperiment} object (or is a list that contains one or more such objects).}

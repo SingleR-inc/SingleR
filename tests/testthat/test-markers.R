@@ -79,4 +79,12 @@ test_that("getClassicMarkers works with blocking", {
     out2 <- getClassicMarkers(list(logcounts(training), logcounts(training)),
         list(training$label, shuffled))
     expect_false(identical(out, out2))
+
+    # Same results if we just combine the two.
+    outb <- getClassicMarkers(
+        cbind(logcounts(training), logcounts(training)),
+        c(training$label, shuffled),
+        block=rep(1:2, each=ncol(training))
+    )
+    expect_identical(out2, outb)
 })

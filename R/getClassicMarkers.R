@@ -7,6 +7,9 @@
 #' @param de.n An integer scalar specifying the number of DE genes to use.
 #' Defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' @param num.threads Integer scalar specifying the number of threads to use.
+#' @param block Vector or factor specifying the assigned block for each reference sample.
+#' If \code{NULL}, all samples are assumed to originate from the same block.
+#' Only relevant if one matrix is supplied in \code{ref}, otherwise each reference is treated as its own block.
 #' @param BPPARAM Deprecated, use \code{num.threads} instead.
 #'
 #' @return
@@ -53,7 +56,7 @@
 #' @importFrom BiocGenerics cbind
 #' @importFrom utils relist
 #' @importFrom beachmat initializeCpp
-getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=1, BPPARAM=NULL) { 
+getClassicMarkers <- function(ref, labels, block=NULL, assay.type="logcounts", check.missing=TRUE, de.n=NULL, num.threads=1, BPPARAM=NULL) { 
     num.threads <- .get_num_threads(num.threads, BPPARAM)
 
     if (!.is_list(ref)) { 
@@ -78,9 +81,12 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         ref[[i]] <- DelayedArray(curmat)[match(common, rownames(curmat)),,drop=FALSE]
     }
 
-    blocks <- NULL
     if (length(ref) > 1L) {
-        blocks <- rep(seq_along(ref) - 1L, vapply(ref, ncol, FUN.VALUE=0L))
+        block <- rep(seq_along(ref) - 1L, vapply(ref, ncol, FUN.VALUE=0L))
+    } else if (!is.null(block)) {
+        block <- as.integer(factor(block)) - 1L
+    } else {
+        block <- NULL
     }
 
     ref <- do.call(cbind, ref)
@@ -90,7 +96,7 @@ getClassicMarkers <- function(ref, labels, assay.type="logcounts", check.missing
         initializeCpp(ref),
         length(ulabels),
         match(labels, ulabels) - 1L,
-        blocks,
+        block,
         de_n=de.n,
         nthreads=num.threads
     )

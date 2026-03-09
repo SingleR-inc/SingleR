@@ -34,7 +34,8 @@
 #' If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \code{N} is the number of unique labels.
 #' Otherwise, defaults to 10.
 #' Ignored if \code{genes} is a list of markers/DE genes.
-#' @param de.args Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"}.
+#' @param de.args Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"},
+#' or to \code{\link{getClassicMarkers}} when \code{de.method="classic"}.
 #' Ignored if \code{genes} is a list of markers/DE genes.
 #' @param aggr.ref Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.
 #' @param aggr.args Further arguments to pass to \code{\link{aggregateReference}} when \code{aggr.ref=TRUE}.
@@ -404,7 +405,9 @@ trainSingleR <- function(
 #' @importFrom utils head
 .get_genes_by_de <- function(ref, labels, de.method="classic", de.n=NULL, de.args=list(), num.threads=1) {
     if (de.method=="classic") {
-        return(getClassicMarkers(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE, num.threads=num.threads))
+        classic.args <- list(ref=ref, labels=labels, de.n=de.n, check.missing=FALSE, num.threads=num.threads)
+        classic.res <- do.call(getClassicMarkers, c(classic.args, de.args))
+        return(classic.res)
     }
 
     if (de.method=="t") {

@@ -68,7 +68,8 @@ If \code{de.method="classic"}, defaults to \code{500 * (2/3) ^ log2(N)} where \c
 Otherwise, defaults to 10.
 Ignored if \code{genes} is a list of markers/DE genes.}
 
-\item{de.args}{Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"}.
+\item{de.args}{Named list of additional arguments to pass to \code{\link[scrapper]{scoreMarkers}} when \code{de.method="wilcox"} or \code{"t"},
+or to \code{\link{getClassicMarkers}} when \code{de.method="classic"}.
 Ignored if \code{genes} is a list of markers/DE genes.}
 
 \item{aggr.ref}{Logical scalar indicating whether references should be aggregated to pseudo-bulk samples for speed, see \code{\link{aggregateReference}}.}
