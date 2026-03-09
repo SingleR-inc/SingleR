@@ -10,6 +10,11 @@ Similarly, suggest the use of \code{aggr.ref=TRUE} for large single-cell referen
 
 \item Updated to the latest version of \pkg{singlepp}, which provides direct support for sparse test/reference matrices.
 This also eliminates the need for \pkg{BiocNeighbors} so all \code{BNPARAM=} arguments are now soft-deprecated.
+
+\item Added \code{center=} and \code{average=} options to \code{plotMarkerHeatmap()}, for centering of genes and averaging of labels, respectively.
+
+\item Support \code{block=} in \code{getClassicMarkers()} to define a blocking factor within a single reference matrix.
+This serves as an alternative to supplying multiple reference matrices.
 }}
 
 \section{Version 2.12.0}{\itemize{
