@@ -437,7 +437,8 @@ trainSingleR <- function(
                 compute.delta.detected=FALSE,
                 compute.delta.mean=FALSE,
                 compute.auc=compute.auc,
-                compute.cohens.d=compute.cohens.d
+                compute.cohens.d=compute.cohens.d,
+                top.index.only=TRUE
             ),
             de.args
         )
@@ -450,7 +451,7 @@ trainSingleR <- function(
             if (g1 == g2) {
                 pairwise[[g1]][[g2]] <- character(0)
             } else {
-                pairwise[[g1]][[g2]] <- all.genes[pairwise[[g1]][[g2]]$index]
+                pairwise[[g1]][[g2]] <- all.genes[pairwise[[g1]][[g2]]]
             }
         }
     }
