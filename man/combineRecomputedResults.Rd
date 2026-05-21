@@ -9,6 +9,7 @@ combineRecomputedResults(
   results,
   test,
   trained,
+  top = 10,
   quantile = 0.8,
   fine.tune = TRUE,
   tune.thresh = 0.05,
@@ -31,6 +32,10 @@ Alternatively, a \link[SummarizedExperiment]{SummarizedExperiment} object contai
 equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
 or (ii) running \code{trainSingleR} on each reference separately and manually making a list of the trained outputs.
 The list should have the same names as \code{results}.}
+
+\item{top}{Integer specifying the number of top markers to use to construct the per-label marker list.
+Specifically, each label's marker list is defined as the union of the \code{top} genes from each pairwise comparison involving that label. 
+Larger values improve stability at the cost of increasing computational work.}
 
 \item{quantile}{Numeric scalar specifying the quantile of the correlation distribution to use for computing the score, see \code{\link{classifySingleR}}.}
 

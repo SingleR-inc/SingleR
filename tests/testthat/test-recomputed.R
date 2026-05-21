@@ -59,17 +59,17 @@ test_that("combineRecomputedResults works as expected (sanity check)", {
     ref2 <- matrix(runif(20000), ncol=20)
     rownames(ref1) <- rownames(ref2) <- sprintf("GENE_%i", seq_len(nrow(ref1)))
 
-    ref1[1:100,1:5] <- 0
-    ref1[201:300,6:10] <- 0
-    ref2[101:200,1:10] <- 0
-    ref2[201:300,11:20] <- 0
+    ref1[1:100,1:5] <- ref1[1:100,1:5] + 2
+    ref1[201:300,6:10] <- ref1[201:300,6:10] + 2 
+    ref2[101:200,1:10] <- ref2[101:200,1:10] + 2
+    ref2[201:300,11:20] <- ref2[201:300,11:20] + 2
 
     lab1 <- rep(c("A", "C"), each=5)
     lab2 <- rep(c("B", "C"), each=10)
 
     test <- matrix(runif(20000), ncol=20)
-    test[1:100,(1:10)*2 -1] <- 0
-    test[101:200,(1:10)*2] <- 0
+    test[1:100,(1:10)*2-1] <- test[1:100,(1:10)*2-1] + 2
+    test[101:200,(1:10)*2] <- test[101:200,(1:10)*2] + 2
     rownames(test) <- rownames(ref1)
 
     train1 <- trainSingleR(ref1, labels=lab1)
@@ -80,7 +80,7 @@ test_that("combineRecomputedResults works as expected (sanity check)", {
     combined <- combineRecomputedResults(
         results=list(pred1, pred2), 
         test=test,
-        trained=list(train1, train2),
+        trained=list(train1, train2)
     )
 
     expect_identical(combined$labels, rep(c("A", "B"), 10))

@@ -6,6 +6,9 @@
 #' @param results A list of \link[S4Vectors]{DataFrame} prediction results as returned by \code{\link{classifySingleR}} when run on each reference separately.
 #' This should have the same names as \code{trained}.
 #' @inheritParams SingleR
+#' @param top Integer specifying the number of top markers to use to construct the per-label marker list.
+#' Specifically, each label's marker list is defined as the union of the \code{top} genes from each pairwise comparison involving that label. 
+#' Larger values improve stability at the cost of increasing computational work. 
 #' @param check.missing Deprecated and ignored, as any row filtering will cause mismatches with the \code{test.genes=} used in \code{\link{trainSingleR}}.
 #' @param trained A list of \link[S4Vectors]{List}s containing the trained outputs of multiple references,
 #' equivalent to either (i) the output of \code{\link{trainSingleR}} on multiple references with \code{recompute=TRUE},
@@ -104,10 +107,12 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
 #' @importFrom beachmat initializeCpp
+#' @importFrom utils head
 combineRecomputedResults <- function(
     results, 
     test, 
     trained, 
+    top = 10,
     quantile=0.8, 
     fine.tune=TRUE, 
     tune.thresh=0.05, 
@@ -154,6 +159,20 @@ combineRecomputedResults <- function(
         }
     }
 
+    markers <- vector("list", length(trained))
+    for (i in seq_along(trained)) {
+        curref <- trained[[i]]
+        curmarkers <- curref$markers$full
+        curnames <- rownames(curref$ref)
+
+        for (l in names(curmarkers)) {
+            unified <- unique(unlist(lapply(curmarkers[[l]], head, n=top)))
+            curmarkers[[l]] <- match(unified, curnames) - 1L
+        }
+
+        markers[[i]] <- curmarkers
+    }
+
     all.inter.test <- all.inter.ref <- vector("list", length(trained))
     test.genes <- rownames(test)
     for (i in seq_along(all.refnames)) {
@@ -164,12 +183,12 @@ combineRecomputedResults <- function(
 
     # Applying the integration.
     ibuilt <- train_integrated(
-        test_nrow=length(test.genes),
-        test_features=all.inter.test,
-        references=lapply(trained, function(x) initializeCpp(x$ref, .check.na=FALSE)),
-        ref_features=all.inter.ref,
-        labels=lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
-        prebuilt=lapply(trained, function(x) rebuildIndex(x)$built),
+        test_nrow = length(test.genes),
+        test_features = all.inter.test,
+        references = lapply(trained, function(x) initializeCpp(x$ref, .check.na=FALSE)),
+        ref_features = all.inter.ref,
+        labels = lapply(trained, function(x) match(x$labels$full, x$labels$unique) - 1L),
+        markers = markers,
         nthreads = num.threads
     )
 

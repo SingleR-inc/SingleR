@@ -1,7 +1,7 @@
 Package: SingleR
 Title: Reference-Based Single-Cell RNA-Seq Annotation
-Version: 2.15.0
-Date: 2026-04-09
+Version: 2.15.1
+Date: 2026-05-21
 Authors@R: c(person("Dvir", "Aran", email="dvir.aran@ucsf.edu", role=c("aut", "cph")),
     person("Aaron", "Lun", email="infinite.monkeys.with.keyboards@gmail.com", role=c("ctb", "cre")),
     person("Daniel", "Bunis", role="ctb"),
@@ -52,6 +52,6 @@ biocViews:
 SystemRequirements: C++17
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.3.3
 URL: https://github.com/SingleR-inc/SingleR
 BugReports: https://github.com/SingleR-inc/SingleR/issues
+Config/roxygen2/version: 8.0.0

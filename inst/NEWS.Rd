@@ -2,6 +2,11 @@
 \title{SingleR News}
 \encoding{UTF-8}
 
+\section{Version 2.16.0}{\itemize{
+\item Added \code{top=} option to \code{combineRecomputedResults()} to restrict the number of per-label markers used for integrated classification.
+This defaults to 10 to reduce the feature space for faster compute, but can be set to \code{Inf} to recover the previous results.
+}}
+
 \section{Version 2.14.0}{\itemize{
 \item Added \code{hint.sce=} to \code{trainSingleR()} to nudge users towards setting a more appropriate \code{de.method=} for single-cell references.
 Similarly, suggest the use of \code{aggr.ref=TRUE} for large single-cell references.

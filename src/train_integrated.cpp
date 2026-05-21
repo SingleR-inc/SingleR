@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <cstddef>
 
 //[[Rcpp::export(rng=false)]]
 SEXP train_integrated(
@@ -10,41 +11,48 @@ SEXP train_integrated(
     Rcpp::List references,
     Rcpp::List ref_features,
     Rcpp::List labels,
-    Rcpp::List prebuilt,
+    Rcpp::List markers,
     int nthreads
 ) {
-    size_t nrefs = references.size();
-
+    const std::size_t nrefs = references.size();
     std::vector<singlepp::TrainIntegratedInput<double, int, int> > inputs;
     inputs.reserve(nrefs);
-    std::vector<singlepp::Intersection<int> > intersections(nrefs);
     std::vector<Rcpp::IntegerVector> holding_labs(nrefs);
 
-    for (size_t r = 0; r < nrefs; ++r) {
+    for (std::size_t r = 0; r < nrefs; ++r) {
         Rcpp::RObject curref(references[r]);
         Rtatami::BoundNumericPointer parsed(curref);
 
         Rcpp::IntegerVector test_ids(test_features[r]);
         Rcpp::IntegerVector ref_ids(ref_features[r]);
-        size_t ninter = test_ids.size();
-        if (ninter != static_cast<size_t>(ref_ids.size())) {
+        const std::size_t ninter = test_ids.size();
+        if (ninter != static_cast<std::size_t>(ref_ids.size())) {
             throw std::runtime_error("length of each entry of 'test_features' and 'ref_features' should be the same");
         }
-        auto& curinter = intersections[r];
-        for (size_t i = 0; i < ninter; ++i) {
+
+        singlepp::Intersection<int> curinter;
+        curinter.reserve(ninter);
+        for (std::size_t i = 0; i < ninter; ++i) {
             curinter.emplace_back(test_ids[i], ref_ids[i]);
         }
 
-        holding_labs[r] = labels[r];
-        Rcpp::RObject built = prebuilt[r];
-        TrainedSinglePointer curbuilt(built);
+        // Setting up the markers. We assume that these are already 0-indexed on the R side.
+        Rcpp::List my_markers = markers[r];
+        const std::size_t ngroups = my_markers.size();
+        singlepp::PerLabelMarkers<int> converted_markers(ngroups);
+        for (std::size_t m = 0; m < ngroups; ++m) {
+            Rcpp::IntegerVector curmarkers(my_markers[m]);
+            auto& dest = converted_markers[m];
+            dest.insert(dest.end(), curmarkers.begin(), curmarkers.end());
+        }
 
-        inputs.push_back(singlepp::prepare_integrated_input(
+        holding_labs[r] = labels[r]; // holding a reference to avoid GC of the array, if it was realized from an ALTREP.
+        inputs.push_back(singlepp::prepare_integrated_input<int, double, int>(
             test_nrow,
-            curinter,
-            *(parsed->ptr),
+            std::move(curinter),
+            parsed->ptr,
             static_cast<const int*>(holding_labs[r].begin()), 
-            *curbuilt
+            std::move(converted_markers)
         ));
     }
 

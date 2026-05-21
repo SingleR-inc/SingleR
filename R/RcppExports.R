@@ -19,8 +19,8 @@ set_executor <- function(ptr) {
     .Call('_SingleR_set_executor', PACKAGE = 'SingleR', ptr)
 }
 
-train_integrated <- function(test_nrow, test_features, references, ref_features, labels, prebuilt, nthreads) {
-    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_nrow, test_features, references, ref_features, labels, prebuilt, nthreads)
+train_integrated <- function(test_nrow, test_features, references, ref_features, labels, markers, nthreads) {
+    .Call('_SingleR_train_integrated', PACKAGE = 'SingleR', test_nrow, test_features, references, ref_features, labels, markers, nthreads)
 }
 
 #' @importFrom Rcpp sourceCpp
